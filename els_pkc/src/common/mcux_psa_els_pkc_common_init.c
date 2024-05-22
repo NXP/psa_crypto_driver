@@ -9,7 +9,8 @@
 #include "mcux_els.h"
 #include "mcux_pkc.h"
 
-#if defined(FSL_FEATURE_SOC_TRNG_COUNT) && (FSL_FEATURE_SOC_TRNG_COUNT > 0)
+#if defined(FSL_FEATURE_SOC_TRNG_COUNT) && (FSL_FEATURE_SOC_TRNG_COUNT > 0) && \
+    !(defined(MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256) && (MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256 > 0))
 #include "fsl_trng.h"
 #define MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED
 #endif
