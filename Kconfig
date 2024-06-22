@@ -1,0 +1,246 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+menu "psaCryptoDriver"
+    config MCUX_COMPONENT_component.psa_crypto_driver.osal
+        bool "Component component.psa_crypto_driver.osal"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+        bool "Component component.psa_crypto_driver.osal.frtos"
+        select MCUX_COMPONENT_component.psa_crypto_driver.osal
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+        bool "Component component.psa_crypto_driver.osal.baremetal"
+        select MCUX_COMPONENT_component.psa_crypto_driver.osal
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt
+        bool "Component component.psa_crypto_driver.mbedtls_thread_alt"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
+        bool "Component component.psa_crypto_driver.els_pkc.oracle"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.common
+        bool "Component component.psa_crypto_driver.els_pkc.common"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.transparent
+        bool "Component component.psa_crypto_driver.els_pkc.transparent"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.opaque
+        bool "Component component.psa_crypto_driver.els_pkc.opaque"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc
+        bool "Component component.psa_crypto_driver.els_pkc"
+        select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
+        select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.common
+        select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.opaque
+        select MCUX_COMPONENT_component.els_pkc.psa_driver
+        
+        if MCUX_COMPONENT_component.psa_crypto_driver.els_pkc
+          choice
+            prompt "Component component.psa_crypto_driver.els_pkc anyOf 1"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_1
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_1
+                bool "Component MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_1"
+                select MCUX_COMPONENT_driver.trng
+                depends on MCUX_HW_DEVICE_RW610 || MCUX_HW_DEVICE_RW612 || MCUX_HW_DEVICE_LPC55S36
+                
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_2
+                bool "Component MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_2"
+                depends on MCUX_HW_DEVICE_MCXN546 || MCUX_HW_DEVICE_MCXN547 || MCUX_HW_DEVICE_MCXN946 || MCUX_HW_DEVICE_MCXN947 || MCUX_HW_DEVICE_MCXN235 || MCUX_HW_DEVICE_MCXN236
+                
+          endchoice
+          choice
+            prompt "Component component.psa_crypto_driver.osal_baremetal"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.osal_baremetal
+        
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.osal_baremetal
+                bool "component.psa_crypto_driver.osal_baremetal"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.osal_frtos
+                bool "component.psa_crypto_driver.osal_frtos"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+          endchoice
+          choice
+            prompt "Component component.psa_crypto_driver.mbedtls_version"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedtls3x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedtls3x
+                bool "Component component.psa_crypto_driver.mbedtls3x"
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedcrypto
+                bool "Component component.psa_crypto_driver.mbedcrypto"
+                select MCUX_COMPONENT_middleware.mbedcrypto
+          endchoice
+        endif
+        
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
+        bool "Component component.psa_crypto_driver.ele_s4xx_rng"
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
+          choice
+            prompt "Component component.psa_crypto_driver.osal_baremetal"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.osal_baremetal
+        
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.osal_baremetal
+                bool "component.psa_crypto_driver.osal_baremetal"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.osal_frtos
+                bool "component.psa_crypto_driver.osal_frtos"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+          endchoice
+          choice
+            prompt "Component component.psa_crypto_driver.mbedtls_version"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedtls3x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedtls3x
+                bool "Component component.psa_crypto_driver.mbedtls3x"
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedcrypto
+                bool "Component component.psa_crypto_driver.mbedcrypto"
+                select MCUX_COMPONENT_middleware.mbedcrypto
+          endchoice
+        endif
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent
+        bool "Component component.psa_crypto_driver.ele_s4xx_psa_transparent"
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr
+        bool "Component component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr"
+        select MCUX_COMPONENT_driver.usdhc
+        select MCUX_COMPONENT_component.rgpio_adapter
+        select MCUX_COMPONENT_middleware.sdmmc.host.usdhc
+        select MCUX_COMPONENT_middleware.sdmmc.host.usdhc.interrupt
+        select MCUX_COMPONENT_middleware.sdmmc.sd
+        select MCUX_COMPONENT_middleware.fatfs.sd
+        select MCUX_COMPONENT_middleware.fatfs
+        select MCUX_COMPONENT_component.ele_nvm_manager
+        
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_opaque
+        bool "Component component.psa_crypto_driver.ele_s4xx_psa_opaque"
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa
+        bool "Component component.psa_crypto_driver.ele_s4xx_psa"
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_opaque
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent
+        if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa
+          choice
+            prompt "Component component.psa_crypto_driver.osal_baremetal"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.osal_baremetal
+        
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.osal_baremetal
+                bool "component.psa_crypto_driver.osal_baremetal"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.osal_frtos
+                bool "component.psa_crypto_driver.osal_frtos"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+          endchoice
+          choice
+            prompt "Component component.psa_crypto_driver.mbedtls_version"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedtls3x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedtls3x
+                bool "Component component.psa_crypto_driver.mbedtls3x"
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedcrypto
+                bool "Component component.psa_crypto_driver.mbedcrypto"
+                select MCUX_COMPONENT_middleware.mbedcrypto
+          endchoice
+        endif
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage
+        bool "Component component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage"
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_opaque
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr
+        select MCUX_COMPONENT_middleware.mbedtls3x.crypto_storage_fatfs
+        if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage
+          choice
+            prompt "Component component.psa_crypto_driver.osal_baremetal"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.osal_baremetal
+        
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.osal_baremetal
+                bool "component.psa_crypto_driver.osal_baremetal"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.osal_frtos
+                bool "component.psa_crypto_driver.osal_frtos"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+          endchoice
+          choice
+            prompt "Component component.psa_crypto_driver.mbedtls_version"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedtls3x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedtls3x
+                bool "Component component.psa_crypto_driver.mbedtls3x"
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedcrypto
+                bool "Component component.psa_crypto_driver.mbedcrypto"
+                select MCUX_COMPONENT_middleware.mbedcrypto
+          endchoice
+        endif
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common
+        bool "Component component.psa_crypto_driver.ele_s200.common"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent
+        bool "Component component.psa_crypto_driver.ele_s200.transparent"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
+        bool "Component component.psa_crypto_driver.ele_s200"
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent
+        select MCUX_COMPONENT_middleware.secure-subsystem.elemu
+        if MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
+          choice
+            prompt "Component component.psa_crypto_driver.osal_baremetal"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.osal_baremetal
+        
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.osal_baremetal
+                bool "component.psa_crypto_driver.osal_baremetal"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.osal_frtos
+                bool "component.psa_crypto_driver.osal_frtos"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+          endchoice
+          choice
+            prompt "Component component.psa_crypto_driver.mbedtls_version"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedtls3x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedtls3x
+                bool "Component component.psa_crypto_driver.mbedtls3x"
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+            
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedcrypto
+                bool "Component component.psa_crypto_driver.mbedcrypto"
+                select MCUX_COMPONENT_middleware.mbedcrypto
+          endchoice
+        endif
+
+endmenu
