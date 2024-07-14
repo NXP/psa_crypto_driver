@@ -24,9 +24,7 @@
 // be deleted at the end of the derivation command
 #define STORAGE_TEMP_KEY  0x00U
 #define STORAGE_FINAL_KEY 0x01U
-
-// ELS slot numbers and PSA key IDs for deriving builtin keys & blob import keys
-#define NXP_DIE_EL2GOOEM_MK_SK_SLOT      0x04U
+  
 #define NXP_DIE_EL2GOIMPORT_KEK_SK_ID    0x7FFF816EU
 #define NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID 0x7FFF816FU
 #define NXP_DIE_EL2GOIMPORT_AUTH_SK_ID   0x7FFF8170U
@@ -35,6 +33,37 @@
 #define NXP_DIE_EL2GOCONN_AUTH_PRK_ID   0x7FFF816CU
 #define NXP_DIE_EL2GOATTEST_AUTH_PRK_ID 0x7FFF8174U
 
+#if !defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
+#define MBEDTLS_NXP_DIE_EL2GOIMPORT_KEK_SK_ID    NXP_DIE_EL2GOIMPORT_KEK_SK_ID
+#define MBEDTLS_NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID
+#define MBEDTLS_NXP_DIE_EL2GOIMPORT_AUTH_SK_ID   NXP_DIE_EL2GOIMPORT_AUTH_SK_ID
+#define MBEDTLS_NXP_DIE_EL2GOCONN_AUTH_PRK_ID    NXP_DIE_EL2GOCONN_AUTH_PRK_ID
+#define MBEDTLS_NXP_DIE_EL2GOATTEST_AUTH_PRK_ID  NXP_DIE_EL2GOATTEST_AUTH_PRK_ID
+#else
+#define MBEDTLS_NXP_DIE_EL2GOIMPORT_KEK_SK_ID                                                 \
+    {                                                                                         \
+        .MBEDTLS_PRIVATE(owner) = 0, .MBEDTLS_PRIVATE(key_id) = NXP_DIE_EL2GOIMPORT_KEK_SK_ID \
+    }
+#define MBEDTLS_NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID                                                 \
+    {                                                                                            \
+        .MBEDTLS_PRIVATE(owner) = 0, .MBEDTLS_PRIVATE(key_id) = NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID \
+    }
+#define MBEDTLS_NXP_DIE_EL2GOIMPORT_AUTH_SK_ID                                                 \
+    {                                                                                          \
+        .MBEDTLS_PRIVATE(owner) = 0, .MBEDTLS_PRIVATE(key_id) = NXP_DIE_EL2GOIMPORT_AUTH_SK_ID \
+    }
+#define MBEDTLS_NXP_DIE_EL2GOCONN_AUTH_PRK_ID                                                 \
+    {                                                                                         \
+        .MBEDTLS_PRIVATE(owner) = 0, .MBEDTLS_PRIVATE(key_id) = NXP_DIE_EL2GOCONN_AUTH_PRK_ID \
+    }
+#define MBEDTLS_NXP_DIE_EL2GOATTEST_AUTH_PRK_ID                                                 \
+    {                                                                                           \
+        .MBEDTLS_PRIVATE(owner) = 0, .MBEDTLS_PRIVATE(key_id) = NXP_DIE_EL2GOATTEST_AUTH_PRK_ID \
+    }
+#endif
+
+static const mbedtls_svc_key_id_t el2goimport_kek_sk_id    = MBEDTLS_NXP_DIE_EL2GOIMPORT_KEK_SK_ID;
+static const mbedtls_svc_key_id_t el2goimporttfm_kek_sk_id = MBEDTLS_NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID;
 typedef enum key_recipe_operation_t
 {
     OP_CKDF,
@@ -42,12 +71,37 @@ typedef enum key_recipe_operation_t
     OP_KDELETE,
 } key_recipe_operation_t;
 
+// in case the key is derived as a process including several key derivation execution,
+// the intermediate source key in a recipe can be a key ID which was derived in previous 
+// step (ID being dynamic)
+#define SOURCE_KEY_SLOT   0x00U
+#define SOURCE_KEY_ID     0x01U
+
+// Derivation data may be dependent on some fuse values which need to be read dynamically
+// from registers at run time. So the source of derivation data can be static or 
+// function pointer where the function calculates the derivation data to be used.
+#define DERIVATION_DATA_SOURCE_STATIC      0x00U
+#define DERIVATION_DATA_SOURCE_DYNAMIC      0x01U
+
 typedef struct _key_recipe_step_ckdf_t
 {
-    mcuxClEls_KeyIndex_t source_key_slot;
+#if defined(MCUXCL_FEATURE_PLATFORM_MCXN)
+    uint32_t kdf_mask;                  // KDF Mask, required by few ELS platforms
+#endif    
+    uint32_t source;                    // Used to distinguish whether to use source_key_slot or id
+    union
+    {
+        mcuxClEls_KeyIndex_t source_key_slot;
+        mbedtls_svc_key_id_t source_key_id;    
+    };
     mbedtls_svc_key_id_t target_key_id;
     mcuxClEls_KeyProp_t key_properties;
-    uint8_t derivation_data[MCUXCLELS_CKDF_DERIVATIONDATA_SIZE];
+    uint32_t dd_src;                    // Used to decide the dynamic data source
+    union 
+    {
+        uint8_t derivation_data[MCUXCLELS_CKDF_DERIVATIONDATA_SIZE];
+        int (*derivation_fn)(uint8_t *derived_data);    
+    };
 } key_recipe_step_ckdf_t;
 
 typedef struct _key_recipe_step_keygen_t

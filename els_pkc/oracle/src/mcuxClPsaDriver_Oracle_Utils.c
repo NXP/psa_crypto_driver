@@ -392,15 +392,36 @@ static psa_status_t execute_ckdf_step(mbedtls_svc_key_id_t key_id,
                                       mcuxClEls_KeyIndex_t *target_key_slot)
 {
     psa_status_t psa_status = PSA_SUCCESS;
-
+    mcuxClEls_KeyIndex_t source_key_slot = 0U;
+    uint8_t dd_data[MCUXCLELS_CKDF_DERIVATIONDATA_SIZE] = { 0 };
+    
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(step != NULL, PSA_ERROR_INVALID_ARGUMENT, "Invalid input pointer");
 
     *target_key_slot = get_usable_key_slot(get_key_bits(&step->ckdf.key_properties));
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(*target_key_slot < MCUXCLELS_KEY_SLOTS, PSA_ERROR_BAD_STATE,
                                          "No usable keyslot found");
 
-    psa_status = mcuxClPsaDriver_Oracle_ElsUtils_Ckdf(step->ckdf.source_key_slot, *target_key_slot,
-                                                      step->ckdf.key_properties, step->ckdf.derivation_data);
+    if (step->ckdf.source == SOURCE_KEY_ID) {
+       get_slot_from_key_id(step->ckdf.source_key_id, &source_key_slot, true);
+    } else {
+       source_key_slot = step->ckdf.source_key_slot;
+    }
+    
+    if (step->ckdf.dd_src == DERIVATION_DATA_SOURCE_DYNAMIC) {
+        (*(step->ckdf.derivation_fn))(dd_data);
+    } else {
+        memcpy(dd_data, step->ckdf.derivation_data, sizeof(step->ckdf.derivation_data));
+    }
+
+
+#if defined(MCUXCL_FEATURE_PLATFORM_MCXN)
+    if (step->ckdf.kdf_mask) {
+        SYSCON0->ELS_KDF_MASK = step->ckdf.kdf_mask;
+    }
+#endif
+    
+    psa_status = mcuxClPsaDriver_Oracle_ElsUtils_Ckdf(source_key_slot, *target_key_slot,
+                                                      step->ckdf.key_properties, dd_data);
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in ELS CKDF function execution");
 
     mbedtls_svc_key_id_t target_key_id = (step->storage == STORAGE_TEMP_KEY) ? step->ckdf.target_key_id : key_id;

@@ -124,6 +124,66 @@ component.psa_crypto_driver.els_pkc.oracle:
       belong_to: psa_crypto_driver_main
       cgroup: psa_crypto_driver_els_pkc_oracle
     display_name: psa_crypto_driver els_pkc_oracle
+  dependency:
+    anyOf:
+    - allOf:
+      - component.psa_crypto_driver.els_pkc.oracle.rw61x
+      - device:
+        - RW610
+        - RW612
+    - allOf:
+      - component.psa_crypto_driver.els_pkc.oracle.mcxn
+      - device:
+        - MCXN546
+        - MCXN547
+        - MCXN946
+        - MCXN947
+        - MCXN235
+        - MCXN236
+        - LPC55S36             #Added as placeholder. Needs to be checked
+
+component.psa_crypto_driver.els_pkc.oracle.rw61x:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc/oracle/platforms/rw61x
+    files:
+    - source: els_pkc/oracle/platforms/rw61x/mcuxClPsaDriver_Oracle_KeyRecipes.h
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Key Recipes for rw61x for els_pkc
+    description: Key Recipes for rw61x for els_pkc
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_els_pkc_oracle
+    display_name: psa_crypto_driver els_pkc_oracle_rw61x
+
+component.psa_crypto_driver.els_pkc.oracle.mcxn:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc/oracle/platforms/mcxn
+    files:
+    - source: els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes.h
+    - source: els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes_Utils.c
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Key Recipes for mcxn for els_pkc
+    description: Key Recipes for mcxn for els_pkc
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_els_pkc_oracle
+    display_name: psa_crypto_driver els_pkc_oracle_mxcn
 
 component.psa_crypto_driver.els_pkc.common:
   section-type: component
