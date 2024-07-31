@@ -1,0 +1,25 @@
+# psa-crypto-driver configuration options
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# HW Acceleration Configs psa-crypto-driver
+#
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	bool "Build psa_crypto_driver for els_pkc"
+	depends on MCUX_ELS_PKC
+	default y if BUILD_WITH_TFM
+	help
+	    Include the psa_crypto_driver component from the NXP MCU SDK in the build.
+	    This provides an abstraction on top of the els_pkc component in order to be
+	    able to access the hardware acceleration offered by els_pkc from mbedtls
+	    via the mbedtls psa_crypto_driver_wrapper.
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
+	bool "Enables threading support in psa-crypto-driver"
+	depends on MCUX_ELS_PKC && MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	default n if BUILD_WITH_TFM
+	help
+	    Enables threading support in psa-crypto-driver component.

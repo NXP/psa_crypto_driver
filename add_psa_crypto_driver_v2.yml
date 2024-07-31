@@ -1,0 +1,537 @@
+---
+__variable__:
+  psa_crypto_driver_version: 1.0.0
+  psa_crypto_driver_dir: components/psa_crypto_driver
+
+components.psa_crypto_driver.ui_control:
+  section-type: component_support
+  component_info:
+    common:
+      fixed_id: nxp_psa_crypto_driver
+      type: software_component
+      ui_name: PSA CRYPTO DRIVER
+      ui_description: PSA crypto driver interface to use cryptographic library running on NXP crypto Hardware IP
+      ui_control: true
+      ui_category: Middleware
+      ui_release_specific: true
+      user_visible: false
+      manifest_name: psa_crypto_driver
+      ui_control_default: true
+      version: "${psa_crypto_driver_version}"
+      component_set_path:
+        repo_base_path: "${psa_crypto_driver_dir}"
+  __requires__:
+  - device.RW610
+  - device.RW612
+
+# --------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
+#        template for default config
+# --------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
+components.psa_crypto_driver.template:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+  contents:
+    cc-define:
+      MBEDTLS_CONFIG_FILE: '"mcux_mbedtls_config.h"'
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: "./"
+    files:
+    - source: mcux_mbedtls_config.h
+    - source: mbedtls_accelerator_config.h
+  component_info:
+    common:
+      description: psa_crypto_driver Template with config files.
+      version: "${psa_crypto_driver_version}"
+      type: project_template
+      full_name: psa_crypto_driver Template
+      change_log: "./ChangeLogKSDK.txt"
+      user_visible: false
+      manifest_name: psa crypto driver config template
+    cmsis_pack:
+      sub: psa_crypto_driver_template
+
+components.psa_crypto_driver.config_default:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+  contents:
+    cc-define:
+      MBEDTLS_CONFIG_FILE: '"mcux_mbedtls_config.h"'
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: "./"
+    files:
+    - source: mcux_mbedtls_config.h
+    - source: mbedtls_accelerator_config.h
+  component_info:
+    common:
+      description: Psa crypto driver library config files for mbedtls3x
+      version: "${psa_crypto_driver_version}"
+      type: software_component
+      full_name: Psa crypto driver config layer
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa crypto driver config_default
+    cmsis_pack:
+      sub: psa_crypto_driver_config_default
+
+components.psa_crypto_driver.config_mbedcrypto:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+  contents:
+    cc-define:
+      MBEDTLS_CONFIG_FILE: '"mcux_mbedcrypto_config.h"'
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: "./"
+    files:
+    - source: mcux_mbedcrypto_config.h
+    - source: mbedtls_accelerator_config.h
+  component_info:
+    common:
+      description: Psa crypto driver library config files for mbedcrypto
+      version: "${psa_crypto_driver_version}"
+      type: software_component
+      full_name: Psa crypto driver config layer
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa crypto driver config mbedcrypto only
+    cmsis_pack:
+      sub: psa_crypto_driver_config_mbedcrypto
+
+# Temporary solution to add a functions which is not implemented in tfm via the IPC
+components.psa_crypto_driver.psa_crypto_client:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control components.psa_crypto_driver.rng
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: psa_crypto_client
+    files:
+    - source: psa_crypto_client/psa_crypto_client.c
+  component_info:
+    common:
+      description: Psa crypto driver library for ELS S50 with PSA crypto client
+      type: software_component
+      version: "${psa_crypto_driver_version}"
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa_crypto_driver_els_cryptoclient
+      full_name: Psa crypto driver port layer with PSA crypto client
+    cmsis_pack:
+      sub: psa_crypto_driver_psa_crypto_client      
+
+components.psa_crypto_driver.osal:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: osal
+    files:
+    - source: osal/osal_mutex.h
+  component_info:
+    common:
+      description: OS Abstraction Layer for utilities for MCUX Psa crypto driver
+      version: "${psa_crypto_driver_version}"
+      type: software_component
+      full_name: Psa crypto driver osal layer
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa_crypto_driver_osal
+    cmsis_pack:
+      sub: psa_crypto_driver_osal
+
+components.psa_crypto_driver.osal.frtos:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+    components.psa_crypto_driver.osal
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: osal/frtos
+    files:
+    - source: osal/frtos/osal_mutex.c
+    - source: osal/frtos/osal_mutex_platform.h
+  component_info:
+    common:
+      description: OS Abstraction Layer for utilities for Psa crypto driver with Free RTOS
+      version: "${psa_crypto_driver_version}"
+      type: software_component
+      full_name: Psa crypto driver osal layer for FRTOS
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa_crypto_driver_osal_frtos
+    cmsis_pack:
+      sub: psa_crypto_driver_osal_frtos
+
+components.psa_crypto_driver.osal.baremetal:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+    components.psa_crypto_driver.osal
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: osal/baremetal
+    files:
+    - source: osal/baremetal/osal_mutex.c
+    - source: osal/baremetal/osal_mutex_platform.h
+  component_info:
+    common:
+      description:  OS Abstraction Layer for utilities for baremetal Psa crypto driver
+      version: "${psa_crypto_driver_version}"
+      type: software_component
+      full_name: Psa crypto driver osal layer for bare metal implementations 
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa_crypto_driver_osal_baremetal
+    cmsis_pack:
+      sub: psa_crypto_driver_osal_baremetal
+
+components.psa_crypto_driver.rng:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+  configuration:
+    tools:
+      __common__:
+        config:
+          __common__:
+            cc-define:
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: rng
+    files:
+    - source: rng/psa_mcux_entropy.c
+  component_info:
+    common:
+      description: Psa crypto driver library for entropy for all RNG and TRNG based devices
+      type: software_component
+      version: "${psa_crypto_driver_version}"
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa_crypto_driver_port_mcux_rng
+      full_name: Psa crypto driver layer for RNG
+    cmsis_pack:
+      sub: psa_crypto_driver_rng
+
+components.psa_crypto_driver.els_pkc.devices:
+  section-type: component_support
+  __requires__:
+    - device.RW612
+    - device.RW610
+
+components.psa_crypto_driver.els_pkc_oracle:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+    components.psa_crypto_driver.els_pkc.devices
+  configuration:
+    tools:
+      __common__:
+        config:
+          __common__:
+            cc-define:
+              PSA_CRYPTO_DRIVER_ELS_PKC:
+  contents:
+    cc-define:
+      PSA_CRYPTO_DRIVER_ELS_PKC: # enable usage of HW Accelerated apis in mbedcrypto for mcux stand-alone applications
+      MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER:  # by default enabled in tfm examples and Oracle also expects it to be enabled
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc/oracle/
+    - repo_relative_path: els_pkc/oracle/inc
+    files:
+    - source: els_pkc/oracle/src/mcuxClPsaDriver_Oracle.c
+    - source: els_pkc/oracle/src/mcuxClPsaDriver_Oracle_ElsUtils.c
+    - source: els_pkc/oracle/src/mcuxClPsaDriver_Oracle_Utils.c
+
+    - source: els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_ElsUtils.h
+    - source: els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_Macros.h
+    - source: els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_Utils.h
+
+  component_info:
+    common:
+      description: Psa crypto driver with oracle to support els_pkc
+      type: software_component
+      version: "${psa_crypto_driver_version}"
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: Psa crypto driver via oracle
+      full_name: Psa crypto driver with oracle files for els_pkc
+    cmsis_pack:
+      sub: psa_crypto_driver_oracle
+      
+components.psa_crypto_driver.els_pkc_psa_transparent:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control
+    components.psa_crypto_driver.els_pkc.devices
+  configuration:
+    tools:
+      __common__:
+        config:
+          __common__:
+            cc-define:
+              PSA_CRYPTO_DRIVER_ELS_PKC:
+  contents:
+    cc-define:
+      PSA_CRYPTO_DRIVER_ELS_PKC:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc
+    - repo_relative_path: els_pkc/include/common
+    - repo_relative_path: els_pkc/include/transparent
+    files:
+    - source: els_pkc/els_pkc_crypto_primitives.h
+    - source: els_pkc/els_pkc_crypto_composites.h
+    
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_init.c
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_init.h
+
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_hash.c
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_hash.h
+                   
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_aead.c
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_aead.h
+                   
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_cipher.c
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_cipher.h
+
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_key_generation.c
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_key_generation.h
+
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_mac.c
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_mac.h    
+    
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_asymmetric_encryption.c
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_asymmetric_encryption.h
+                   
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_asymmetric_signature.c
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_asymmetric_signature.h
+  component_info:
+    common:
+      description: Psa crypto driver for els_pkc
+      type: software_component
+      version: "${psa_crypto_driver_version}"
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa_crypto_driver_els_pkc_psa_transparent
+      full_name: Psa crypto driver layer via els_pkc
+    cmsis_pack:
+      sub: psa_crypto_driver_els_pkc_transparent
+
+components.psa_crypto_driver.els_pkc_psa_opaque:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control 
+    components.psa_crypto_driver.els_pkc.devices
+  configuration:
+    tools:
+      __common__:
+        config:
+          __common__:
+            cc-define:
+              PSA_CRYPTO_DRIVER_ELS_PKC:
+  contents:
+    cc-define:
+      PSA_CRYPTO_DRIVER_ELS_PKC:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc
+    - repo_relative_path: els_pkc/include/common
+    - repo_relative_path: els_pkc/include/opaque
+    files:
+    - source: els_pkc/els_pkc_crypto_primitives.h
+    - source: els_pkc/els_pkc_crypto_composites.h
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_init.c
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_init.h
+    
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_key_generation.c
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_key_generation.h
+
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_asymmetric_signature.c
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_asymmetric_signature.h
+
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_cipher.c
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_cipher.h
+
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_aead.c
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_aead.h
+
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_mac.c
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_mac.h
+  component_info:
+    common:
+      description: Psa crypto driver for ELS PKC
+      type: software_component
+      version: "${psa_crypto_driver_version}"
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: psa_crypto_driver_els_pkc_psa_opaque
+      full_name: Psa crypto driver layer via ELS PKC
+    cmsis_pack:
+      sub: psa_crypto_driver_els_pkc_opaque
+
+components.psa_crypto_driver.psa_driver_els_pkc:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control 
+    components.psa_crypto_driver.els_pkc.devices 
+    component.els_pkc.psa_driver
+    components.psa_crypto_driver.els_pkc_oracle
+    components.psa_crypto_driver.els_pkc_psa_opaque
+    components.psa_crypto_driver.els_pkc_psa_transparent
+    components.psa_crypto_driver.osal
+    components.psa_crypto_driver.osal.baremetal
+    driver.trng
+  configuration:
+    tools:
+      __common__:
+        config:
+          __common__:
+            cc-define:
+              PSA_CRYPTO_DRIVER_ELS_PKC:
+  contents:
+    cc-define:
+      PSA_CRYPTO_DRIVER_ELS_PKC:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: "./"
+    - repo_relative_path: els_pkc
+    - repo_relative_path: els_pkc/include
+    - repo_relative_path: els_pkc/include/common
+    files:
+    - source: els_pkc/els_pkc_driver.h
+
+    - source: els_pkc/src/common/mcux_psa_els_pkc_common_init.c
+    - source: els_pkc/include/common/mcux_psa_els_pkc_common_init.h
+
+    - source: els_pkc/src/common/mcux_psa_els_pkc_entropy.c
+    - source: els_pkc/include/common/mcux_psa_els_pkc_entropy.h
+  component_info:
+    common:
+      description: Psa crypto driver library to be used with els_pkc
+      type: software_component
+      version: "${psa_crypto_driver_version}"
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: false
+      manifest_name: mbedtls_els_pkc
+      full_name: Psa crypto driver layer to be used with els_pkc
+    cmsis_pack:
+      sub: psa_crypto_driver_for_els_pkc
+
+# --------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
+#        Interface that can be used via mbedcrypto
+# --------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
+components.psa_crypto_driver.psa_driver_els_pkc_with_mbedcrypto:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control 
+    components.psa_crypto_driver.psa_driver_els_pkc
+    components.psa_crypto_driver.config_mbedcrypto
+    middleware.mbedcrypto
+  configuration:
+    tools:
+      __common__:
+        config:
+          __common__:
+            cc-define:
+              PSA_CRYPTO_DRIVER_ELS_PKC:
+  contents:
+    cc-define:
+      PSA_CRYPTO_DRIVER_ELS_PKC:
+      MBEDTLS_PSA_CRYPTO_C:
+      MBEDTLS_PSA_CRYPTO_DRIVERS:
+      MBEDTLS_CONFIG_FILE: '"mcux_mbedcrypto_config.h"'
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: "./"
+  component_info:
+    common:
+      description: Psa crypto driver library to be used with els_pkc via mbedcrypto
+      type: software_component
+      version: "${psa_crypto_driver_version}"
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: true
+      manifest_name: psa_crypto_driver_els_pkc_mbedcrypto
+      full_name: Psa crypto driver layer to be used with els_pkc via mbedcrypto
+    cmsis_pack:
+      sub: psa_crypto_driver_for_els_pkc_via_mbedcrypto
+
+# --------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
+#        Interface that can be used via mbedtls3x
+# --------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
+components.psa_crypto_driver.psa_driver_els_pkc_with_mbedtls3x:
+  section-type: component
+  __requires__:
+  - components.psa_crypto_driver.ui_control 
+    components.psa_crypto_driver.psa_driver_els_pkc
+    components.psa_crypto_driver.config_default
+    middleware.mbedtls3x
+  configuration:
+    tools:
+      __common__:
+        config:
+          __common__:
+            cc-define:
+              PSA_CRYPTO_DRIVER_ELS_PKC:
+  contents:
+    cc-define:
+      PSA_CRYPTO_DRIVER_ELS_PKC:
+      MBEDTLS_CONFIG_FILE: '"mcux_mbedtls_config.h"'
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: "./"
+  component_info:
+    common:
+      description: Psa crypto driver library to be used with els_pkc via mbedtls3x
+      type: software_component
+      version: "${psa_crypto_driver_version}"
+      change_log: "./ChangeLogKSDK.txt"
+      component_bundle: bundles.drivers
+      user_visible: true
+      manifest_name: psa_crypto_driver_els_pkc_via_mbedtls3x
+      full_name: Psa crypto driver layer to be used with els_pkc via mbedtls3x
+    cmsis_pack:
+      sub: psa_crypto_driver_for_els_pkc_via_mbedtls3x

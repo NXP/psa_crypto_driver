@@ -1,0 +1,714 @@
+# yaml-language-server: $schema=../../bin/generator/sdk_generator/data/sdk_data_schema/v3/software_set_and_project_schema.json
+
+__variable__:
+  psa_crypto_driver_version: 1.0.0
+  psa_crypto_driver_dir: components/psa_crypto_driver
+
+component.psa_crypto_driver.osal:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: osal
+    files:
+    - source: osal/osal_mutex.h
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    description: OS Abstraction Layer for PSA crypto driver
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    full_name: PSA crypto driver osal layer
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_osal
+    display_name: psa_crypto_driver osal
+
+component.psa_crypto_driver.osal.frtos:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: osal/frtos
+    files:
+    - source: osal/frtos/osal_mutex.c
+    - source: osal/frtos/osal_mutex_platform.h
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    description: OS Abstraction Layer for PSA crypto driver on FreeRTOS
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    full_name: PSA crypto driver osal layer for FreeRTOS
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_osal_frtos
+    display_name: psa_crypto_driver osal_frtos
+  dependency:
+    allOf:
+    - component.psa_crypto_driver.osal
+
+component.psa_crypto_driver.osal.baremetal:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: osal/baremetal
+    files:
+    - source: osal/baremetal/osal_mutex.c
+    - source: osal/baremetal/osal_mutex_platform.h
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    description: OS Abstraction Layer for PSA crypto driver on bare metal
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    full_name: PSA crypto driver osal layer for bare metal implementations
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_osal_baremetal
+    display_name: psa_crypto_driver osal_baremetal
+  dependency:
+    allOf:
+    - component.psa_crypto_driver.osal
+
+component.psa_crypto_driver.mbedtls_thread_alt:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: mbedtls_thread_alt
+    files:
+    - source: mbedtls_thread_alt/threading_alt.c
+    - source: mbedtls_thread_alt/threading_alt.h
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    description: Threading Alt implementation for mbedtls layer via PSA crypto driver
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    full_name: PSA crypto driver threading alt layer for mbedtls threading based
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_dri_mbed_thrd_alt
+    display_name: psa_crypto_driver mbedtls_threading_alt
+
+component.psa_crypto_driver.els_pkc.oracle:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc/oracle/inc
+    files:
+    - source: els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_Interface_builtin_key_ids.h
+    - source: els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_Interface_key_locations.h
+    - source: els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_ElsUtils.h
+    - source: els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_Macros.h
+    - source: els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_Utils.h
+    - source: els_pkc/oracle/src/mcuxClPsaDriver_Oracle.c
+    - source: els_pkc/oracle/src/mcuxClPsaDriver_Oracle_ElsUtils.c
+    - source: els_pkc/oracle/src/mcuxClPsaDriver_Oracle_Utils.c
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Oracle of PSA crypto driver for els_pkc
+    description: Oracle of PSA crypto driver for els_pkc
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_els_pkc_oracle
+    display_name: psa_crypto_driver els_pkc_oracle
+
+component.psa_crypto_driver.els_pkc.common:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc/include/common
+    files:
+    - source: els_pkc/include/common/mcux_psa_els_pkc_common_init.h
+    - source: els_pkc/include/common/mcux_psa_els_pkc_entropy.h
+    - source: els_pkc/src/common/mcux_psa_els_pkc_common_init.c
+    - source: els_pkc/src/common/mcux_psa_els_pkc_entropy.c
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Common files of PSA crypto driver for els_pkc
+    description: Common files of PSA crypto driver for els_pkc
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_els_pkc_common
+    display_name: psa_crypto_driver els_pkc_common
+
+component.psa_crypto_driver.els_pkc.transparent:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc/include/transparent
+    files:
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_aead.h
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_asymmetric_signature.h
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_cipher.h
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_hash.h
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_init.h
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_key_generation.h
+    - source: els_pkc/include/transparent/mcux_psa_els_pkc_mac.h
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_aead.c
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_asymmetric_signature.c
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_cipher.c
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_hash.c
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_init.c
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_key_generation.c
+    - source: els_pkc/src/transparent/mcux_psa_els_pkc_mac.c
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Transparent part of PSA crypto driver for els_pkc
+    description: Transparent part of PSA crypto driver for els_pkc
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypt_dri_els_pkc_trans
+    display_name: psa_crypto_driver els_pkc_transparent
+
+component.psa_crypto_driver.els_pkc.opaque:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: els_pkc/include/opaque
+    files:
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_aead.h
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_asymmetric_signature.h
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_cipher.h
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_init.h
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_key_generation.h
+    - source: els_pkc/include/opaque/mcux_psa_els_pkc_opaque_mac.h
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_aead.c
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_asymmetric_signature.c
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_cipher.c
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_init.c
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_key_generation.c
+    - source: els_pkc/src/opaque/mcux_psa_els_pkc_opaque_mac.c
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Opaque part of PSA crypto driver for els_pkc
+    description: Opaque part of PSA crypto driver for els_pkc
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_dri_els_pkc_opaque
+    display_name: psa_crypto_driver els_pkc_opaque
+
+component.psa_crypto_driver.els_pkc:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    configuration:
+      cc-define:
+        PSA_CRYPTO_DRIVER_ELS_PKC:
+    cc-include:
+    - repo_relative_path: els_pkc
+    files:
+    - source: els_pkc/els_pkc_crypto_composites.h
+    - source: els_pkc/els_pkc_crypto_primitives.h
+    - source: els_pkc/els_pkc_driver.h
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: PSA crypto driver for els_pkc
+    description: PSA crypto driver for els_pkc
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: always
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_els_pkc
+    display_name: psa_crypto_driver_els_pkc
+  dependency:
+    allOf:
+    - component.psa_crypto_driver.els_pkc.oracle
+    - component.psa_crypto_driver.els_pkc.common
+    - component.psa_crypto_driver.els_pkc.transparent
+    - component.psa_crypto_driver.els_pkc.opaque
+    - component.els_pkc.psa_driver
+    - anyOf:
+      - allOf:
+        - driver.trng
+        - device:
+          - RW610
+          - RW612
+          - LPC55S36
+      - allOf:
+        - device:
+          - MCXN546
+          - MCXN547
+          - MCXN946
+          - MCXN947
+          - MCXN235
+          - MCXN236
+    - anyOf:
+      - component.psa_crypto_driver.osal.baremetal
+      - component.psa_crypto_driver.osal.frtos
+    - anyOf:
+      - allOf:
+        - middleware.mbedtls3x.port.psa_crypto_config
+        - middleware.mbedtls3x.crypto
+      - allOf:
+        - middleware.mbedcrypto
+
+
+component.psa_crypto_driver.ele_s4xx_rng:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: ele_s4xx
+    - repo_relative_path: ele_s4xx/include
+    - repo_relative_path: ele_s4xx/include/common
+    files:
+    - source: ele_s4xx/ele_s4xx.h
+    - source: ele_s4xx/ele_fw.h
+
+    - source: ele_s4xx/src/common/mcux_psa_s4xx_common_init.c
+    - source: ele_s4xx/include/common/mcux_psa_s4xx_common_init.h
+
+    - source: ele_s4xx/src/common/mcux_psa_s4xx_entropy.c
+    - source: ele_s4xx/include/common/mcux_psa_s4xx_entropy.h
+
+    configuration:
+      cc-define:
+        FSL_FEATURE_SOC_ELE_S4XX:
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    description: PSA port library for ELE S4xx with only RNG ALT Function
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: always
+    full_name: MbedTLS 3x MCUX SDK port layer via ELE S400
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypt_dri_ele_s4xx_rng
+    display_name: psa_crypto_driver_ele_s4xx_rng
+  dependency:
+    allOf:
+    - driver.s3mu
+    - component.ele_crypto
+    - anyOf:
+      - component.psa_crypto_driver.osal.baremetal
+      - component.psa_crypto_driver.osal.frtos
+    - anyOf:
+      - allOf:
+        - middleware.mbedtls3x.port.psa_crypto_config
+        - middleware.mbedtls3x.crypto
+      - allOf:
+        - middleware.mbedcrypto
+
+
+component.psa_crypto_driver.ele_s4xx_psa_transparent:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: ele_s4xx/
+    - repo_relative_path: ele_s4xx/include/common
+    - repo_relative_path: ele_s4xx/include/transparent
+    files:
+    - source: ele_s4xx/ele_s4xx_crypto_primitives.h
+    - source: ele_s4xx/src/transparent/mcux_psa_s4xx_init.c
+    - source: ele_s4xx/include/transparent/mcux_psa_s4xx_init.h
+
+    - source: ele_s4xx/src/transparent/mcux_psa_s4xx_key_generation.c
+    - source: ele_s4xx/include/transparent/mcux_psa_s4xx_key_generation.h
+
+    - source: ele_s4xx/src/transparent/mcux_psa_s4xx_hash.c
+    - source: ele_s4xx/include/transparent/mcux_psa_s4xx_hash.h
+
+    - source: ele_s4xx/src/common/mcux_psa_s4xx_common_key_management.c
+    - source: ele_s4xx/include/common/mcux_psa_s4xx_common_key_management.h
+
+    - source: ele_s4xx/src/transparent/mcux_psa_s4xx_aead.c
+    - source: ele_s4xx/include/transparent/mcux_psa_s4xx_aead.h
+
+    - source: ele_s4xx/src/transparent/mcux_psa_s4xx_cipher.c
+    - source: ele_s4xx/include/transparent/mcux_psa_s4xx_cipher.h
+
+    - source: ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_encryption.c
+    - source: ele_s4xx/include/transparent/mcux_psa_s4xx_asymmetric_encryption.h
+
+    - source: ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_signature.c
+    - source: ele_s4xx/include/transparent/mcux_psa_s4xx_asymmetric_signature.h
+    configuration:
+      cc-define:
+        PSA_CRYPTO_DRIVER_ELE_S4XX:
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Transparent part of PSA crypto driver for ele_s4xx
+    description: Transparent part of PSA crypto driver for ele_s4xx
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypt_dri_ele_s4xx_trans
+    display_name: psa_crypto_driver_ele_s4xx-psa_transp
+  dependency:
+    allOf:
+    - driver.s3mu
+    - component.ele_crypto
+
+component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: ele_s4xx/include/common
+    files:
+    - source: ele_s4xx/src/common/mcux_psa_s4xx_sdmmc_nvm_manager.c
+    - source: ele_s4xx/include/common/mcux_psa_s4xx_sdmmc_nvm_manager.h
+    configuration:
+      cc-define:
+        PSA_ELE_S4XX_SD_NVM_MANAGER:
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: NVM manager for ELE S4xx with storage on SD FATFS
+    description: NVM manager for ELE S4xx with storage on SD FATFS
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypt_ele_s4xx_sd_nvm_mgr
+    display_name: psa_crypto_driver_ele_s4xx_sd_nvm_mgr
+  dependency:
+    allOf:
+    - driver.usdhc
+    - component.rgpio_adapter
+    - middleware.sdmmc.host.usdhc
+    - middleware.sdmmc.host.usdhc.interrupt
+    - middleware.sdmmc.sd
+    - middleware.fatfs.sd
+    - middleware.fatfs
+    - component.ele_nvm_manager
+
+component.psa_crypto_driver.ele_s4xx_psa_opaque:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: ele_s4xx/
+    - repo_relative_path: ele_s4xx/include/common
+    - repo_relative_path: ele_s4xx/include/opaque
+    files:
+    - source: ele_s4xx/ele_s4xx_crypto_primitives.h
+    - source: ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_init.c
+    - source: ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_init.h
+
+    - source: ele_s4xx/src/common/mcux_psa_s4xx_common_key_management.c
+    - source: ele_s4xx/include/common/mcux_psa_s4xx_common_key_management.h
+
+    - source: ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_key_generation.c
+    - source: ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_key_generation.h
+
+    - source: ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_asymmetric_signature.c
+    - source: ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_asymmetric_signature.h
+
+    - source: ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_cipher.c
+    - source: ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_cipher.h
+
+    - source: ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_aead.c
+    - source: ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_aead.h
+
+    - source: ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_mac.c
+    - source: ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_mac.h
+    configuration:
+      cc-define:
+        PSA_CRYPTO_DRIVER_ELE_S4XX:
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: PSA Opaque driver wrappers for ELE S4XX opaque
+    description: PSA Opaque driver wrappers for ELE S4XX opaque
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypt_dri_ele_s4xx_opaque
+    display_name: psa_crypto_driver_ele_s4xx_psa_opaque
+  dependency:
+    allOf:
+    - driver.s3mu
+    - component.ele_crypto
+
+component.psa_crypto_driver.ele_s4xx_psa:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    configuration:
+      cc-define:
+        PSA_CRYPTO_DRIVER_ELE_S4XX:
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: PSA crypto driver for ELE S4XX
+    description: PSA crypto driver for ELE S4XX
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: always
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypt_dri_ele_s4xx_psa
+    display_name: psa_crypto_driver_ele_s4xx_psa
+  dependency:
+    allOf:
+    - driver.s3mu
+    - component.ele_crypto
+    - component.psa_crypto_driver.ele_s4xx_rng
+    - component.psa_crypto_driver.ele_s4xx_psa_opaque
+    - component.psa_crypto_driver.ele_s4xx_psa_transparent
+    - anyOf:
+      - component.psa_crypto_driver.osal.baremetal
+      - component.psa_crypto_driver.osal.frtos
+    - anyOf:
+      - allOf:
+        - middleware.mbedtls3x.port.psa_crypto_config
+        - middleware.mbedtls3x.crypto
+      - allOf:
+        - middleware.mbedcrypto
+
+component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    configuration:
+      cc-define:
+        PSA_CRYPTO_DRIVER_ELE_S4XX:
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: PSA SDK port layer via ELE S4XX
+    description: PSA crypto driver for ELE S4XX with Persistent Storage on SD card FATFS
+    type: middleware
+    version: "${psa_crypto_driver_version}"
+    user_visible: always
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypt_dri_ele_s4xx_psa_pers
+    display_name: psa_crypto_driver_ele_s4xx_psa_storage
+  dependency:
+    allOf:
+    - driver.s3mu
+    - component.ele_crypto
+    - component.psa_crypto_driver.ele_s4xx_rng
+    - component.psa_crypto_driver.ele_s4xx_psa_opaque
+    - component.psa_crypto_driver.ele_s4xx_psa_transparent
+    - component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr
+    - middleware.mbedtls3x.crypto_storage_fatfs
+    - anyOf:
+      - component.psa_crypto_driver.osal.baremetal
+      - component.psa_crypto_driver.osal.frtos
+    - anyOf:
+      - allOf:
+        - middleware.mbedtls3x.port.psa_crypto_config
+        - middleware.mbedtls3x.crypto
+      - allOf:
+        - middleware.mbedcrypto
+
+component.psa_crypto_driver.ele_s200.common:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: ele_s200/include/common
+    files:
+    - source: ele_s200/include/common/mcux_psa_s2xx_common_init.h
+    - source: ele_s200/include/common/mcux_psa_s2xx_entropy.h
+    - source: ele_s200/src/common/mcux_psa_s2xx_common_init.c
+    - source: ele_s200/src/common/mcux_psa_s2xx_entropy.c
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Common files of PSA crypto driver for ele_s200
+    description: Common files of PSA crypto driver for ele_s200
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_dri_ele_s200_common
+    display_name: psa_crypto_driver_ele_s200_common
+
+component.psa_crypto_driver.ele_s200.transparent:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: ele_s200/include/transparent
+    files:
+    - source: ele_s200/include/transparent/mcux_psa_s2xx_aead.h
+    # - source: ele_s200/include/transparent/mcux_psa_s2xx_asymmetric_signature.h
+    - source: ele_s200/include/transparent/mcux_psa_s2xx_cipher.h
+    - source: ele_s200/include/transparent/mcux_psa_s2xx_hash.h
+    - source: ele_s200/include/transparent/mcux_psa_s2xx_init.h
+    # - source: ele_s200/include/transparent/mcux_psa_s2xx_key_generation.h
+    - source: ele_s200/include/transparent/mcux_psa_s2xx_mac.h
+    - source: ele_s200/src/transparent/mcux_psa_s2xx_aead.c
+    # - source: ele_s200/src/transparent/mcux_psa_s2xx_asymmetric_signature.c
+    - source: ele_s200/src/transparent/mcux_psa_s2xx_cipher.c
+    - source: ele_s200/src/transparent/mcux_psa_s2xx_hash.c
+    - source: ele_s200/src/transparent/mcux_psa_s2xx_init.c
+    # - source: ele_s200/src/transparent/mcux_psa_s2xx_key_generation.c
+    - source: ele_s200/src/transparent/mcux_psa_s2xx_mac.c
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: Transparent part of PSA crypto driver for ele_s200
+    description: Transparent part of PSA crypto driver for ele_s200
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: never
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_dri_ele_s200_trans
+    display_name: psa_crypto_driver ele_s200_transparent
+
+component.psa_crypto_driver.ele_s200:
+  section-type: component
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    configuration:
+      cc-define:
+        PSA_CRYPTO_DRIVER_ELE_S2XX:
+    cc-include:
+    - repo_relative_path: ele_s200
+    files:
+    - source: ele_s200/ele_s2xx_crypto_primitives.h
+    - source: ele_s200/ele_s2xx.h
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    full_name: PSA crypto driver for ELE S200
+    description: PSA crypto driver for ELE S200
+    type: software_component
+    version: "${psa_crypto_driver_version}"
+    user_visible: always
+    taxonomy:
+      belong_to: psa_crypto_driver_main
+      cgroup: psa_crypto_driver_ele_s200
+    display_name: psa_crypto_driver_ele_s200
+  dependency:
+    allOf:
+    - component.psa_crypto_driver.ele_s200.common
+    - component.psa_crypto_driver.ele_s200.transparent
+    - middleware.secure-subsystem.elemu
+    - anyOf:
+      - component.psa_crypto_driver.osal.baremetal
+      - component.psa_crypto_driver.osal.frtos
+    - anyOf:
+      - allOf:
+        - middleware.mbedtls3x.port.psa_crypto_config
+        - middleware.mbedtls3x.crypto
+      - allOf:
+        - middleware.mbedcrypto
+
+set.component.psa_crypto_driver:
+  section-type: set
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    fixed_id: nxp_psa_crypto_driver
+    version: "${psa_crypto_driver_version}"
+    display_name: PSA CRYPTO DRIVER
+    description: PSA crypto driver interface to use cryptographic library running on NXP crypto Hardware IP
+    set_location:
+      repo_base_path: "${psa_crypto_driver_dir}"
+    type: middleware
+    vendor: NXP
+    component_taxonomy:
+      psa_crypto_driver_main:
+        cclass: psa_crypto_driver
+    product:
+      kex_package:
+        scr:
+          - scr.component.psa_crypto_driver
+        kex_web_ui:
+          ui_control: true
+          ui_release_specific: true
+          ui_control_default: true
+          ui_category: Middleware
+      cmsis_pack:
+        scr:
+          - scr.component.psa_crypto_driver
+        vendor: NXP
+        # supported: false
+        pack_root:
+          pack_type: SWP
+          pack_name: NXP_PSA_CRYPTO_DRIVER
+          pack_version: 1.0.0
+  dependency:
+    anyOf:
+    - device:
+      - RW610
+      - RW612
+      - LPC55S36
+      - MCXN235
+      - MCXN236
+      - MCXN546
+      - MCXN547
+      - MCXN946
+      - MCXN947
+      - MIMXRT1189
+      - MIMXRT1187
+      - KW45B41Z83
+container.component.psa_crypto_driver.unused_files:
+  section-type: container
+  contents:
+    repo_base_path: "${psa_crypto_driver_dir}"
+    project_base_path: component/psa_crypto_driver
+    cc-include:
+    - repo_relative_path: "./"
+    files:
+    - source: CMakeLists.txt
+      hidden: true
+      exclude: true
+    - source: osal/CMakeLists.txt
+      hidden: true
+      exclude: true
+  belong_to: set.component.psa_crypto_driver
+  section_info:
+    description: psa_crypto_driver files unused by projects
+    version: "${psa_crypto_driver_version}"
+    type: other
+    user_visible: never
+    full_name: psa_crypto_driver unused files
+    display_name: unused_files
+scr.component.psa_crypto_driver:
+  section-type: scr
+  belong_to: set.component.psa_crypto_driver
+  contents:
+    Name: PSA CRYPTO DRIVER
+    Version: "${psa_crypto_driver_version}"
+    license:
+      - license.bsd-3
+    Format: source code
+    Description: PSA crypto driver interface to use cryptographic library running on NXP crypto Hardware IP
+    Origin: NXP (BSD-3-Clause)
+    Location: "${psa_crypto_driver_dir}"
