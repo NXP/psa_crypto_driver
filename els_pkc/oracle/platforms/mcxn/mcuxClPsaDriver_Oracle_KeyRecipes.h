@@ -20,11 +20,12 @@
 
 #define NXP_DIE_MK_SK_SLOT      0x00U
 
-// N10
+// MCXN 
 #define MBEDTLS_NXP_CUST_DIE_EL2GO_MK_SK_ID      0x7FFF816DU
 #define MBEDTLS_NXP_CUST_DIE_EL2GOOEM_MK_SK_ID   0x7FFF816AU 
 
 psa_status_t get_el2goem_mk_dd(uint8_t* dd);
+
 
 #define RECIPE_STEP_CREATE_NXP_DIE_EL2GOIMPORT_KEK_SK                                                                  \
     {                                                                                                                  \
@@ -41,6 +42,15 @@ psa_status_t get_el2goem_mk_dd(uint8_t* dd);
     }
 
 const key_recipe_t recipe_el2goimport_kek_sk = {
+    .number_of_steps = 1,
+    .steps =
+        {
+            RECIPE_STEP_CREATE_NXP_DIE_EL2GOIMPORT_KEK_SK,
+        },
+};
+
+/* For N10 DIE KEK SK and EL2GOIMPORT_KEK_SK are same */
+const key_recipe_t recipe_die_kek_sk = {
     .number_of_steps = 1,
     .steps =
         {

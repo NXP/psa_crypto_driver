@@ -28,18 +28,24 @@
 #define NXP_DIE_EL2GOIMPORT_KEK_SK_ID    0x7FFF816EU
 #define NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID 0x7FFF816FU
 #define NXP_DIE_EL2GOIMPORT_AUTH_SK_ID   0x7FFF8170U
+#define NXP_DIE_KEK_SK_ID                0x7FFF8180U
 
 #define NXP_DIE_EL2GOPUBLIC_MK_SK_SLOT  0x06U
 #define NXP_DIE_EL2GOCONN_AUTH_PRK_ID   0x7FFF816CU
 #define NXP_DIE_EL2GOATTEST_AUTH_PRK_ID 0x7FFF8174U
 
 #if !defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
+#define MBEDTLS_NXP_DIE_KEK_SK_ID                NXP_DIE_KEK_SK_ID
 #define MBEDTLS_NXP_DIE_EL2GOIMPORT_KEK_SK_ID    NXP_DIE_EL2GOIMPORT_KEK_SK_ID
 #define MBEDTLS_NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID
 #define MBEDTLS_NXP_DIE_EL2GOIMPORT_AUTH_SK_ID   NXP_DIE_EL2GOIMPORT_AUTH_SK_ID
 #define MBEDTLS_NXP_DIE_EL2GOCONN_AUTH_PRK_ID    NXP_DIE_EL2GOCONN_AUTH_PRK_ID
 #define MBEDTLS_NXP_DIE_EL2GOATTEST_AUTH_PRK_ID  NXP_DIE_EL2GOATTEST_AUTH_PRK_ID
 #else
+#define MBEDTLS_NXP_DIE_KEK_SK_ID                                                 \
+    {                                                                                         \
+        .MBEDTLS_PRIVATE(owner) = 0, .MBEDTLS_PRIVATE(key_id) = NXP_DIE_KEK_SK_ID \
+    }
 #define MBEDTLS_NXP_DIE_EL2GOIMPORT_KEK_SK_ID                                                 \
     {                                                                                         \
         .MBEDTLS_PRIVATE(owner) = 0, .MBEDTLS_PRIVATE(key_id) = NXP_DIE_EL2GOIMPORT_KEK_SK_ID \
@@ -62,6 +68,7 @@
     }
 #endif
 
+static const mbedtls_svc_key_id_t die_kek_sk_id    = MBEDTLS_NXP_DIE_KEK_SK_ID;
 static const mbedtls_svc_key_id_t el2goimport_kek_sk_id    = MBEDTLS_NXP_DIE_EL2GOIMPORT_KEK_SK_ID;
 static const mbedtls_svc_key_id_t el2goimporttfm_kek_sk_id = MBEDTLS_NXP_DIE_EL2GOIMPORTTFM_KEK_SK_ID;
 typedef enum key_recipe_operation_t
@@ -100,7 +107,7 @@ typedef struct _key_recipe_step_ckdf_t
     union 
     {
         uint8_t derivation_data[MCUXCLELS_CKDF_DERIVATIONDATA_SIZE];
-        int (*derivation_fn)(uint8_t *derived_data);    
+        psa_status_t (*derivation_fn)(uint8_t *derived_data);    
     };
 } key_recipe_step_ckdf_t;
 
@@ -185,6 +192,9 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GetPublicKeyFromHandler(mbedtls_svc_ke
                                                                   uint8_t **public_key,
                                                                   size_t *public_key_size);
 
+psa_status_t mcuxClPsaDriver_Oracle_Utils_GetPublicKeyFromSlot(mcuxClEls_KeyIndex_t slot_id,
+                                                                  uint8_t **public_key,
+                                                                  size_t *public_key_size);
 /**
  * @brief Executes a parsed key recipe.
  *
@@ -215,7 +225,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_RemoveKeyFromEls(mbedtls_svc_key_id_t 
 /**
  * @brief Parses psa_import_blob and executes the KEYIN command on the ELS
  *
- * @param[in] key_id psa key id reference
+ * @param[in] attributes provided key attributes
  * @param[in] psa_import_blob buffer holding psa import command
  * @param[in] psa_import_blob_size the length of the buffer
  * @param[in] wrap_key_slot The ELS key slot of the wrapping key
@@ -224,7 +234,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_RemoveKeyFromEls(mbedtls_svc_key_id_t 
  * @retval PSA_SUCCESS                 The operation was successful
  * @retval PSA_ERROR_HARDWARE_FAILURE  The ELS operation failed
  */
-psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteElsKeyIn(mbedtls_svc_key_id_t key_id,
+psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteElsKeyIn(const psa_key_attributes_t *attributes,
                                                           uint8_t *psa_import_blob,
                                                           size_t psa_import_blob_size,
                                                           mcuxClEls_KeyIndex_t wrap_key_slot,
@@ -264,4 +274,55 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteElsDecryptCbc(uint8_t *psa_exte
                                                                uint8_t **key_data,
                                                                size_t *key_size,
                                                                mcuxClEls_KeyIndex_t enc_key_slot);
+ 
+
+
+/**
+ * @brief Return the container size for RFC3394 blob
+ *
+ * @param[in] attributes provided key attributes
+ *
+ * @retval Size of the container
+ */
+uint32_t mcuxClPsaDriver_Oracle_Utils_RFC3394ContainerSize(const psa_key_attributes_t *attributes);
+
+/**
+ * @brief Return the container size for RFC3394 blob
+ *
+ * @param[in] slot_id the ID of the key as stored in ELS
+ *
+ * @retval PSA_SUCCESS                 The operation was succesful
+ * @retval PSA_ERROR_DOES_NOT_EXIST    No key with the associated key_id found in ELS
+ */
+psa_status_t mcuxClPsaDriver_Oracle_Utils_RemoveKeyFromElsSlot(mcuxClEls_KeyIndex_t slot_id);
+
+/**
+ * @brief Generate Shared secret using DH Key Exchange within ELS.
+ *        Both the ECC keypairs are generated within the ELS
+ *
+ * @param[in] attributes provided key attributes
+ * @param[out] slot_id in which the shared secret will be stored
+ *
+ * @retval PSA_SUCCESS                 The operation was succesful
+ * @retval PSA_ERROR_DOES_NOT_EXIST    No key with the associated key_id found in ELS
+ */
+psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(
+    const psa_key_attributes_t *attributes,
+    mcuxClEls_KeyIndex_t *key_index_shared_secret);
+
+/**
+ * @brief Generate Sa random key within ELS.
+ *        For ECC keypairs, the shared secret generated via Key Exchange is returned.
+ *        For symmetric keys, key is derived from the shared secret.
+ *
+ * @param[in] attributes provided key attributes
+ * @param[out] key_index in which the generated key will be stored
+ *
+ * @retval PSA_SUCCESS                 The operation was succesful
+ * @retval PSA_ERROR_DOES_NOT_EXIST    No key with the associated key_id found in ELS
+ */
+psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateKey(
+    const psa_key_attributes_t *attributes,
+    mcuxClEls_KeyIndex_t *key_index);
+
 #endif //_MCUXCLPSADRIVER_ORACLE_UTILS_
