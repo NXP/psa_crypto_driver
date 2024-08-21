@@ -19,7 +19,10 @@
 #include "mcux_psa_els_pkc_common_init.h"
 #endif /* defined(PSA_CRYPTO_DRIVER_THREAD_EN) */
 
-extern bool is_output_multiple_of_block_size(psa_key_type_t key_type, psa_algorithm_t alg, size_t input_length);
+static bool is_output_multiple_of_block_size(psa_key_type_t key_type, size_t output_length)
+{
+    return (key_type == PSA_KEY_TYPE_AES && output_length % MCUXCLELS_CIPHER_BLOCK_SIZE_AES == 0);
+}
 
 /** \defgroup psa_aead PSA driver entry points for AEAD
  *
@@ -90,16 +93,18 @@ psa_status_t els_pkc_opaque_aead_decrypt(const psa_key_attributes_t *attributes,
     }
 #endif /* defined(PSA_CRYPTO_DRIVER_THREAD_EN) */
 
-    /* The crypto hardware accelerator returns the output in multiple of it's blocksize (16) with padded output. To
-     * handle the decryption of less than block size, we have to pass a intermediate internal buffer as PSS tests
-     * expects only the desired output bytes.*/
-    if (is_output_multiple_of_block_size(psa_get_key_type(attributes), alg, plaintext_size) == false)
+    /* The crypto hardware accelerator returns the output in multiple of it's blocksize (16) with padded output,
+       regardless of actual output size. To work around cases where the output is not multiple of the blocksize, 
+       we allocate a buffer with the number of bytes ceiled to block size before calling it and only copy the 
+       actual data into the real buffer afterwards. */
+    if (is_output_multiple_of_block_size(psa_get_key_type(attributes), plaintext_size) == false)
     {
         local_out_buff =
             mbedtls_calloc(1, ((plaintext_size / MCUXCLELS_CIPHER_BLOCK_SIZE_AES) * MCUXCLELS_CIPHER_BLOCK_SIZE_AES) +
                                   MCUXCLELS_CIPHER_BLOCK_SIZE_AES);
         update_output = true;
     }
+
     status = mcuxClPsaDriver_psa_driver_wrapper_aead_decrypt(
         attributes, key_buffer, key_buffer_size, alg, nonce, nonce_length, additional_data, additional_data_length,
         ciphertext, ciphertext_length, (update_output) ? local_out_buff : plaintext, plaintext_size, plaintext_length);
@@ -107,7 +112,7 @@ psa_status_t els_pkc_opaque_aead_decrypt(const psa_key_attributes_t *attributes,
     /* Copy output buffer*/
     if (update_output)
     {
-        memcpy(plaintext, local_out_buff, plaintext_size);
+        memcpy(plaintext, local_out_buff, *plaintext_length);
         mbedtls_free(local_out_buff);
     }
 
@@ -270,13 +275,14 @@ psa_status_t els_pkc_opaque_aead_update(els_pkc_opaque_aead_operation_t *operati
     }
 #endif /* defined(PSA_CRYPTO_DRIVER_THREAD_EN) */
 
-    /* The crypto hardware accelerator returns the output in multiple of it's blocksize (16) with padded output.
-+       To handle the decryption of less than block size, we have to pass a intermediate internal buffer as PSA
-       tests expects only the desired output bytes.*/
-    if (is_output_multiple_of_block_size(operation->key_type, operation->alg, input_length) == false)
+    /* The crypto hardware accelerator returns the output in multiple of it's blocksize (16) with padded output,
+       regardless of actual output size. To work around cases where the output is not multiple of the blocksize, 
+       we allocate a buffer with the number of bytes ceiled to block size before calling it and only copy the 
+       actual data into the real buffer afterwards. */
+    if (is_output_multiple_of_block_size(operation->key_type, output_size) == false)
     {
         local_out_buff =
-            mbedtls_calloc(1, ((input_length / MCUXCLELS_CIPHER_BLOCK_SIZE_AES) * MCUXCLELS_CIPHER_BLOCK_SIZE_AES) +
+            mbedtls_calloc(1, ((output_size / MCUXCLELS_CIPHER_BLOCK_SIZE_AES) * MCUXCLELS_CIPHER_BLOCK_SIZE_AES) +
                                   MCUXCLELS_CIPHER_BLOCK_SIZE_AES);
         update_output = true;
     }
@@ -287,7 +293,7 @@ psa_status_t els_pkc_opaque_aead_update(els_pkc_opaque_aead_operation_t *operati
     /* Copy output buffer*/
     if (update_output)
     {
-        memcpy(output, local_out_buff, output_size);
+        memcpy(output, local_out_buff, *output_length);
         mbedtls_free(local_out_buff);
     }
 
