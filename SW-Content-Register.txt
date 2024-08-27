@@ -3,7 +3,7 @@
 NXP Software Content Register
 
 Name:             PSA CRYPTO DRIVER
-Version:          1.0.0
+Version:          1.0.1
 Outgoing License: BSD-3-Clause
 License File:     LICENSE
 Format:           source code
