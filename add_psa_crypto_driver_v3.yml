@@ -737,7 +737,18 @@ set.component.psa_crypto_driver:
       - MCXN947
       - MIMXRT1189
       - MIMXRT1187
+      - K32W1480
+      - KW45B41Z52
+      - KW45B41Z53
+      - KW45B41Z82
       - KW45B41Z83
+      - KW45Z41052
+      - KW45Z41053
+      - KW45Z41082
+      - KW45Z41083
+      - KW45B41Z83_NBU
+      - MCXW716A
+      - MCXW716C
 container.component.psa_crypto_driver.unused_files:
   section-type: container
   contents:
