@@ -134,9 +134,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc)
             "
     )
     mcux_add_source(
-        SOURCES els_pkc/els_pkc_crypto_composites.h
-                els_pkc/els_pkc_crypto_primitives.h
-                els_pkc/els_pkc_driver.h
+        SOURCES els_pkc/els_pkc_driver.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
