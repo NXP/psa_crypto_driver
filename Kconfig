@@ -18,8 +18,32 @@ menu "psaCryptoDriver"
     config MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt
         bool "Component component.psa_crypto_driver.mbedtls_thread_alt"
 
-    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
-        bool "Component component.psa_crypto_driver.els_pkc.oracle"
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.rw61x
+        bool "Component component.psa_crypto_driver.els_pkc.oracle.rw61x"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn
+        bool "Component component.psa_crypto_driver.els_pkc.oracle.mcxn"
+
+     config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
+         bool "Component component.psa_crypto_driver.els_pkc.oracle"
+
+        if MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
+          choice
+            prompt "Platform"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.rw61x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.rw61x
+                bool "RW61x"
+                select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.rw61x
+                depends on MCUX_HW_DEVICE_RW610 || MCUX_HW_DEVICE_RW612
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.mcxn
+                bool "MCXN"
+                select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn
+                depends on MCUX_HW_DEVICE_MCXN546 || MCUX_HW_DEVICE_MCXN547 || MCUX_HW_DEVICE_MCXN946 || MCUX_HW_DEVICE_MCXN947 || MCUX_HW_DEVICE_MCXN235 || MCUX_HW_DEVICE_MCXN236
+            endchoice
+        endif
+
 
     config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.common
         bool "Component component.psa_crypto_driver.els_pkc.common"

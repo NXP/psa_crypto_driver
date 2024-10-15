@@ -63,6 +63,7 @@ if(CONFIG_SOC_SERIES_RW6XX)
             ${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/transparent
             ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle
             ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/inc
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/platforms/rw61x
 
             #include the psa-driver inlcude path from clib
             ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/inc

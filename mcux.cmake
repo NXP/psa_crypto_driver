@@ -50,6 +50,29 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt)
     )
 endif()
 
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.rw61x)
+    mcux_add_source(
+        SOURCES els_pkc/oracle/platforms/rw61x/mcuxClPsaDriver_Oracle_KeyRecipes.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES els_pkc/oracle/platforms/rw61x
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn)
+    mcux_add_source(
+        SOURCES els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes.h
+                els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes_Utils.c
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES els_pkc/oracle/platforms/mcxn
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle)
     mcux_add_source(
         SOURCES els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_Interface_builtin_key_ids.h
