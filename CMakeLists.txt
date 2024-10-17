@@ -32,6 +32,88 @@ target_link_options(
         ${TOOLCHAIN_LD_FLAGS}
 )
 
+if(CONFIG_SOC_SERIES_RW6XX)
+
+    target_compile_definitions(
+        McuxPsaCryptoDriverElsPkc 
+        PUBLIC
+            CPU_RW612ETA1I
+    )
+
+    target_compile_definitions(
+        McuxPsaCryptoDriverElsPkc 
+        PRIVATE
+            MBEDTLS_MCUX_ENTROPY
+    )
+
+    target_include_directories(McuxPsaCryptoDriverElsPkc
+        PUBLIC
+            #psa-crypto-driver for els_pkc include paths
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/.
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/common
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/opaque
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/transparent
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/inc
+
+            #include the psa-driver inlcude path from clib
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/inc
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/inc/internal
+
+            #include McuxElsPkc include directories
+            "$<TARGET_PROPERTY:McuxElsPkc,INTERFACE_INCLUDE_DIRECTORIES>"
+    )
+
+    target_include_directories(McuxPsaCryptoDriverElsPkc
+        PRIVATE
+            # psa/crypto.h and psa/crypto_types.h
+            ${NXP_MODULE_CRYPTO_PATH}/mbedtls/include
+            ${NXP_MODULE_CRYPTO_PATH}/mbedtls/include/psa
+            # for psa driver wrapper
+            ${NXP_MODULE_CRYPTO_PATH}/mbedtls/library
+            # cmsis required to build els_pkc
+            ${NXP_MODULE_ELS_PKC_PATH}/src/platforms/rw61x/cmsis_cortex_m_5_5_1/inc
+    )
+
+    target_sources(
+        McuxPsaCryptoDriverElsPkc 
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle_ElsUtils.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle_Utils.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/common/mcux_psa_els_pkc_common_init.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/common/mcux_psa_els_pkc_entropy.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_aead.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_asymmetric_signature.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_cipher.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_init.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_key_generation.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_mac.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_aead.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_asymmetric_signature.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_cipher.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_hash.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_init.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_key_generation.c
+            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_mac.c
+            
+            # add psa-driver source files from els_pkc(clib) in this (psa_crypto_driver)lib
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Aead.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Cipher.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_DER_functions.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Hash.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Key.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Mac.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Rsa.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Sign.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_UpdateKeyStatus.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Verify.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_export_public_key.c
+            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_generate_ecp_key.c
+    )
+endif()
+
+
 if(CONFIG_BUILD_WITH_TFM)
     target_compile_options(
         McuxPsaCryptoDriverElsPkc
@@ -136,86 +218,7 @@ else()
 
 endif()
 
-if(CONFIG_SOC_SERIES_RW6XX)
 
-    target_compile_definitions(
-        McuxPsaCryptoDriverElsPkc 
-        PUBLIC
-            CPU_RW612ETA1I
-    )
-
-    target_compile_definitions(
-        McuxPsaCryptoDriverElsPkc 
-        PRIVATE
-            MBEDTLS_MCUX_ENTROPY
-    )
-
-    target_include_directories(McuxPsaCryptoDriverElsPkc
-        PUBLIC
-            #psa-crypto-driver for els_pkc include paths
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/.
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/common
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/opaque
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/transparent
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/inc
-    
-            #include the psa-driver inlcude path from clib
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/inc
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/inc/internal
-
-            #include McuxElsPkc include directories
-            "$<TARGET_PROPERTY:McuxElsPkc,INTERFACE_INCLUDE_DIRECTORIES>"
-    )
-
-    target_include_directories(McuxPsaCryptoDriverElsPkc
-        PRIVATE
-            # psa/crypto.h and psa/crypto_types.h
-            ${NXP_MODULE_CRYPTO_PATH}/mbedtls/include
-            ${NXP_MODULE_CRYPTO_PATH}/mbedtls/include/psa
-            # for psa driver wrapper
-            ${NXP_MODULE_CRYPTO_PATH}/mbedtls/library
-            # cmsis required to build els_pkc
-            ${NXP_MODULE_ELS_PKC_PATH}/src/platforms/rw61x/cmsis_cortex_m_5_5_1/inc
-    )
-
-    target_sources(
-        McuxPsaCryptoDriverElsPkc 
-        PRIVATE
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle_ElsUtils.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle_Utils.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/common/mcux_psa_els_pkc_common_init.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/common/mcux_psa_els_pkc_entropy.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_aead.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_asymmetric_signature.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_cipher.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_init.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_key_generation.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_mac.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_aead.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_asymmetric_signature.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_cipher.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_hash.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_init.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_key_generation.c
-            ${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/transparent/mcux_psa_els_pkc_mac.c
-            
-            # add psa-driver source files from els_pkc(clib) in this (psa_crypto_driver)lib
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Aead.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Cipher.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_DER_functions.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Hash.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Key.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Mac.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Rsa.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Sign.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_UpdateKeyStatus.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_Verify.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_export_public_key.c
-            ${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_generate_ecp_key.c
-    )
-endif()
 
 
 export(TARGETS McuxPsaCryptoDriverElsPkc
