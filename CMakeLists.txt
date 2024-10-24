@@ -40,6 +40,14 @@ if(CONFIG_SOC_SERIES_RW6XX)
             CPU_RW612ETA1I
     )
 
+    if (CONFIG_MCUX_PSA_CRYPTO_DRIVER_USE_ELS_PKC_SHA1)
+        target_compile_definitions(
+            McuxPsaCryptoDriverElsPkc 
+            PRIVATE
+                MCUX_PSA_CRYPTO_DRIVER_USE_ELS_PKC_SHA1
+        )
+    endif()
+
     target_compile_definitions(
         McuxPsaCryptoDriverElsPkc 
         PRIVATE

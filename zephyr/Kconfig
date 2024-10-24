@@ -1,7 +1,8 @@
 # psa-crypto-driver configuration options
 
 # Copyright 2024 NXP
-# SPDX-License-Identifier: Apache-2.0
+#
+# SPDX-License-Identifier: BSD-3-Clause
 
 #
 # HW Acceleration Configs psa-crypto-driver
@@ -23,3 +24,9 @@ config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
 	default n if BUILD_WITH_TFM
 	help
 	    Enables threading support in psa-crypto-driver component.
+
+config MCUX_PSA_CRYPTO_DRIVER_USE_ELS_PKC_SHA1
+	bool "Enables use of SHA1 from els-pkc via psa-crypto-driver"
+	depends on MCUX_ELS_PKC && MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	help
+	    Enables use of SHA1 from els-pkc via psa-crypto-driver component.
