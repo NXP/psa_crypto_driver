@@ -24,6 +24,9 @@ menu "psaCryptoDriver"
     config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn
         bool "Component component.psa_crypto_driver.els_pkc.oracle.mcxn"
 
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mimxrt
+        bool "Component component.psa_crypto_driver.els_pkc.oracle.mimxrt"
+
      config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
          bool "Component component.psa_crypto_driver.els_pkc.oracle"
 
@@ -41,6 +44,11 @@ menu "psaCryptoDriver"
                 bool "MCXN"
                 select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn
                 depends on MCUX_HW_DEVICE_MCXN546 || MCUX_HW_DEVICE_MCXN547 || MCUX_HW_DEVICE_MCXN946 || MCUX_HW_DEVICE_MCXN947 || MCUX_HW_DEVICE_MCXN235 || MCUX_HW_DEVICE_MCXN236
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.mimxrt
+                bool "MIMXRT"
+                select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mimxrt
+                depends on MCUX_HW_DEVICE_MIMXRT798S
             endchoice
         endif
 

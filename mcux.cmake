@@ -73,6 +73,17 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn)
     )
 endif()
 
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mimxrt)
+    mcux_add_source(
+        SOURCES els_pkc/oracle/platforms/mimxrt/mcuxClPsaDriver_Oracle_KeyRecipes.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES els_pkc/oracle/platforms/mimxrt
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle)
     mcux_add_source(
         SOURCES els_pkc/oracle/inc/mcuxClPsaDriver_Oracle_Interface_builtin_key_ids.h
