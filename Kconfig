@@ -48,7 +48,7 @@ menu "psaCryptoDriver"
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.mimxrt
                 bool "MIMXRT"
                 select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mimxrt
-                depends on MCUX_HW_DEVICE_MIMXRT798S
+                depends on MCUX_HW_DEVICE_MIMXRT798S || MCUX_HW_DEVICE_MIMXRT758S || MCUX_HW_DEVICE_MIMXRT735S
             endchoice
         endif
 
@@ -81,7 +81,7 @@ menu "psaCryptoDriver"
                 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_2
                 bool "Component MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_2"
-                depends on MCUX_HW_DEVICE_MCXN546 || MCUX_HW_DEVICE_MCXN547 || MCUX_HW_DEVICE_MCXN946 || MCUX_HW_DEVICE_MCXN947 || MCUX_HW_DEVICE_MCXN235 || MCUX_HW_DEVICE_MCXN236
+                depends on MCUX_HW_DEVICE_MCXN546 || MCUX_HW_DEVICE_MCXN547 || MCUX_HW_DEVICE_MCXN946 || MCUX_HW_DEVICE_MCXN947 || MCUX_HW_DEVICE_MCXN235 || MCUX_HW_DEVICE_MCXN236 || MCUX_HW_DEVICE_MIMXRT798S || MCUX_HW_DEVICE_MIMXRT758S || MCUX_HW_DEVICE_MIMXRT735S
                 
           endchoice
           choice
