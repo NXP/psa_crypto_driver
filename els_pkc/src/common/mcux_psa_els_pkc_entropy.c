@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -20,17 +20,19 @@
 
 #include "mcux_psa_els_pkc_entropy.h"
 
-/* Use 256bit RNG3 random mode if available, otherwise use standalone TRNG or low entropy PRNG */
-#if defined(MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256) && (MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256 > 0u)
-#include <mcuxClRandom.h>
-#include <mcuxClRandomModes.h>
-#elif defined(FSL_FEATURE_SOC_TRNG_COUNT) && (FSL_FEATURE_SOC_TRNG_COUNT > 0)
+/* Standalone TRNG can be used if its configured to be used via cmake,
+   otherwise Use 256bit RNG3 random mode if available, or else fallback to low entropy PRNG(default enabled) */
+#if defined(MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED)
+#if defined(FSL_FEATURE_SOC_TRNG_COUNT) && (FSL_FEATURE_SOC_TRNG_COUNT > 0)
 #include "fsl_trng.h"
-#define MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED
 #ifndef TRNG0
 #define TRNG0 TRNG
 #endif /* ifndef TRNG0 */
-#endif /* MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256 || FSL_FEATURE_SOC_TRNG_COUNT */
+#endif /* FSL_FEATURE_SOC_TRNG_COUNT */
+#elif defined(MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256) && (MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256 > 0u)
+#include <mcuxClRandom.h>
+#include <mcuxClRandomModes.h>
+#endif /* MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256 || MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED */
       
 /** \defgroup psa_entropy PSA driver entry points for entropy collection
  *

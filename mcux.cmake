@@ -50,6 +50,14 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt)
     )
 endif()
 
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option)
+    # adding specific compile option to use HW TRNG
+    mcux_add_macro(
+         CC "-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED\
+            "
+    )
+endif()
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.rw61x)
     mcux_add_source(
         SOURCES els_pkc/oracle/platforms/rw61x/mcuxClPsaDriver_Oracle_KeyRecipes.h

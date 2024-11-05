@@ -77,6 +77,7 @@ menu "psaCryptoDriver"
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_1
                 bool "Component MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_1"
                 select MCUX_COMPONENT_driver.trng
+                select MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option
                 depends on MCUX_HW_DEVICE_RW610 || MCUX_HW_DEVICE_RW612 || MCUX_HW_DEVICE_LPC55S36
                 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc_DEPEND_ANYOF_1_OPTION_2
@@ -110,7 +111,10 @@ menu "psaCryptoDriver"
                 select MCUX_COMPONENT_middleware.mbedcrypto
           endchoice
         endif
-        
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option
+        bool "Component component.psa_crypto_driver.use_trng_compile_option"
+
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
         bool "Component component.psa_crypto_driver.ele_s4xx_rng"
         select MCUX_COMPONENT_driver.s3mu
