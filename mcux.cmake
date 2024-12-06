@@ -48,6 +48,9 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt)
         INCLUDES mbedtls_thread_alt
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
+    mcux_add_macro(
+         CC "-DPSA_CRYPTO_DRIVER_THREAD_EN"
+    )
 endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option)
@@ -276,9 +279,15 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_opaque)
 endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa)
+    mcux_add_macro(
+        CC  "-DPSA_CRYPTO_DRIVER_ELE_S4XX"
+    )
 endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage)
+    mcux_add_macro(
+        CC  "-DPSA_CRYPTO_DRIVER_ELE_S4XX"
+    )
 endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common)
@@ -343,5 +352,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200)
     mcux_add_include(
         INCLUDES ele_s200
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        CC  "-DPSA_CRYPTO_DRIVER_ELE_S2XX"
     )
 endif()
