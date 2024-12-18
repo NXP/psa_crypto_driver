@@ -242,6 +242,10 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr)
         INCLUDES ele_s4xx/include/common
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
+    mcux_add_macro(
+        CC "-DPSA_ELE_S4XX_SD_NVM_MANAGER=1\
+           "
+    )
 endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_opaque)
