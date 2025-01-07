@@ -247,3 +247,32 @@ status_t CRYPTO_DeinitHardware(void)
 
     return result;
 }
+
+
+/*!
+ * @brief Application reset for Crypto blocks.
+ *
+ * Wait for the secure subsystem module to be running
+ * This function is provided to be called by MCUXpresso SDK applications.
+ * It calls basic reinit for Crypto Hw acceleration and Hw entropy modules.
+ */
+void CRYPTO_ELEMU_reset(void)
+{
+    CRYPTO_DeinitHardware();
+    (void)ELEMU_LP_WakeupPathInit(ELEMUA);
+}
+
+
+/*!
+ * @brief Application Reinit for Crypto blocks.
+ *
+ * This function is provided to be called by MCUXpresso SDK applications.
+ * It calls basic reinit for Crypto Hw acceleration and Hw entropy modules.
+ */
+status_t CRYPTO_ReinitHardware(void)
+{
+    /* Reset the init state so the hardware will be reinitialized at the next cryptographic HW acceleration operation */
+    g_isCryptoHWInitialized = false;
+
+    return kStatus_Success;
+}

@@ -71,6 +71,25 @@ status_t CRYPTO_InitHardware(void);
 status_t CRYPTO_DeinitHardware(void);
 
 /*!
+ * @brief Application reset for Crypto blocks.
+ *
+ * Wait for the secure subsystem module to be running
+ * This function is provided to be called by MCUXpresso SDK applications.
+ * It calls basic reinit for Crypto Hw acceleration and Hw entropy modules.
+ */
+void CRYPTO_ELEMU_reset(void);
+
+
+/*!
+ * @brief Application Reinit for Crypto blocks.
+ *
+ * This function is provided to be called by MCUXpresso SDK applications.
+ * It calls basic reinit for Crypto Hw acceleration and Hw entropy modules.
+ */
+status_t CRYPTO_ReinitHardware(void);
+
+
+/*!
  * @brief  Convert ELE error to PSA status
  *
  * @return PSA_SUCCESS on success. Error code from psa_status_t on
