@@ -37,9 +37,15 @@
 #endif
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
+#include "mcux_psa_s2xx_key_locations.h"
+
+#define PSA_CRYPTO_LOCATION_S200_ENC_STORAGE_KEY   PSA_KEY_LOCATION_S200_ENC_STORAGE_KEY
+#define PSA_CRYPTO_LOCATION_S200_ENC_STORAGE_DATA  PSA_KEY_LOCATION_S200_ENC_STORAGE_DATA
+#define PSA_CRYPTO_LOCATION_S200_BLOB_STORAGE      PSA_KEY_LOCATION_S200_BLOB_STORAGE
+
 /*
  * Location specific details go in this file which is also exposed to application writers
- * to iunclude when using key from a particular location.
+ * to include when using key from a particular location.
  */
 #include "mcux_psa_defines.h"
 
@@ -55,7 +61,7 @@
 // #include "mcux_psa_s2xx_key_generation.h"
 
 // #include "mcux_psa_s2xx_opaque_init.h"
-// #include "mcux_psa_s2xx_opaque_key_generation.h"
+#include "mcux_psa_s2xx_opaque_key_generation.h"
 // #include "mcux_psa_s2xx_opaque_asymmetric_signature.h"
 // #include "mcux_psa_s2xx_opaque_cipher.h"
 // #include "mcux_psa_s2xx_opaque_aead.h"

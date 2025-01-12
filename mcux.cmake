@@ -285,6 +285,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common)
     mcux_add_source(
         SOURCES ele_s200/include/common/mcux_psa_s2xx_common_init.h
                 ele_s200/include/common/mcux_psa_s2xx_entropy.h
+                ele_s200/include/common/mcux_psa_s2xx_key_locations.h
                 ele_s200/src/common/mcux_psa_s2xx_common_init.c
                 ele_s200/src/common/mcux_psa_s2xx_entropy.c
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
@@ -302,15 +303,18 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent)
                 ele_s200/include/transparent/mcux_psa_s2xx_hash.h
                 ele_s200/include/transparent/mcux_psa_s2xx_init.h
                 ele_s200/include/transparent/mcux_psa_s2xx_mac.h
+                ele_s200/include/opaque/mcux_psa_s2xx_opaque_key_generation.h
                 ele_s200/src/transparent/mcux_psa_s2xx_aead.c
                 ele_s200/src/transparent/mcux_psa_s2xx_cipher.c
                 ele_s200/src/transparent/mcux_psa_s2xx_hash.c
                 ele_s200/src/transparent/mcux_psa_s2xx_init.c
                 ele_s200/src/transparent/mcux_psa_s2xx_mac.c
+                ele_s200/src/opaque/mcux_psa_s2xx_opaque_key_generation.c
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
         INCLUDES ele_s200/include/transparent
+        INCLUDES ele_s200/include/opaque
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
 endif()
