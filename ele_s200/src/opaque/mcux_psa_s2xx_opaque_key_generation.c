@@ -1169,12 +1169,6 @@ psa_status_t s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
 
         return PSA_SUCCESS;
     }
-       
-       
-//
-//        status = mcuxClPsaDriver_Oracle_ImportKey(data,
-//                                                  data_length,
-//                                                  key_buffer_length);
 
         if (PSA_ERROR_NOT_SUPPORTED == status)
         {
