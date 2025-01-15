@@ -246,10 +246,14 @@ menu "psaCryptoDriver"
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent
         bool "Component component.psa_crypto_driver.ele_s200.transparent"
 
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.opaque
+        bool "Component component.psa_crypto_driver.ele_s200.opaque"
+
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
         bool "Component component.psa_crypto_driver.ele_s200"
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.opaque
         select MCUX_COMPONENT_middleware.secure-subsystem.elemu
         if MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
           choice

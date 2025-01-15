@@ -7,6 +7,10 @@
 
 #include "mcux_psa_s2xx_common_init.h" /* ELE Crypto port layer */
 
+#if (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
+#include "ele_200_fw.h"
+#endif /* ELEMU_HAS_LOADABLE_FW */
+
 /******************************************************************************/
 /*************************** Mutex ********************************************/
 /******************************************************************************/
@@ -18,6 +22,11 @@ mcux_mutex_t ele_hwcrypto_mutex;
 /******************************************************************************/
 /******************** CRYPTO_InitHardware *************************************/
 /******************************************************************************/
+
+#if defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
+// TODO this is a temporary decalration - figure out where it is declared??
+psa_status_t secure_storage_its_initialize(void);
+#endif /* MBEDTLS_PSA_CRYPTO_STORAGE_C */
 
 ele_s2xx_ctx_t g_ele_ctx = {0u}; /* Global context */
 
@@ -79,7 +88,7 @@ static status_t ele_close_handles(void)
         sscp_mu_deinit(&g_ele_ctx.sscpContext);
 
     } while (0);
-    
+
     return 0;
 }
 
@@ -122,7 +131,7 @@ status_t CRYPTO_InitHardware(void)
         }
 
 #if (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
-        result = ELEMU_loadFwLocal(ELEMUA);
+        result = ELEMU_loadFw(ELEMUA, (uint32_t *)fw);
         if (result != kStatus_Success)
         {
             break;
@@ -175,6 +184,15 @@ status_t CRYPTO_InitHardware(void)
         {
             break;
         }
+
+#if defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
+        /* Init secure storage */
+        if (PSA_SUCCESS != secure_storage_its_initialize())
+        {
+            result = kStatus_Fail;
+            break;
+        }
+#endif /* MBEDTLS_PSA_CRYPTO_STORAGE_C */
 
         result = kStatus_Success;
 

@@ -39,6 +39,9 @@ typedef struct
 #define ELE_SUBSYSTEM          (kType_SSS_Ele200)
 #define ELE_HIGH_QUALITY_RNG   1
 
+// vendor-defined algorithms for EL2GO
+#define ALG_NXP_ALL_CIPHER 0x84C0FF00
+
 /* MUTEX FOR HW Modules*/
 extern mcux_mutex_t ele_hwcrypto_mutex;
 
