@@ -18,10 +18,7 @@
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_s2xx_common_key_management.h"
 
-#define EL2GO_AES_KEY_PROPERTIES (0x8001c001u)
-
-
-// TODO rename and move static functions to the common layer
+// TODO move static functions to the common layer
 //      most, if not all, should be the same for transparent ciphers too
 
 static psa_status_t psa_to_s200_alg(psa_key_type_t key_type, psa_algorithm_t alg, sss_algorithm_t *ele_algo)
@@ -59,7 +56,7 @@ static psa_status_t psa_to_s200_alg(psa_key_type_t key_type, psa_algorithm_t alg
     return PSA_SUCCESS;
 }
 
-static psa_status_t common_argument_validation(
+static psa_status_t ele_s2xx_cipher_arg_validation(
     const psa_key_attributes_t *attributes,
     const uint8_t *key_buffer,
     size_t key_buffer_size,
@@ -150,7 +147,6 @@ static psa_status_t key_management(const psa_key_attributes_t *attributes,
                                    size_t key_buffer_size,
                                    sss_sscp_object_t *sssKey)
 {
-    uint32_t key_properties = 0u;
     psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
 
     /* Validate if the key is a blob */
@@ -160,38 +156,11 @@ static psa_status_t key_management(const psa_key_attributes_t *attributes,
         return psa_status;
     }
 
-    if ((sss_sscp_key_object_init(sssKey, &g_ele_ctx.keyStore)) != kStatus_SSS_Success)
+    /* Import the key */
+    psa_status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, sssKey);
+    if (PSA_SUCCESS != psa_status)
     {
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Check if this key has already been imported */
-    if (sss_sscp_key_object_get_handle(sssKey, psa_get_key_id(attributes)) != kStatus_SSS_Success)
-    {
-        /* Handle not found, but we got passed a key; try to import it */
-
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-
-        psa_status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, sssKey);
-        if (PSA_SUCCESS != psa_status)
-        {
-            return psa_status;
-        }
-    }
-    else
-    {
-        /* The given key ID was found in the S2XX,
-         * so check to the best of our ability if it's an el2go key
-         */
-        if (sss_sscp_key_object_get_properties(sssKey, &key_properties) != kStatus_SSS_Success)
-        {
-            return PSA_ERROR_GENERIC_ERROR;
-        }
-
-        if (EL2GO_AES_KEY_PROPERTIES != key_properties)
-        {
-            return PSA_ERROR_GENERIC_ERROR;
-        }
+        return psa_status;
     }
 
     return PSA_SUCCESS;
@@ -261,7 +230,7 @@ psa_status_t ele_s2xx_opaque_cipher_encrypt(
         return psa_status;
     }
 
-    psa_status = common_argument_validation(attributes, key_buffer,
+    psa_status = ele_s2xx_cipher_arg_validation(attributes, key_buffer,
                                             key_buffer_size, alg, iv, iv_length,
                                             input, input_length, output,
                                             output_size, output_length,
@@ -331,7 +300,7 @@ psa_status_t ele_s2xx_opaque_cipher_decrypt(
         return psa_status;
     }
 
-    psa_status = common_argument_validation(attributes, key_buffer,
+    psa_status = ele_s2xx_cipher_arg_validation(attributes, key_buffer,
                                             key_buffer_size, alg, NULL, 0,
                                             input, input_length, output,
                                             output_size, output_length,

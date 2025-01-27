@@ -36,31 +36,8 @@ typedef struct psa_cmd_s
     size_t signature_size;
 } psa_cmd_t;
 
-typedef struct
-{
-    uint32_t magic;                  /*! offset 0x00: Fixed 4-byte string of 'sbv3' without the
-                                        trailing NULL */
-    uint32_t formatVersion;          /*! offset 0x04: (major = 3, minor = 0); The format
-                                        version determines the header block size. */
-    uint32_t flags;                  /*! offset 0x08: not defined yet, keep zero for future
-                                        compatibility */
-    uint32_t blockCount;             /*! offset 0x0C: Number of blocks not including the
-                                        header block. */
-    uint32_t blockSize;              /*! offset 0x10: Size in bytes of all subsequent blocks. */
-    uint32_t timeStamp[2];           /*! offset 0x14: 64-bit timestamp in microseconds since
-                                        1-1-2000 00:00 when the image was created. */
-    uint32_t firmwareVersion;        /*! offset 0x1c: Version number of the included
-                                        firmware */
-    uint32_t imageTotalLength;       /*! offset 0x20: total image length in bytes,
-                                        including signatures etc. */
-    uint32_t imageType;              /*! offset 0x24: image type and flags */
-    uint32_t certificateBlockOffset; /*! offset 0x28: Offset from start of header
-                                        block to the certificate block. This
-                                        allows the signed image verification code
-                                        to verify the signature over the header
-                                        block. */
-    uint8_t decription[16];          /*! text description of SB3.1 file */
-} nboot_sb3_header_t;
+#define NO_VALID_ALGORITHM_PROPERTY_FOUND ((sss_sscp_key_property_t)0x0u)
+#define EL2GO_AES_KEY_PROPERTIES          (0x8001c001u)
 
 // Tags used in PSA commands
 #define PSA_CMD_TAG_MAGIC               0x40U
@@ -382,12 +359,35 @@ exit:
     return psa_status;
 }
 
+/* Translate the vendor-defined ALG_NXP_* values to s2xx kSSS_KeyProp_CryptoAlgo_* values */
+static sss_sscp_key_property_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes)
+{
+    sss_sscp_key_property_t prop = NO_VALID_ALGORITHM_PROPERTY_FOUND;
+
+    switch (psa_get_key_algorithm(attributes))
+    {
+        case ALG_NXP_ALL_CIPHER:
+            prop = kSSS_KeyProp_CryptoAlgo_AES;
+            break;
+        case ALG_NXP_ALL_AEAD:
+            prop = kSSS_KeyProp_CryptoAlgo_AEAD;
+            break;
+        default:
+            prop = NO_VALID_ALGORITHM_PROPERTY_FOUND;
+            break;
+    }
+
+    return prop;
+}
+
 
 psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
                                  const uint8_t *blob, size_t blob_size,
                                  sss_sscp_object_t *sssKey)
 {
     psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
+    sss_sscp_key_property_t algorithm_key_property = NO_VALID_ALGORITHM_PROPERTY_FOUND;
+    uint32_t key_properties = 0u;
 
     /* Check if EL2go FW is loaded into S200; if not load it */
     if (ele2go_fw_loaded() != PSA_SUCCESS)
@@ -411,21 +411,61 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Keyobject init failed");
     }
 
-    /* Use the PSA key ID as the S200 key ID - easier to keep track of it */
-    if (sss_sscp_key_object_allocate_handle(sssKey, psa_get_key_id(attributes),
-                                            kSSS_KeyPart_Default, kSSS_CipherType_AES,
-                                            PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)),
-                                            kSSS_KeyProp_CryptoAlgo_AES) != kStatus_SSS_Success)
+    algorithm_key_property = get_s2xx_algo_keyprop(attributes);
+    if (NO_VALID_ALGORITHM_PROPERTY_FOUND == algorithm_key_property)
     {
-        psa_status = PSA_ERROR_HARDWARE_FAILURE;
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Allocating handle failed");
+        psa_status = PSA_ERROR_INVALID_ARGUMENT;
+        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Valid keyproperty not found");
     }
 
-    /* Load key from EL2GO Blob to also let the s2xx validate the blob */
-    if (sss_sscp_key_store_import_key(&g_ele_ctx.keyStore, sssKey, blob, blob_size, 0, kSSS_blobType_EL2GO_TLV_blob) != kStatus_SSS_Success)
+    /* Check if this key has already been imported */
+    if (sss_sscp_key_object_get_handle(sssKey, psa_get_key_id(attributes)) != kStatus_SSS_Success)
     {
-        psa_status = PSA_ERROR_HARDWARE_FAILURE;
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Blob import failed");
+        /* Handle not found, but we got passed a key; try to import it */
+
+        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
+
+        if (sss_sscp_key_object_init(sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
+        {
+            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Keyobject init 2 failed");
+        }
+
+        /* Use the PSA key ID as the S200 key ID - easier to keep track of it */
+        if (sss_sscp_key_object_allocate_handle(sssKey, psa_get_key_id(attributes),
+                                                kSSS_KeyPart_Default, kSSS_CipherType_SYMMETRIC,
+                                                PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)),
+                                                algorithm_key_property) != kStatus_SSS_Success)
+        {
+            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Allocating handle failed");
+        }
+
+        /* Load key from EL2GO Blob to also let the s2xx validate the blob */
+        if (sss_sscp_key_store_import_key(&g_ele_ctx.keyStore, sssKey, blob,
+                                          blob_size, 0,
+                                          kSSS_blobType_EL2GO_TLV_blob) != kStatus_SSS_Success)
+        {
+            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Blob import failed");
+        }
+    }
+    else
+    {
+        /* The given key ID was found in the S2XX,
+         * so check to the best of our ability if it's an el2go key
+         */
+        if (sss_sscp_key_object_get_properties(sssKey, &key_properties) != kStatus_SSS_Success)
+        {
+            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, get key properties failed");
+        }
+
+        if (EL2GO_AES_KEY_PROPERTIES != key_properties)
+        {
+            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, key properties do not match el2go");
+        }
     }
 
     psa_status = PSA_SUCCESS;
