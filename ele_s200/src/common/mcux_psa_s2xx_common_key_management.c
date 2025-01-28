@@ -36,7 +36,6 @@ typedef struct psa_cmd_s
     size_t signature_size;
 } psa_cmd_t;
 
-#define NO_VALID_ALGORITHM_PROPERTY_FOUND ((sss_sscp_key_property_t)0x0u)
 #define EL2GO_AES_KEY_PROPERTIES          (0x8001c001u)
 
 // Tags used in PSA commands
@@ -360,24 +359,83 @@ exit:
 }
 
 /* Translate the vendor-defined ALG_NXP_* values to s2xx kSSS_KeyProp_CryptoAlgo_* values */
-static sss_sscp_key_property_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes)
+static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes,
+                                          sss_sscp_key_property_t *s2xx_algo_prop,
+                                          sss_key_part_t *s2xx_key_part,
+                                          sss_cipher_type_t *s2xx_cipher_type)
 {
-    sss_sscp_key_property_t prop = NO_VALID_ALGORITHM_PROPERTY_FOUND;
+    // TODO deal with PSA_ALG_NONE according to the profile
 
+    psa_status_t status = PSA_SUCCESS;
+
+    /* Deal with the key part */
+    if (PSA_KEY_TYPE_IS_ASYMMETRIC(psa_get_key_type(attributes)))
+    {
+        if (PSA_KEY_TYPE_IS_PUBLIC_KEY(psa_get_key_type(attributes)))
+        {
+            *s2xx_key_part = kSSS_KeyPart_Public;
+        }
+        else if (PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes)))
+        {
+            *s2xx_key_part = kSSS_KeyPart_Pair;
+        }
+        else
+        {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            goto exit;
+        }
+    }
+    else
+    {
+        /* Symmetric is simple */
+        *s2xx_key_part    = kSSS_KeyPart_Default;
+        *s2xx_cipher_type = kSSS_CipherType_SYMMETRIC;
+    }
+
+    status = PSA_SUCCESS;
+
+    /* Parse the actual algorithm that is to be used */
     switch (psa_get_key_algorithm(attributes))
     {
         case ALG_NXP_ALL_CIPHER:
-            prop = kSSS_KeyProp_CryptoAlgo_AES;
+            *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_AES;
             break;
         case ALG_NXP_ALL_AEAD:
-            prop = kSSS_KeyProp_CryptoAlgo_AEAD;
+            *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_AEAD;
+            break;
+        case PSA_ALG_CMAC:
+        case PSA_ALG_HMAC(PSA_ALG_ANY_HASH):
+            *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_MAC;
+            break;
+        case ALG_S200_ECBKDF_OR_CKDF:
+            *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_KDF;
+            break;
+        case ALG_S200_ECDH_OR_ECDH_CKDF:
+            *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_KDF;
+            *s2xx_cipher_type = kSSS_CipherType_EC_NIST_P;
+            break;
+        case PSA_ALG_ECDH:
+            *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_KDF;
+            *s2xx_cipher_type = kSSS_CipherType_EC_MONTGOMERY;
+            break;
+        case PSA_ALG_ECDSA(PSA_ALG_ANY_HASH):
+            *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_AsymSignVerify;
+            *s2xx_cipher_type = kSSS_CipherType_EC_NIST_P;
+            break;
+        case PSA_ALG_PURE_EDDSA:
+            *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_AsymSignVerify;
+            *s2xx_cipher_type = kSSS_CipherType_EC_TWISTED_ED;
+            break;
+        case PSA_ALG_NONE:
+            *s2xx_algo_prop = (sss_sscp_key_property_t)0u;
             break;
         default:
-            prop = NO_VALID_ALGORITHM_PROPERTY_FOUND;
+            status = PSA_ERROR_INVALID_ARGUMENT;
             break;
     }
 
-    return prop;
+exit:
+    return status;
 }
 
 
@@ -386,7 +444,9 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
                                  sss_sscp_object_t *sssKey)
 {
     psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
-    sss_sscp_key_property_t algorithm_key_property = NO_VALID_ALGORITHM_PROPERTY_FOUND;
+    sss_sscp_key_property_t algorithm_key_property;
+    sss_key_part_t key_part;
+    sss_cipher_type_t cipher_type;
     uint32_t key_properties = 0u;
 
     /* Check if EL2go FW is loaded into S200; if not load it */
@@ -411,10 +471,9 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Keyobject init failed");
     }
 
-    algorithm_key_property = get_s2xx_algo_keyprop(attributes);
-    if (NO_VALID_ALGORITHM_PROPERTY_FOUND == algorithm_key_property)
+    psa_status = get_s2xx_algo_keyprop(attributes, &algorithm_key_property, &key_part, &cipher_type);
+    if (PSA_SUCCESS != psa_status)
     {
-        psa_status = PSA_ERROR_INVALID_ARGUMENT;
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Valid keyproperty not found");
     }
 
@@ -433,7 +492,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
 
         /* Use the PSA key ID as the S200 key ID - easier to keep track of it */
         if (sss_sscp_key_object_allocate_handle(sssKey, psa_get_key_id(attributes),
-                                                kSSS_KeyPart_Default, kSSS_CipherType_SYMMETRIC,
+                                                key_part, cipher_type,
                                                 PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)),
                                                 algorithm_key_property) != kStatus_SSS_Success)
         {
@@ -452,20 +511,22 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
     }
     else
     {
-        /* The given key ID was found in the S2XX,
-         * so check to the best of our ability if it's an el2go key
-         */
-        if (sss_sscp_key_object_get_properties(sssKey, &key_properties) != kStatus_SSS_Success)
-        {
-            psa_status = PSA_ERROR_HARDWARE_FAILURE;
-            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, get key properties failed");
-        }
-
-        if (EL2GO_AES_KEY_PROPERTIES != key_properties)
-        {
-            psa_status = PSA_ERROR_HARDWARE_FAILURE;
-            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, key properties do not match el2go");
-        }
+        // TODO this needs to be generalized to other types of key as well, not just AES
+        //      -> see profile, specifically the "fixed s200 key properties"
+//        /* The given key ID was found in the S2XX,
+//         * so check to the best of our ability if it's an el2go key
+//         */
+//        if (sss_sscp_key_object_get_properties(sssKey, &key_properties) != kStatus_SSS_Success)
+//        {
+//            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+//            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, get key properties failed");
+//        }
+//
+//        if (EL2GO_AES_KEY_PROPERTIES != key_properties)
+//        {
+//            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+//            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, key properties do not match el2go");
+//        }
     }
 
     psa_status = PSA_SUCCESS;

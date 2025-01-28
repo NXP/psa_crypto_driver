@@ -40,8 +40,10 @@ typedef struct
 #define ELE_HIGH_QUALITY_RNG   1
 
 /* Vendor-defined algorithms for EL2GO */
-#define ALG_NXP_ALL_CIPHER (0x84C0FF00)
-#define ALG_NXP_ALL_AEAD   (0x8550FF00)
+#define ALG_NXP_ALL_CIPHER         (0x84C0FF00)
+#define ALG_NXP_ALL_AEAD           (0x8550FF00)
+#define ALG_S200_ECBKDF_OR_CKDF    (0x8800FD00)
+#define ALG_S200_ECDH_OR_ECDH_CKDF (0x8902FC00)
 
 /* MUTEX FOR HW Modules*/
 extern mcux_mutex_t ele_hwcrypto_mutex;
