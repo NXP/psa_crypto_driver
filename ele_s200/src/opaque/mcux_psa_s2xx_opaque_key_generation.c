@@ -35,7 +35,7 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     if (false == (MCUXCLPSADRIVER_IS_LOCAL_STORAGE(location)))
     {
         psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
-        if (MCUXCLPSADRIVER_IS_S200_BLOB_STORAGE(location))
+        if (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location) || MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location))
         {
             // validate blob attributes
             status = ele_s2xx_validate_blob_attributes(attributes, data, data_length);
@@ -100,7 +100,7 @@ static psa_status_t ele_s2xx_get_buffer_size_from_key_data(const psa_key_attribu
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
     psa_status_t status         = PSA_ERROR_CORRUPTION_DETECTED;
 
-    if ((MCUXCLPSADRIVER_IS_S200_BLOB_STORAGE(location)) || (MCUXCLPSADRIVER_IS_S200_ENC_STORAGE(location)))
+    if (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location) || MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location))
     {
         *key_buffer_length = data_length;
         status             = PSA_SUCCESS;

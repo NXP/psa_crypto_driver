@@ -23,11 +23,6 @@ mcux_mutex_t ele_hwcrypto_mutex;
 /******************** CRYPTO_InitHardware *************************************/
 /******************************************************************************/
 
-#if defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
-// TODO this is a temporary decalration - figure out where it is declared??
-psa_status_t secure_storage_its_initialize(void);
-#endif /* MBEDTLS_PSA_CRYPTO_STORAGE_C */
-
 ele_s2xx_ctx_t g_ele_ctx = {0u}; /* Global context */
 
 uint32_t g_isCryptoHWInitialized = false;
