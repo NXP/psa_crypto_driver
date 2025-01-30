@@ -91,24 +91,23 @@ static psa_status_t ele_s2xx_cipher_arg_validation(
         }
     }
 
-    /* When encrypting, IV buffer can't be NULL or size 0 */
-    if ((kMode_SSS_Encrypt == mode) &&
-        ((PSA_ALG_CBC_NO_PADDING == alg) || (PSA_ALG_CTR == alg)))
+    /* Special validation cases for encryption */
+    if (kMode_SSS_Encrypt == mode)
     {
-        if (!iv || !iv_length)
+        /* Output buffer has to be atleast Input buffer size */
+        if (output_size < input_length)
         {
-            return PSA_ERROR_INVALID_ARGUMENT;
+            return PSA_ERROR_BUFFER_TOO_SMALL;
         }
-    }
 
-    /* PSA specification is not very clear on 0 input for ECB.
-     * However software implementation and the tests return SUCCESS
-     * for 0 input. So adding this check here.
-     */
-    if ((PSA_ALG_ECB_NO_PADDING == alg) && (0 == input_length))
-    {
-        *output_length = 0;
-        return PSA_SUCCESS;
+        /* IV buffer can't be NULL or size 0 */
+        if ((PSA_ALG_CBC_NO_PADDING == alg) || (PSA_ALG_CTR == alg))
+        {
+            if (!iv || !iv_length)
+            {
+                return PSA_ERROR_INVALID_ARGUMENT;
+            }
+        }
     }
 
     /* If input length or input buffer NULL, it's an error.
@@ -118,12 +117,6 @@ static psa_status_t ele_s2xx_cipher_arg_validation(
     if (!input_length || !input)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Output buffer has to be atleast Input buffer size */
-    if (output_size < input_length)
-    {
-        return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
     /* Output buffer can't be NULL */
@@ -235,10 +228,19 @@ psa_status_t ele_s2xx_opaque_cipher_encrypt(
                                             input, input_length, output,
                                             output_size, output_length,
                                             kMode_SSS_Encrypt);
-    if ((PSA_SUCCESS != psa_status) ||
-        ((PSA_SUCCESS == psa_status) && (PSA_ALG_ECB_NO_PADDING == alg)))
+    if (PSA_SUCCESS != psa_status)
     {
         return psa_status;
+    }
+
+    /* PSA specification is not very clear on 0 input for ECB.
+     * However software implementation and the tests return SUCCESS
+     * for 0 input. So adding this check here.
+     */
+    if ((PSA_ALG_ECB_NO_PADDING == alg) && (0 == input_length))
+    {
+        *output_length = 0;
+        return PSA_SUCCESS;
     }
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex))
@@ -305,10 +307,19 @@ psa_status_t ele_s2xx_opaque_cipher_decrypt(
                                             input, input_length, output,
                                             output_size, output_length,
                                             kMode_SSS_Decrypt);
-    if ((PSA_SUCCESS != psa_status) ||
-        ((PSA_SUCCESS == psa_status) && (PSA_ALG_ECB_NO_PADDING == alg)))
+    if (PSA_SUCCESS != psa_status)
     {
         return psa_status;
+    }
+
+    /* PSA specification is not very clear on 0 input for ECB.
+     * However software implementation and the tests return SUCCESS
+     * for 0 input. So adding this check here.
+     */
+    if ((PSA_ALG_ECB_NO_PADDING == alg) && (0 == input_length))
+    {
+        *output_length = 0;
+        return PSA_SUCCESS;
     }
 
     /* Find the IV length for key type and algorithm */
@@ -342,7 +353,7 @@ psa_status_t ele_s2xx_opaque_cipher_decrypt(
         goto exit;
     }
 
-    *output_length = input_length;
+    *output_length = expected_op_length;
 
 exit:
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
