@@ -247,8 +247,8 @@ static psa_status_t ele2go_fw_loaded()
 {
     uint32_t ele_version[2];
 
-    /* ELE will respond with 0x10100017EBFC5D if EL2go FW  KW45_A1_A2_SDK_FW_1_1_0_5 is loaded*/
-    static const uint32_t el2go_fw_loaded[2] = {0x1010001, 0x7EBFC5D};
+    /* ELE will respond with 0x10200015d2497ed if EL2go FW SDK_FW_KW45_K32W1xx_MCXW71_1_2_0_1_RC1 is loaded*/
+    static const uint32_t el2go_fw_loaded[2] = {0x1020001, 0x5d2497ed};
 
     if (get_ele_fw_version((uint8_t *)ele_version) != PSA_SUCCESS )
     {
