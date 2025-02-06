@@ -20,8 +20,6 @@
 /* Number of valid tag lengths sizes both for CCM and GCM modes */
 #define VALID_TAG_LENGTH_SIZE 7u
 
-
-
 static psa_status_t check_generic_aead_alg(psa_algorithm_t alg, psa_key_type_t key_type, sss_algorithm_t *ele_alg)
 {
     psa_algorithm_t default_alg = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
@@ -114,7 +112,7 @@ static psa_status_t do_aead(const uint8_t *nonce, size_t nonce_length,
         {
             /* If AEAD decrypt failed in this case we cannot differentiate between root cause
              * It may be due to some sanity check, but most likely due to tag mismatch between actual and expected value
-             * So threat all fails in this case as signature mismatch */
+             * So treat all fails in this case as signature mismatch */
             return PSA_ERROR_INVALID_SIGNATURE;
         }
         return PSA_ERROR_GENERIC_ERROR;
@@ -201,7 +199,8 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
     psa_key_type_t key_type  = psa_get_key_type(attributes);
     sss_algorithm_t ele_alg  = 0;
     sss_sscp_object_t sssKey = {0};
-    size_t tag_length        = 0;
+    uint8_t *tag             = NULL;
+    size_t tag_length        = 0u;
 
     /* Validate the algorithm first */
     status = check_generic_aead_alg(alg, key_type, &ele_alg);
@@ -255,12 +254,12 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
     }
 
     /* Do AEAD */
-    uint8_t *tag = (uint8_t *)(ciphertext + plaintext_length);
-    status       = do_aead(nonce, nonce_length,
-                           additional_data, additional_data_length,
-                           plaintext, plaintext_length, ciphertext,
-                           tag, &tag_length,
-                           kMode_SSS_Encrypt, &sssKey, ele_alg);
+    tag    = (uint8_t *)(ciphertext + plaintext_length);
+    status = do_aead(nonce, nonce_length,
+                     additional_data, additional_data_length,
+                     plaintext, plaintext_length, ciphertext,
+                     tag, &tag_length,
+                     kMode_SSS_Encrypt, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;

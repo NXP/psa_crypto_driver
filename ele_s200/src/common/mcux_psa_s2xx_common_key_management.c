@@ -264,9 +264,7 @@ static psa_status_t ele2go_fw_loaded()
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
-
     /* Unreachable */
-    return PSA_ERROR_GENERIC_ERROR;
 }
 
 static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_size, psa_cmd_t *psa_cmd)
@@ -362,7 +360,8 @@ exit:
 static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes,
                                           sss_sscp_key_property_t *s2xx_algo_prop,
                                           sss_key_part_t *s2xx_key_part,
-                                          sss_cipher_type_t *s2xx_cipher_type)
+                                          sss_cipher_type_t *s2xx_cipher_type,
+                                          size_t *allocation_size)
 {
     // TODO deal with PSA_ALG_NONE according to the profile
 
@@ -373,11 +372,13 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
     {
         if (PSA_KEY_TYPE_IS_PUBLIC_KEY(psa_get_key_type(attributes)))
         {
-            *s2xx_key_part = kSSS_KeyPart_Public;
+            *s2xx_key_part   = kSSS_KeyPart_Public;
+            *allocation_size = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(psa_get_key_bits(attributes));
         }
         else if (PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes)))
         {
-            *s2xx_key_part = kSSS_KeyPart_Pair;
+            *s2xx_key_part   = kSSS_KeyPart_Pair;
+            *allocation_size = (PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(psa_get_key_bits(attributes)) + PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
         }
         else
         {
@@ -390,6 +391,7 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
         /* Symmetric is simple */
         *s2xx_key_part    = kSSS_KeyPart_Default;
         *s2xx_cipher_type = kSSS_CipherType_SYMMETRIC;
+        *allocation_size  = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
     }
 
     status = PSA_SUCCESS;
@@ -410,7 +412,7 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
         case ALG_S200_ECBKDF_OR_CKDF:
             *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_KDF;
             break;
-        case ALG_S200_ECDH_OR_ECDH_CKDF:
+        case ALG_S200_ECDH_CKDF:
             *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_KDF;
             *s2xx_cipher_type = kSSS_CipherType_EC_NIST_P;
             break;
@@ -447,7 +449,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
     sss_sscp_key_property_t algorithm_key_property;
     sss_key_part_t key_part;
     sss_cipher_type_t cipher_type;
-    uint32_t key_properties = 0u;
+    size_t allocation_size = 0u;
 
     /* Check if EL2go FW is loaded into S200; if not load it */
     if (ele2go_fw_loaded() != PSA_SUCCESS)
@@ -471,7 +473,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Keyobject init failed");
     }
 
-    psa_status = get_s2xx_algo_keyprop(attributes, &algorithm_key_property, &key_part, &cipher_type);
+    psa_status = get_s2xx_algo_keyprop(attributes, &algorithm_key_property, &key_part, &cipher_type, &allocation_size);
     if (PSA_SUCCESS != psa_status)
     {
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Valid keyproperty not found");
@@ -493,7 +495,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
         /* Use the PSA key ID as the S200 key ID - easier to keep track of it */
         if (sss_sscp_key_object_allocate_handle(sssKey, psa_get_key_id(attributes),
                                                 key_part, cipher_type,
-                                                PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)),
+                                                allocation_size,
                                                 algorithm_key_property) != kStatus_SSS_Success)
         {
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
@@ -532,6 +534,67 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
     psa_status = PSA_SUCCESS;
 exit:
     return psa_status;
+}
+
+psa_status_t ele_s2xx_set_key(sss_sscp_object_t *sssKey,
+                              uint32_t key_id,
+                              const uint8_t *key_buffer,
+                              size_t key_buffer_size,
+                              sss_key_part_t key_part,
+                              sss_cipher_type_t cipher_type,
+                              sss_sscp_key_property_t key_properties,
+                              size_t allocation_size,
+                              size_t key_bitlen)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    if (sss_sscp_key_object_init(sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto exit;
+    }
+
+    if (sss_sscp_key_object_allocate_handle(sssKey, key_id,
+                                            key_part, cipher_type,
+                                            allocation_size,
+                                            key_properties) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto exit;
+    }
+
+    if (sss_sscp_key_store_set_key(&g_ele_ctx.keyStore, sssKey, key_buffer,
+                                   key_buffer_size, key_bitlen,
+                                   key_part) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto exit;
+    }
+
+    status = PSA_SUCCESS;
+exit:
+    if (PSA_SUCCESS != status)
+    {
+        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
+    }
+
+    return status;
+}
+
+psa_status_t ele_s2xx_delete_key(sss_sscp_object_t *sssKey)
+{
+    psa_status_t status = PSA_SUCCESS;
+
+    /* At first, try to erase the key */
+    (void)sss_sscp_key_store_erase_key(&g_ele_ctx.keyStore, sssKey);
+
+    /* Regardless of the erase operation success, free the key object */
+    if (sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    return status;
 }
 
 /* Modified from mcuxClPsaDriver_Oracle_Utils_ValidateBlobAttributes() */

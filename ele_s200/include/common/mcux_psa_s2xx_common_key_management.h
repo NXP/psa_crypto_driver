@@ -37,6 +37,18 @@ psa_status_t ele_s2xx_validate_blob_attributes(const psa_key_attributes_t *attri
                                                const uint8_t *psa_import_blob,
                                                size_t psa_import_blob_size);
 
+psa_status_t ele_s2xx_set_key(sss_sscp_object_t *sssKey,
+                              uint32_t key_id,
+                              const uint8_t *key_buffer,
+                              size_t key_buffer_size,
+                              sss_key_part_t key_part,
+                              sss_cipher_type_t cipher_type,
+                              sss_sscp_key_property_t key_properties,
+                              size_t allocation_size,
+                              size_t key_bitlen);
+
+psa_status_t ele_s2xx_delete_key(sss_sscp_object_t *sssKey);
+
 #ifdef __cplusplus
 }
 #endif

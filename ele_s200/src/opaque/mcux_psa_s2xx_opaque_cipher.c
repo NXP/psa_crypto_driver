@@ -210,12 +210,10 @@ psa_status_t ele_s2xx_opaque_cipher_encrypt(
     size_t *output_length)
 {
     psa_key_type_t key_type = psa_get_key_type(attributes);
-    size_t key_bits         = psa_get_key_bits(attributes);
     psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
 
     sss_algorithm_t ele_algo = 0;
     sss_sscp_object_t sssKey = {0};
-    sss_status_t status;
 
     psa_status = psa_to_s200_alg(key_type, alg, &ele_algo);
     if (PSA_SUCCESS != psa_status)
@@ -285,31 +283,28 @@ psa_status_t ele_s2xx_opaque_cipher_decrypt(
     size_t *output_length)
 {
     psa_key_type_t key_type = psa_get_key_type(attributes);
-    size_t key_bits         = psa_get_key_bits(attributes);
-    psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_status_t status     = PSA_ERROR_CORRUPTION_DETECTED;
 
     sss_algorithm_t ele_algo = 0;
-    sss_sscp_symmetric_t ctx = {0};
     sss_sscp_object_t sssKey = {0};
-    sss_status_t status;
 
     uint32_t iv_length          = 0;
     uint32_t expected_op_length = 0;
 
-    psa_status = psa_to_s200_alg(key_type, alg, &ele_algo);
-    if (PSA_SUCCESS != psa_status)
+    status = psa_to_s200_alg(key_type, alg, &ele_algo);
+    if (PSA_SUCCESS != status)
     {
-        return psa_status;
+        return status;
     }
 
-    psa_status = ele_s2xx_cipher_arg_validation(attributes, key_buffer,
+    status = ele_s2xx_cipher_arg_validation(attributes, key_buffer,
                                             key_buffer_size, alg, NULL, 0,
                                             input, input_length, output,
                                             output_size, output_length,
                                             kMode_SSS_Decrypt);
-    if (PSA_SUCCESS != psa_status)
+    if (PSA_SUCCESS != status)
     {
-        return psa_status;
+        return status;
     }
 
     /* PSA specification is not very clear on 0 input for ECB.
@@ -340,15 +335,15 @@ psa_status_t ele_s2xx_opaque_cipher_decrypt(
     }
 
     /* Handle key import */
-    psa_status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
-    if (PSA_SUCCESS != psa_status)
+    status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
+    if (PSA_SUCCESS != status)
     {
         goto exit;
     }
 
-    psa_status = do_cipher(&sssKey, input, iv_length, (input + iv_length),
+    status = do_cipher(&sssKey, input, iv_length, (input + iv_length),
                            output, input_length, ele_algo, kMode_SSS_Decrypt);
-    if (PSA_SUCCESS != psa_status)
+    if (PSA_SUCCESS != status)
     {
         goto exit;
     }
@@ -361,5 +356,5 @@ exit:
         return PSA_ERROR_BAD_STATE;
     }
 
-    return psa_status;
+    return status;
 }

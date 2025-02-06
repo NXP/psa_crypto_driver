@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -24,6 +24,10 @@
 #include "fsl_sss_sscp.h"
 #include "fsl_sscp_mu.h"
 
+#if defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
+#include "secure_storage.h"
+#endif /* MBEDTLS_PSA_CRYPTO_STORAGE_C */
+
 typedef struct
 {
     sss_sscp_key_store_t keyStore;
@@ -40,10 +44,10 @@ typedef struct
 #define ELE_HIGH_QUALITY_RNG   1
 
 /* Vendor-defined algorithms for EL2GO */
-#define ALG_NXP_ALL_CIPHER         (0x84C0FF00)
-#define ALG_NXP_ALL_AEAD           (0x8550FF00)
-#define ALG_S200_ECBKDF_OR_CKDF    (0x8800FD00)
-#define ALG_S200_ECDH_OR_ECDH_CKDF (0x8902FC00)
+#define ALG_NXP_ALL_CIPHER      ((psa_algorithm_t) 0x84C0FF00)
+#define ALG_NXP_ALL_AEAD        ((psa_algorithm_t) 0x8550FF00)
+#define ALG_S200_ECBKDF_OR_CKDF ((psa_algorithm_t) 0x8800FD00)
+#define ALG_S200_ECDH_CKDF      ((psa_algorithm_t) 0x8902FC00)
 
 /* MUTEX FOR HW Modules*/
 extern mcux_mutex_t ele_hwcrypto_mutex;

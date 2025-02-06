@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -31,6 +31,14 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     size_t key_buffer_size, size_t *key_buffer_length,  size_t *bits);
 
 /*!
+ * \brief Export a public key or the public part of a key pair
+ */
+psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attributes,
+                                               const uint8_t *key_buffer,
+                                               size_t key_buffer_size, uint8_t *data,
+                                               size_t data_size, size_t *data_length);
+
+/*!
  * \brief Destroy opaque key
  */
 psa_status_t ele_s2xx_opaque_destroy_key(const psa_key_attributes_t *attributes,
@@ -42,6 +50,19 @@ psa_status_t ele_s2xx_opaque_destroy_key(const psa_key_attributes_t *attributes,
  */
 size_t ele_s2xx_opaque_size_function(const psa_key_attributes_t *attributes,
                                      const uint8_t *data, size_t data_length);
+
+/*!
+ * \brief Perform a key agreement
+ */
+psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attributes,
+                                           const uint8_t *key_buffer,
+                                           size_t key_buffer_size,
+                                           psa_algorithm_t alg,
+                                           const uint8_t *peer_key,
+                                           size_t peer_key_length,
+                                           uint8_t *shared_secret,
+                                           size_t shared_secret_size,
+                                           size_t *shared_secret_length);
 
 #ifdef __cplusplus
 }

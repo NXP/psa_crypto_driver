@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -39,8 +39,15 @@
 
 #include "mcux_psa_s2xx_key_locations.h"
 
+/* S2XX key locations */
 #define PSA_CRYPTO_LOCATION_S200_KEY_STORAGE  PSA_KEY_LOCATION_S200_KEY_STORAGE
 #define PSA_CRYPTO_LOCATION_S200_DATA_STORAGE PSA_KEY_LOCATION_S200_DATA_STORAGE
+
+/* S2XX vendor-defined algorithms */
+#define PSA_ALG_NXP_ALL_CIPHER      ALG_NXP_ALL_CIPHER
+#define PSA_ALG_NXP_ALL_AEAD        ALG_NXP_ALL_AEAD
+#define PSA_ALG_S200_ECBKDF_OR_CKDF ALG_S200_ECBKDF_OR_CKDF
+#define PSA_ALG_S200_ECDH_CKDF      ALG_S200_ECDH_CKDF
 
 /*
  * Location specific details go in this file which is also exposed to application writers
@@ -61,9 +68,9 @@
 
 // #include "mcux_psa_s2xx_opaque_init.h"
 #include "mcux_psa_s2xx_opaque_key_generation.h"
-// #include "mcux_psa_s2xx_opaque_asymmetric_signature.h"
-// #include "mcux_psa_s2xx_opaque_cipher.h"
-// #include "mcux_psa_s2xx_opaque_aead.h"
-// #include "mcux_psa_s2xx_opaque_mac.h"
+#include "mcux_psa_s2xx_opaque_asymmetric_signature.h"
+#include "mcux_psa_s2xx_opaque_cipher.h"
+#include "mcux_psa_s2xx_opaque_aead.h"
+#include "mcux_psa_s2xx_opaque_mac.h"
 
 #endif /* ELE_S2XX_H */

@@ -332,9 +332,13 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.opaque)
         SOURCES ele_s200/include/opaque/mcux_psa_s2xx_opaque_key_generation.h
                 ele_s200/include/opaque/mcux_psa_s2xx_opaque_cipher.h
                 ele_s200/include/opaque/mcux_psa_s2xx_opaque_aead.h
+                ele_s200/include/opaque/mcux_psa_s2xx_opaque_asymmetric_signature.h
+                ele_s200/include/opaque/mcux_psa_s2xx_opaque_mac.h
                 ele_s200/src/opaque/mcux_psa_s2xx_opaque_key_generation.c
                 ele_s200/src/opaque/mcux_psa_s2xx_opaque_cipher.c
                 ele_s200/src/opaque/mcux_psa_s2xx_opaque_aead.c
+                ele_s200/src/opaque/mcux_psa_s2xx_opaque_asymmetric_signature.c
+                ele_s200/src/opaque/mcux_psa_s2xx_opaque_mac.c
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
