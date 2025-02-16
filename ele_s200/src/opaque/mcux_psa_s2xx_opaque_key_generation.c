@@ -17,6 +17,7 @@
 #include "mcux_psa_s2xx_opaque_key_generation.h"
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_s2xx_common_key_management.h"
+#include "mcux_psa_s2xx_common_compute.h"
 
 psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     const uint8_t *data, size_t data_length, uint8_t *key_buffer,
@@ -252,50 +253,6 @@ static psa_status_t key_management(const psa_key_attributes_t *attributes,
     return PSA_SUCCESS;
 }
 
-static psa_status_t do_key_agreement(sss_sscp_object_t *sssKey,
-                                     sss_sscp_object_t *sssKey_peer,
-                                     sss_sscp_object_t *sssKey_shared,
-                                     uint8_t *shared_secret,
-                                     size_t shared_secret_size,
-                                     size_t *shared_secret_length)
-{
-    sss_sscp_derive_key_t ctx   = {0};
-    size_t shared_secret_bitlen = 0u;
-
-    if (sss_sscp_derive_key_context_init(&ctx,  &g_ele_ctx.sssSession, sssKey,
-                                         kAlgorithm_SSS_ECDH, kMode_SSS_ComputeSharedSecret) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    if (sss_sscp_asymmetric_dh_derive_key(&ctx, sssKey_peer, sssKey_shared) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        (void)sss_sscp_derive_key_context_free(&ctx);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Use the length parameter as an in/out argument and retrieve the key */
-    *shared_secret_length = shared_secret_size;
-    if (sss_sscp_key_store_get_key(&g_ele_ctx.keyStore, sssKey_shared,
-                                   shared_secret, shared_secret_length,
-                                   &shared_secret_bitlen, kSSS_KeyPart_Default) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        (void)sss_sscp_derive_key_context_free(&ctx);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    if (sss_sscp_derive_key_context_free(&ctx) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    return PSA_SUCCESS;
-}
-
 static psa_status_t init_shared_secret_key_object(sss_sscp_object_t *sssKey_shared,
                                                   size_t allocation_size)
 {
@@ -437,7 +394,8 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
     }
 
     /* Do the key agreement, get the shared secret and set the output size */
-    status = do_key_agreement(&sssKey, &sssKey_peer, &sssKey_shared, shared_secret, shared_secret_size, shared_secret_length);
+    status = ele_s2xx_common_key_agreement(&sssKey, &sssKey_peer, &sssKey_shared,
+                                           shared_secret, shared_secret_size, shared_secret_length);
     if (PSA_SUCCESS != status)
     {
         goto exit;

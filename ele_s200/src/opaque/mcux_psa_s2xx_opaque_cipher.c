@@ -17,9 +17,7 @@
 #include "mcux_psa_s2xx_opaque_cipher.h"
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_s2xx_common_key_management.h"
-
-// TODO move static functions to the common layer
-//      most, if not all, should be the same for transparent ciphers too
+#include "mcux_psa_s2xx_common_compute.h"
 
 static psa_status_t psa_to_s200_alg(psa_key_type_t key_type, psa_algorithm_t alg, sss_algorithm_t *ele_algo)
 {
@@ -140,57 +138,20 @@ static psa_status_t key_management(const psa_key_attributes_t *attributes,
                                    size_t key_buffer_size,
                                    sss_sscp_object_t *sssKey)
 {
-    psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
     /* Validate if the key is a blob */
-    psa_status = ele_s2xx_validate_blob_attributes(attributes, key_buffer, key_buffer_size);
-    if (PSA_SUCCESS != psa_status)
+    status = ele_s2xx_validate_blob_attributes(attributes, key_buffer, key_buffer_size);
+    if (PSA_SUCCESS != status)
     {
-        return psa_status;
+        return status;
     }
 
     /* Import the key */
-    psa_status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, sssKey);
-    if (PSA_SUCCESS != psa_status)
+    status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, sssKey);
+    if (PSA_SUCCESS != status)
     {
-        return psa_status;
-    }
-
-    return PSA_SUCCESS;
-}
-
-static psa_status_t do_cipher(sss_sscp_object_t *sssKey,
-                              const uint8_t *iv, size_t iv_length,
-                              const uint8_t *input, uint8_t *output,
-                              size_t input_length,
-                              sss_algorithm_t ele_algo, sss_mode_t mode)
-{
-    sss_sscp_symmetric_t ctx = {0};
-
-    /* Init symmetric context */
-    if (sss_sscp_symmetric_context_init(&ctx, &g_ele_ctx.sssSession,
-                                        sssKey, ele_algo,
-                                        mode) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Run encryption */
-    if (sss_sscp_cipher_one_go(&ctx, (uint8_t *)iv,
-                               iv_length, input,
-                               output, input_length) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_symmetric_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Clean up */
-    if (sss_sscp_symmetric_context_free(&ctx) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
+        return status;
     }
 
     return PSA_SUCCESS;
@@ -210,25 +171,25 @@ psa_status_t ele_s2xx_opaque_cipher_encrypt(
     size_t *output_length)
 {
     psa_key_type_t key_type = psa_get_key_type(attributes);
-    psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_status_t status     = PSA_ERROR_CORRUPTION_DETECTED;
 
     sss_algorithm_t ele_algo = 0;
     sss_sscp_object_t sssKey = {0};
 
-    psa_status = psa_to_s200_alg(key_type, alg, &ele_algo);
-    if (PSA_SUCCESS != psa_status)
+    status = psa_to_s200_alg(key_type, alg, &ele_algo);
+    if (PSA_SUCCESS != status)
     {
-        return psa_status;
+        return status;
     }
 
-    psa_status = ele_s2xx_cipher_arg_validation(attributes, key_buffer,
+    status = ele_s2xx_cipher_arg_validation(attributes, key_buffer,
                                             key_buffer_size, alg, iv, iv_length,
                                             input, input_length, output,
                                             output_size, output_length,
                                             kMode_SSS_Encrypt);
-    if (PSA_SUCCESS != psa_status)
+    if (PSA_SUCCESS != status)
     {
-        return psa_status;
+        return status;
     }
 
     /* PSA specification is not very clear on 0 input for ECB.
@@ -247,15 +208,15 @@ psa_status_t ele_s2xx_opaque_cipher_encrypt(
     }
 
     /* Handle key import */
-    psa_status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
-    if (PSA_SUCCESS != psa_status)
+    status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
+    if (PSA_SUCCESS != status)
     {
         goto exit;
     }
 
-    psa_status = do_cipher(&sssKey, iv, iv_length, input, output,
-                           input_length, ele_algo, kMode_SSS_Encrypt);
-    if (PSA_SUCCESS != psa_status)
+    status = ele_s2xx_common_cipher(&sssKey, iv, iv_length, input, output,
+                                    input_length, ele_algo, kMode_SSS_Encrypt);
+    if (PSA_SUCCESS != status)
     {
         goto exit;
     }
@@ -268,7 +229,7 @@ exit:
         return PSA_ERROR_BAD_STATE;
     }
 
-    return psa_status;
+    return status;
 }
 
 psa_status_t ele_s2xx_opaque_cipher_decrypt(
@@ -341,8 +302,8 @@ psa_status_t ele_s2xx_opaque_cipher_decrypt(
         goto exit;
     }
 
-    status = do_cipher(&sssKey, input, iv_length, (input + iv_length),
-                           output, input_length, ele_algo, kMode_SSS_Decrypt);
+    status = ele_s2xx_common_cipher(&sssKey, input, iv_length, (input + iv_length),
+                                    output, input_length, ele_algo, kMode_SSS_Decrypt);
     if (PSA_SUCCESS != status)
     {
         goto exit;

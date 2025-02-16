@@ -17,75 +17,10 @@
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_s2xx_common_key_management.h"
 #include "mcux_psa_s2xx_hash.h"
+#include "mcux_psa_s2xx_common_compute.h"
 
 #define NISTP521_BITLEN (521)
 #define ED25519_BITLEN  (255)
-
-static psa_status_t do_sign_digest(uint8_t *digest, size_t digest_len,
-                                   uint8_t *signature, size_t *signature_len,
-                                   sss_sscp_object_t *sssKey, sss_algorithm_t ele_alg)
-{
-    sss_sscp_asymmetric_t ctx = {0u};
-
-    /* Initialize asymmetric context for signing */
-    if (sss_sscp_asymmetric_context_init(&ctx,  &g_ele_ctx.sssSession,
-                                         sssKey, ele_alg, kMode_SSS_Sign) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Sign message digest */
-    if (sss_sscp_asymmetric_sign_digest(&ctx, digest, digest_len,
-                                        signature, signature_len) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_asymmetric_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Clean up */
-    if (sss_sscp_asymmetric_context_free(&ctx) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    return PSA_SUCCESS;
-}
-
-static psa_status_t do_verify_digest(uint8_t *digest, size_t digest_len,
-                                     uint8_t *signature, size_t signature_len,
-                                     sss_sscp_object_t *sssKey, sss_algorithm_t ele_alg)
-{
-    sss_sscp_asymmetric_t ctx = {0u};
-
-    /* Initialize asymmetric context for signing */
-    if (sss_sscp_asymmetric_context_init(&ctx,  &g_ele_ctx.sssSession,
-                                         sssKey, ele_alg, kMode_SSS_Verify) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Sign message digest */
-    if (sss_sscp_asymmetric_verify_digest(&ctx, digest, digest_len,
-                                          signature, signature_len) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_asymmetric_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Clean up */
-    if (sss_sscp_asymmetric_context_free(&ctx) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    return PSA_SUCCESS;
-}
 
 static psa_status_t ele_s2xx_psa_2_ele_asym_alg(const psa_key_attributes_t *attributes,
                                                 psa_algorithm_t alg,
@@ -288,7 +223,7 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
     }
 
     *signature_length = signature_size;
-    status = do_sign_digest((uint8_t *)hash, hash_length, signature, signature_length, &sssKey, ele_alg);
+    status = ele_s2xx_common_sign_digest((uint8_t *)hash, hash_length, signature, signature_length, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -359,7 +294,7 @@ psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
         goto exit;
     }
 
-    status = do_verify_digest((uint8_t *)hash, hash_length, (uint8_t *)signature, signature_length, &sssKey, ele_alg);
+    status = ele_s2xx_common_verify_digest((uint8_t *)hash, hash_length, (uint8_t *)signature, signature_length, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -452,7 +387,7 @@ psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes
     }
 
     *signature_length = signature_size;
-    status = do_sign_digest((uint8_t *)input, input_length, signature, signature_length, &sssKey, ele_alg);
+    status = ele_s2xx_common_sign_digest((uint8_t *)input, input_length, signature, signature_length, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -538,7 +473,7 @@ psa_status_t ele_s2xx_opaque_verify_message(const psa_key_attributes_t *attribut
         goto exit;
     }
 
-    status = do_verify_digest((uint8_t *)input, input_length, (uint8_t *)signature, signature_length, &sssKey, ele_alg);
+    status = ele_s2xx_common_verify_digest((uint8_t *)input, input_length, (uint8_t *)signature, signature_length, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;

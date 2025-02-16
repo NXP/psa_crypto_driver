@@ -14,6 +14,7 @@
  */
 
 #include "mcux_psa_s2xx_mac.h"
+#include "mcux_psa_s2xx_common_compute.h"
 
 /*
  * Entry points for MAC computation and verification as described by the PSA
@@ -71,7 +72,7 @@ static status_t set_mac_key(sss_sscp_object_t *sssKey, const uint8_t *key_buffer
         return kStatus_InvalidArgument;
     }
     size_t key_bytes = key_bits >> 3u;
-    
+
     if ((sss_sscp_key_object_init(sssKey, &g_ele_ctx.keyStore)) != kStatus_SSS_Success)
     {
         return kStatus_Fail;
@@ -106,7 +107,6 @@ psa_status_t ele_s2xx_transparent_mac_compute(const psa_key_attributes_t *attrib
                                               size_t *mac_length)
 {
     psa_status_t status      = PSA_ERROR_CORRUPTION_DETECTED;
-    sss_sscp_mac_t ctx       = {0};
     sss_algorithm_t ele_alg  = 0;
     sss_sscp_object_t sssKey = {0};
     size_t key_bits          = psa_get_key_bits(attributes);
@@ -129,36 +129,17 @@ psa_status_t ele_s2xx_transparent_mac_compute(const psa_key_attributes_t *attrib
     /* Set Key for MAC*/
     if ((set_mac_key(&sssKey, key_buffer, key_bits, ele_alg)) != kStatus_Success)
     {
-        (void)mcux_mutex_unlock(&ele_hwcrypto_mutex);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-    /* Init context for MAC*/
-    if ((sss_sscp_mac_context_init(&ctx, &g_ele_ctx.sssSession, &sssKey, ele_alg, kMode_SSS_Mac)) !=
-        kStatus_SSS_Success)
-    {
-        (void)mcux_mutex_unlock(&ele_hwcrypto_mutex);
-        (void)sss_sscp_key_object_free(&sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-    /* Call MAC one go*/
-    if ((sss_sscp_mac_one_go(&ctx, (const uint8_t *)input, input_length, (uint8_t *)mac, &mac_size)) !=
-        kStatus_SSS_Success)
-    {
-        (void)mcux_mutex_unlock(&ele_hwcrypto_mutex);
-        (void)sss_sscp_mac_context_free(&ctx);
-        (void)sss_sscp_key_object_free(&sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
     }
 
-    *mac_length = mac_size;
-
-    /* Free context */
-    if (sss_sscp_mac_context_free(&ctx) != kStatus_SSS_Success)
+    status = ele_s2xx_common_mac(input, input_length, mac, mac_size, mac_length, &sssKey, ele_alg);
+    if (PSA_SUCCESS != status)
     {
-        (void)sss_sscp_key_object_free(&sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
+        goto exit;
     }
 
+exit:
     (void)sss_sscp_key_object_free(&sssKey, kSSS_keyObjFree_KeysStoreDefragment);
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
@@ -166,6 +147,7 @@ psa_status_t ele_s2xx_transparent_mac_compute(const psa_key_attributes_t *attrib
         return PSA_ERROR_GENERIC_ERROR;
     }
 
-    return PSA_SUCCESS;
+    return status;
+
 }
 /** @} */ // end of psa_mac

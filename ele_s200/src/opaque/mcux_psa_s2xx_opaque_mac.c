@@ -17,6 +17,7 @@
 #include "mcux_psa_s2xx_opaque_mac.h"
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_s2xx_common_key_management.h"
+#include "mcux_psa_s2xx_common_compute.h"
 
 /* Convert PSA Algorithm to ELE Algorithm, CMAC or HMAC with SHA256 */
 static psa_status_t ele_psa_mac_alg_to_ele_mac_alg(psa_algorithm_t alg, sss_algorithm_t *ele_alg)
@@ -102,40 +103,6 @@ static psa_status_t key_management(const psa_key_attributes_t *attributes,
     return PSA_SUCCESS;
 }
 
-static psa_status_t do_mac(const uint8_t *input, size_t input_length,
-                           uint8_t *mac, size_t mac_size, size_t *mac_length,
-                           sss_sscp_object_t *sssKey, sss_algorithm_t ele_alg)
-{
-    sss_sscp_mac_t ctx = {0};
-
-    /* Init context for MAC*/
-    if ((sss_sscp_mac_context_init(&ctx, &g_ele_ctx.sssSession, sssKey, ele_alg, kMode_SSS_Mac)) !=
-        kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-    /* Call MAC one go*/
-    if ((sss_sscp_mac_one_go(&ctx, (const uint8_t *)input, input_length, (uint8_t *)mac, &mac_size)) !=
-        kStatus_SSS_Success)
-    {
-        (void)sss_sscp_mac_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    *mac_length = mac_size;
-
-    /* Free context */
-    if (sss_sscp_mac_context_free(&ctx) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    return PSA_SUCCESS;
-}
-
 psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
                                               const uint8_t *key_buffer,
                                               size_t key_buffer_size,
@@ -168,6 +135,8 @@ psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    mac_size = PSA_MAC_LENGTH(psa_get_key_type(attributes), psa_get_key_bits(attributes), alg);
+
     if (mcux_mutex_lock(&ele_hwcrypto_mutex))
     {
         return PSA_ERROR_GENERIC_ERROR;
@@ -179,7 +148,7 @@ psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
         goto exit;
     }
 
-    status = do_mac(input, input_length, mac, mac_size, mac_length, &sssKey, ele_alg);
+    status = ele_s2xx_common_mac(input, input_length, mac, mac_size, mac_length, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;

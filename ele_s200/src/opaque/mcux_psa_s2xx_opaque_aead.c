@@ -16,6 +16,7 @@
 #include "mcux_psa_s2xx_opaque_aead.h"
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_s2xx_common_key_management.h"
+#include "mcux_psa_s2xx_common_compute.h"
 
 /* Number of valid tag lengths sizes both for CCM and GCM modes */
 #define VALID_TAG_LENGTH_SIZE 7u
@@ -80,49 +81,6 @@ static psa_status_t check_generic_aead_alg(psa_algorithm_t alg, psa_key_type_t k
     if (i == VALID_TAG_LENGTH_SIZE)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    return PSA_SUCCESS;
-}
-
-static psa_status_t do_aead(const uint8_t *nonce, size_t nonce_length,
-                            const uint8_t *additional_data, size_t additional_data_length,
-                            const uint8_t *input, size_t input_size,
-                            uint8_t *output,
-                            uint8_t *tag, size_t *tag_length,
-                            sss_mode_t mode, sss_sscp_object_t *sssKey, sss_algorithm_t ele_alg)
-{
-    sss_sscp_aead_t ctx = {0};
-
-    if ((sss_sscp_aead_context_init(&ctx, &g_ele_ctx.sssSession, sssKey, ele_alg, mode)) !=
-        kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* RUN AEAD */
-    if ((sss_sscp_aead_one_go(&ctx, input, output, input_size, (uint8_t *)nonce, nonce_length,
-                              additional_data, additional_data_length, tag, tag_length)) !=
-        kStatus_SSS_Success)
-    {
-        (void)sss_sscp_aead_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        if (kMode_SSS_Decrypt == mode)
-        {
-            /* If AEAD decrypt failed in this case we cannot differentiate between root cause
-             * It may be due to some sanity check, but most likely due to tag mismatch between actual and expected value
-             * So treat all fails in this case as signature mismatch */
-            return PSA_ERROR_INVALID_SIGNATURE;
-        }
-        return PSA_ERROR_GENERIC_ERROR;
-    };
-
-    /* Free contexts */
-    if (sss_sscp_aead_context_free(&ctx) != kStatus_SSS_Success)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
     }
 
     return PSA_SUCCESS;
@@ -255,11 +213,11 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
 
     /* Do AEAD */
     tag    = (uint8_t *)(ciphertext + plaintext_length);
-    status = do_aead(nonce, nonce_length,
-                     additional_data, additional_data_length,
-                     plaintext, plaintext_length, ciphertext,
-                     tag, &tag_length,
-                     kMode_SSS_Encrypt, &sssKey, ele_alg);
+    status = ele_s2xx_common_aead(nonce, nonce_length,
+                                  additional_data, additional_data_length,
+                                  plaintext, plaintext_length, ciphertext,
+                                  tag, &tag_length,
+                                  kMode_SSS_Encrypt, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -353,11 +311,11 @@ psa_status_t ele_s2xx_opaque_aead_decrypt(const psa_key_attributes_t *attributes
     }
 
     /* Do AEAD */
-    status = do_aead(nonce, nonce_length,
-                     additional_data, additional_data_length,
-                     ciphertext, cipher_length, plaintext,
-                     tag, &tag_length,
-                     kMode_SSS_Decrypt, &sssKey, ele_alg);
+    status = ele_s2xx_common_aead(nonce, nonce_length,
+                                  additional_data, additional_data_length,
+                                  ciphertext, cipher_length, plaintext,
+                                  tag, &tag_length,
+                                  kMode_SSS_Decrypt, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;

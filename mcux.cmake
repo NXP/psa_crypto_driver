@@ -296,9 +296,11 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common)
                 ele_s200/include/common/mcux_psa_s2xx_entropy.h
                 ele_s200/include/common/mcux_psa_s2xx_common_key_management.h
                 ele_s200/include/common/mcux_psa_s2xx_key_locations.h
+                ele_s200/include/common/mcux_psa_s2xx_common_compute.h
                 ele_s200/src/common/mcux_psa_s2xx_common_init.c
                 ele_s200/src/common/mcux_psa_s2xx_entropy.c
                 ele_s200/src/common/mcux_psa_s2xx_common_key_management.c
+                ele_s200/src/common/mcux_psa_s2xx_common_compute.c
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
