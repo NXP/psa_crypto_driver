@@ -23,6 +23,22 @@
 extern "C" {
 #endif
 
+/*!
+ * \brief Sign a precomputed hash of a message
+ *
+ * \param[in]  attributes       Attributes of the key to use
+ * \param[in]  key_buffer       Key material buffer
+ * \param[in]  key_buffer_size  Size in bytes of the key
+ * \param[in]  alg              Algorithm to use
+ * \param[in]  input            Hash to sign buffer
+ * \param[in]  input_length     Size in bytes of the data to sign
+ * \param[out] signature        Buffer to hold the signature data
+ * \param[in]  signature_size   Size in bytes of the signature buffer
+ * \param[out] signature_length Size in bytes of the signature
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
 psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
                                        const uint8_t *key_buffer, size_t key_buffer_size,
                                        psa_algorithm_t alg,
@@ -30,12 +46,43 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
                                        uint8_t *signature, size_t signature_size,
                                        size_t *signature_length);
 
+/*!
+ * \brief Verify a message signature on a hash
+ *
+ * \param[in] attributes       Attributes of the key to use
+ * \param[in] key_buffer       Key material buffer
+ * \param[in] key_buffer_size  Size in bytes of the key
+ * \param[in] alg              Algorithm to use
+ * \param[in] hash            Hash to sign buffer
+ * \param[in] hash_length     Size in bytes of the data to sign
+ * \param[in] signature        Signature to verify
+ * \param[in] signature_length Size in bytes of the signature
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
 psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
                                          const uint8_t *key_buffer, size_t key_buffer_size,
                                          psa_algorithm_t alg,
                                          const uint8_t *hash, size_t hash_length,
                                          const uint8_t *signature, size_t signature_length);
 
+/*!
+ * \brief Sign a message
+ *
+ * \param[in]  attributes       Attributes of the key to use
+ * \param[in]  key_buffer       Key material buffer
+ * \param[in]  key_buffer_size  Size in bytes of the key
+ * \param[in]  alg              Algorithm to use
+ * \param[in]  input            Data to sign buffer
+ * \param[in]  input_length     Size in bytes of the data to sign
+ * \param[out] signature        Buffer to hold the signature data
+ * \param[in]  signature_size   Size in bytes of the signature buffer
+ * \param[out] signature_length Size in bytes of the signature
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
 psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes,
                                           const uint8_t *key_buffer, size_t key_buffer_size,
                                           psa_algorithm_t alg,
@@ -43,6 +90,21 @@ psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes
                                           uint8_t *signature, size_t signature_size,
                                           size_t *signature_length);
 
+/*!
+ * \brief Verify a message signature
+ *
+ * \param[in] attributes       Attributes of the key to use
+ * \param[in] key_buffer       Key material buffer
+ * \param[in] key_buffer_size  Size in bytes of the key
+ * \param[in] alg              Algorithm to use
+ * \param[in] input            Data to sign buffer
+ * \param[in] input_length     Size in bytes of the data to sign
+ * \param[in] signature        Signature to verify
+ * \param[in] signature_length Size in bytes of the signature
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
 psa_status_t ele_s2xx_opaque_verify_message(const psa_key_attributes_t *attributes,
                                             const uint8_t *key_buffer, size_t key_buffer_size,
                                             psa_algorithm_t alg,

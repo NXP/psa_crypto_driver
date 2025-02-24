@@ -23,6 +23,22 @@
 extern "C" {
 #endif
 
+/*!
+ * \brief Perform a MAC operation in a single step
+ *
+ * \param[in]  attributes      Attributes for the key to be set
+ * \param[in]  key_buffer      Buffer holding key material
+ * \param[in]  key_buffer_size Size in bytes of the key
+ * \param[in]  alg             Algorithm to be used
+ * \param[in]  input           Buffer containing input data to produce the MAC
+ * \param[in]  input_length    Size in bytes of the input buffer
+ * \param[out] mac             Buffer holding the produced MAC value
+ * \param[in]  mac_size        Size in bytes of the mac buffer
+ * \param[out] mac_length      Size in bytes of the produced MAC value
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
 psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
                                          const uint8_t *key_buffer,
                                          size_t key_buffer_size,
