@@ -63,6 +63,7 @@ static psa_status_t ele_s2xx_psa_2_ele_asym_alg(const psa_key_attributes_t *attr
 #endif /* PSA_WANT_ALG_SHA_512 */
             default:
                 status = PSA_ERROR_NOT_SUPPORTED;
+                break;
         }
     }
     else
@@ -206,7 +207,7 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
     }
 
     output_size = PSA_SIGN_OUTPUT_SIZE(psa_get_key_type(attributes), psa_get_key_bits(attributes), alg);
-    if (output_size < signature_size)
+    if (output_size > signature_size)
     {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }

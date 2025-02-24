@@ -406,7 +406,11 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
             *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_AEAD;
             break;
         case PSA_ALG_CMAC:
-        case PSA_ALG_HMAC(PSA_ALG_ANY_HASH):
+        case PSA_ALG_HMAC(PSA_ALG_SHA_1):
+        case PSA_ALG_HMAC(PSA_ALG_SHA_224):
+        case PSA_ALG_HMAC(PSA_ALG_SHA_256):
+        case PSA_ALG_HMAC(PSA_ALG_SHA_384):
+        case PSA_ALG_HMAC(PSA_ALG_SHA_512):
             *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_MAC;
             break;
         case ALG_S200_ECBKDF_OR_CKDF:
@@ -420,7 +424,10 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
             *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_KDF;
             *s2xx_cipher_type = kSSS_CipherType_EC_MONTGOMERY;
             break;
-        case PSA_ALG_ECDSA(PSA_ALG_ANY_HASH):
+        case PSA_ALG_ECDSA(PSA_ALG_SHA_224):
+        case PSA_ALG_ECDSA(PSA_ALG_SHA_256):
+        case PSA_ALG_ECDSA(PSA_ALG_SHA_384):
+        case PSA_ALG_ECDSA(PSA_ALG_SHA_512):
             *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_AsymSignVerify;
             *s2xx_cipher_type = kSSS_CipherType_EC_NIST_P;
             break;
