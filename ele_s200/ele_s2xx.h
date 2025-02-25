@@ -63,7 +63,7 @@
 #include "mcux_psa_s2xx_hash.h"
 #include "mcux_psa_s2xx_mac.h"
 // #include "mcux_psa_s2xx_asymmetric_encryption.h"
-// #include "mcux_psa_s2xx_asymmetric_signature.h"
+#include "mcux_psa_s2xx_asymmetric_signature.h"
 // #include "mcux_psa_s2xx_key_generation.h"
 
 // #include "mcux_psa_s2xx_opaque_init.h"

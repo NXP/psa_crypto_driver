@@ -316,11 +316,13 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent)
                 ele_s200/include/transparent/mcux_psa_s2xx_hash.h
                 ele_s200/include/transparent/mcux_psa_s2xx_init.h
                 ele_s200/include/transparent/mcux_psa_s2xx_mac.h
+                ele_s200/include/transparent/mcux_psa_s2xx_asymmetric_signature.h
                 ele_s200/src/transparent/mcux_psa_s2xx_aead.c
                 ele_s200/src/transparent/mcux_psa_s2xx_cipher.c
                 ele_s200/src/transparent/mcux_psa_s2xx_hash.c
                 ele_s200/src/transparent/mcux_psa_s2xx_init.c
                 ele_s200/src/transparent/mcux_psa_s2xx_mac.c
+                ele_s200/src/transparent/mcux_psa_s2xx_asymmetric_signature.c
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
