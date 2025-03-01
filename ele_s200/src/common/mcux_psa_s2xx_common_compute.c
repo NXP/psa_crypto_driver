@@ -183,13 +183,18 @@ psa_status_t ele_s2xx_common_verify_digest(uint8_t *digest, size_t digest_len,
         return PSA_ERROR_GENERIC_ERROR;
     }
 
-    /* Sign message digest */
+    /* Verify message digest */
     if (sss_sscp_asymmetric_verify_digest(&ctx, digest, digest_len,
                                           signature, signature_len) != kStatus_SSS_Success)
     {
         (void)sss_sscp_asymmetric_context_free(&ctx);
         (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-        return PSA_ERROR_GENERIC_ERROR;
+
+        /* We do not have return code granularity for differentiating
+         * generic errors vs signature verification errors.
+         * We will assume the more likely situation of a failure at this point,
+         * which is signature verification failure. */
+        return PSA_ERROR_INVALID_SIGNATURE;
     }
 
     /* Clean up */

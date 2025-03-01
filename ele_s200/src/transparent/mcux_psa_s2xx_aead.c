@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -151,7 +151,7 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
     uint8_t *tag             = NULL;
 
     /* Algorithm needs to be a AEAD algo */
-    if (!PSA_ALG_IS_AEAD(alg))
+    if (false == PSA_ALG_IS_AEAD(alg))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -173,7 +173,7 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
     tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -186,7 +186,7 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
     }
 
     /* Nonce can't be NULL */
-    if (!nonce || !nonce_length)
+    if (NULL == nonce || 0u == nonce_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -200,12 +200,12 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
     }
 
     /* Output buffer can't be NULL */
-    if (!ciphertext || !ciphertext_length)
+    if (NULL == ciphertext || NULL == ciphertext_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    *ciphertext_length = 0;
+    *ciphertext_length = 0u;
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex))
     {
@@ -264,7 +264,7 @@ psa_status_t ele_s2xx_transparent_aead_decrypt(const psa_key_attributes_t *attri
     size_t cipher_length     = 0u;
 
     /* Algorithm needs to be a AEAD algo */
-    if (!PSA_ALG_IS_AEAD(alg))
+    if (false == PSA_ALG_IS_AEAD(alg))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -279,7 +279,7 @@ psa_status_t ele_s2xx_transparent_aead_decrypt(const psa_key_attributes_t *attri
     tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -292,12 +292,12 @@ psa_status_t ele_s2xx_transparent_aead_decrypt(const psa_key_attributes_t *attri
     }
 
     /* Input Buffer or size can't be NULL */
-    if (!ciphertext || !ciphertext_length)
+    if (NULL == ciphertext || 0u == ciphertext_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!nonce || !nonce_length)
+    if (NULL == nonce || 0u == nonce_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }

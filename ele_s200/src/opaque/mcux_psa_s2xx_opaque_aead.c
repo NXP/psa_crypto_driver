@@ -116,7 +116,7 @@ static status_t ele_s2xx_aead_arg_validation(const psa_key_attributes_t *attribu
                                              psa_algorithm_t alg)
 {
     /* Check permissions for EL2GO keys, as those checks were skipped in common layer */
-    if (PSA_ALG_IS_VENDOR_DEFINED(psa_get_key_algorithm(attributes)))
+    if (true == PSA_ALG_IS_VENDOR_DEFINED(psa_get_key_algorithm(attributes)))
     {
         if (ALG_NXP_ALL_AEAD != psa_get_key_algorithm(attributes))
         {
@@ -125,18 +125,18 @@ static status_t ele_s2xx_aead_arg_validation(const psa_key_attributes_t *attribu
     }
 
     /* Algorithm needs to be a AEAD algo */
-    if (!PSA_ALG_IS_AEAD(alg))
+    if (false == PSA_ALG_IS_AEAD(alg))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!nonce || !nonce_length)
+    if (NULL == nonce || 0u == nonce_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -192,12 +192,12 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
     }
 
     /* Output buffer can't be NULL */
-    if (!ciphertext || !ciphertext_length)
+    if (NULL == ciphertext || NULL == ciphertext_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    *ciphertext_length = 0;
+    *ciphertext_length = 0u;
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex))
     {
@@ -269,7 +269,7 @@ psa_status_t ele_s2xx_opaque_aead_decrypt(const psa_key_attributes_t *attributes
     tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
 
     /* Input Buffer or size can't be NULL */
-    if (!ciphertext || !ciphertext_length)
+    if (NULL == ciphertext || 0u == ciphertext_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }

@@ -19,8 +19,8 @@
 #include "mcux_psa_s2xx_hash.h"
 #include "mcux_psa_s2xx_common_compute.h"
 
-#define NISTP521_BITLEN (521)
-#define ED25519_BITLEN  (255)
+#define NISTP521_BITLEN (521u)
+#define ED25519_BITLEN  (255u)
 
 static psa_status_t ele_s2xx_psa_2_ele_asym_alg(const psa_key_attributes_t *attributes,
                                                 psa_algorithm_t alg,
@@ -34,7 +34,7 @@ static psa_status_t ele_s2xx_psa_2_ele_asym_alg(const psa_key_attributes_t *attr
         *ele_alg = kAlgorithm_SSS_EdDSA_Ed25519;
         status   = PSA_SUCCESS;
     }
-    else if (PSA_ALG_IS_ECDSA(alg))
+    else if (true == PSA_ALG_IS_ECDSA(alg))
     {
         sign_hash_alg = PSA_ALG_SIGN_GET_HASH(alg);
         status        = PSA_SUCCESS;
@@ -134,7 +134,7 @@ static psa_status_t validate_key_bitlen_for_message_sign(const psa_key_attribute
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
-    if (PSA_ALG_IS_ECDSA(alg))
+    if (true == PSA_ALG_IS_ECDSA(alg))
     {
         /* We will be pre-hashing the message for ECDSA, so we know that the hash length
          * will be PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg))
@@ -173,8 +173,19 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
         return status;
     }
 
+    if (PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(attributes)) != PSA_ECC_FAMILY_SECP_R1)
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     /* Hash sign/verify only with ECDSA on S200 */
-    if (!PSA_ALG_IS_ECDSA(alg))
+    if (false == PSA_ALG_IS_ECDSA(alg))
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    /* Deterministic ECDSA not supported */
+    if (true == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
@@ -186,22 +197,17 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
         return status;
     }
 
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!hash || !hash_length)
+    if (NULL == hash || 0u == hash_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!signature || !signature_length)
-    {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (!signature_length)
+    if (NULL == signature || NULL == signature_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -256,8 +262,19 @@ psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
         return status;
     }
 
+    if (PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(attributes)) != PSA_ECC_FAMILY_SECP_R1)
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     /* Hash sign/verify only with ECDSA on S200 */
-    if (!PSA_ALG_IS_ECDSA(alg))
+    if (false == PSA_ALG_IS_ECDSA(alg))
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    /* Deterministic ECDSA not supported */
+    if (true == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
@@ -269,17 +286,17 @@ psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
         return status;
     }
 
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!hash || !hash_length)
+    if (NULL == hash || 0u == hash_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!signature || !signature_length)
+    if (NULL == signature || 0u == signature_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -339,28 +356,23 @@ psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes
         return status;
     }
 
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!input || !input_length)
+    if (NULL == input || 0u == input_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!signature || !signature_length)
-    {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (!signature_length)
+    if (NULL == signature || NULL == signature_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Pre-hash for ECDSA */
-    if (PSA_ALG_IS_ECDSA(alg))
+    if (true == PSA_ALG_IS_ECDSA(alg))
     {
         status = ele_s2xx_transparent_hash_compute(PSA_ALG_SIGN_GET_HASH(alg),
                                                    input, input_length,
@@ -431,23 +443,23 @@ psa_status_t ele_s2xx_opaque_verify_message(const psa_key_attributes_t *attribut
         return status;
     }
 
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!input || !input_length)
+    if (NULL == input || 0u == input_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!signature || !signature_length)
+    if (NULL == signature || 0u == signature_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Pre-hash for ECDSA */
-    if (PSA_ALG_IS_ECDSA(alg))
+    if (true == PSA_ALG_IS_ECDSA(alg))
     {
         status = ele_s2xx_transparent_hash_compute(PSA_ALG_SIGN_GET_HASH(alg),
                                                    input, input_length,

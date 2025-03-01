@@ -40,7 +40,7 @@ static psa_status_t ele_s2xx_psa_2_ele_asym_alg(const psa_key_attributes_t *attr
         *ele_alg = kAlgorithm_SSS_EdDSA_Ed25519;
         status   = PSA_SUCCESS;
     }
-    else if (PSA_ALG_IS_ECDSA(alg))
+    else if (true == PSA_ALG_IS_ECDSA(alg))
     {
         sign_hash_alg = PSA_ALG_SIGN_GET_HASH(alg);
         status        = PSA_SUCCESS;
@@ -130,7 +130,7 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
     size_t public_key_data_length                       = 0u;
 
     status = PSA_SUCCESS;
-    if (PSA_KEY_TYPE_IS_KEY_PAIR(key_type))
+    if (true == PSA_KEY_TYPE_IS_KEY_PAIR(key_type))
     {
         /* In PSA, an ECC key pair is represented by the secret value,
          * so we need to also export the public part for S2XX and position them
@@ -146,7 +146,7 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
         memcpy(key_data + key_data_size, key_buffer, PSA_BITS_TO_BYTES(key_bits));
         key_data_size = key_data_size + PSA_BITS_TO_BYTES(key_bits);
     }
-    else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(key_type))
+    else if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(key_type))
     {
         /* Set required S2XX flags and skip the first Byte of the ECC public key */
         key_part        = kSSS_KeyPart_Public;
@@ -239,13 +239,13 @@ psa_status_t ele_s2xx_transparent_sign_hash(const psa_key_attributes_t *attribut
     }
 
     /* Hash sign/verify only with ECDSA on S200 */
-    if (!PSA_ALG_IS_ECDSA(alg))
+    if (false == PSA_ALG_IS_ECDSA(alg))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
     /* Deterministic ECDSA not supported */
-    if (PSA_ALG_IS_DETERMINISTIC_ECDSA(alg))
+    if (true == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
@@ -257,22 +257,17 @@ psa_status_t ele_s2xx_transparent_sign_hash(const psa_key_attributes_t *attribut
         return status;
     }
 
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!hash || !hash_length)
+    if (NULL == hash || 0u == hash_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!signature || !signature_length)
-    {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (!signature_length)
+    if (NULL == signature || NULL == signature_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -338,13 +333,13 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
     }
 
     /* Hash sign/verify only with ECDSA on S200 */
-    if (!PSA_ALG_IS_ECDSA(alg))
+    if (false == PSA_ALG_IS_ECDSA(alg))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
     /* Deterministic ECDSA not supported */
-    if (PSA_ALG_IS_DETERMINISTIC_ECDSA(alg))
+    if (true == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
@@ -356,17 +351,17 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
         return status;
     }
 
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!hash || !hash_length)
+    if (NULL == hash || 0u == hash_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!signature || !signature_length)
+    if (NULL == signature || 0u == signature_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -242,7 +242,7 @@ psa_status_t ele_s2xx_transparent_hash_finish(ele_s2xx_hash_operation_t *operati
     }
 
     /* Check if hash_size is sufficient or not */
-    if (!hash || hash_size < operation->ctx.digestFullLen)
+    if (NULL == hash || hash_size < operation->ctx.digestFullLen)
     {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
@@ -293,7 +293,7 @@ psa_status_t ele_s2xx_transparent_hash_compute(psa_algorithm_t alg,
         return status;
     }
 
-    if (!hash || !hash_size)
+    if (NULL == hash || 0u == hash_size)
     {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }

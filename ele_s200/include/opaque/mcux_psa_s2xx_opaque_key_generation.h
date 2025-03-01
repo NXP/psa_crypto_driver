@@ -46,6 +46,26 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
                                         size_t *bits);
 
 /*!
+ * \brief Export the key from a private key.
+ *
+ * \param[in]  attributes      Attributes of the key to use
+ * \param[in]  key_buffer      Buffer to hold the generated key
+ * \param[in]  key_buffer_size Size in bytes of the key_buffer buffer
+ * \param[out] data            Buffer to hold the extracted public key
+ * \param[in]  data_size       Size in bytes of the data buffer
+ * \param[out] data_length     Size in bytes of the extracted public key
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
+psa_status_t ele_s2xx_opaque_export_key(const psa_key_attributes_t *attributes,
+                                        const uint8_t *key_buffer,
+                                        size_t key_buffer_size,
+                                        uint8_t *data,
+                                        size_t data_size,
+                                        size_t *data_length);
+
+/*!
  * \brief Export the public key from a private key.
  *
  * \param[in]  attributes      Attributes of the key to use

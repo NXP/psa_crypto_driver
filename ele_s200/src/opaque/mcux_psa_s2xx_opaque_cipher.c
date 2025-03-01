@@ -69,19 +69,19 @@ static psa_status_t ele_s2xx_cipher_arg_validation(
     sss_mode_t mode)
 {
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Algorithm needs to be a CIPHER algo */
-    if (!PSA_ALG_IS_CIPHER(alg))
+    if (false == PSA_ALG_IS_CIPHER(alg))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Check permissions for EL2GO keys, as those checks were skipped in common layer */
-    if (PSA_ALG_IS_VENDOR_DEFINED(psa_get_key_algorithm(attributes)))
+    if (true == PSA_ALG_IS_VENDOR_DEFINED(psa_get_key_algorithm(attributes)))
     {
         if (ALG_NXP_ALL_CIPHER != psa_get_key_algorithm(attributes))
         {
@@ -101,7 +101,7 @@ static psa_status_t ele_s2xx_cipher_arg_validation(
         /* IV buffer can't be NULL or size 0 */
         if ((PSA_ALG_CBC_NO_PADDING == alg) || (PSA_ALG_CTR == alg))
         {
-            if (!iv || !iv_length)
+            if (NULL == iv || 0u == iv_length)
             {
                 return PSA_ERROR_INVALID_ARGUMENT;
             }
@@ -112,20 +112,20 @@ static psa_status_t ele_s2xx_cipher_arg_validation(
      * Special case for ECB where input = 0 may be allowed.
      * Taken care of in above code.
      */
-    if (!input_length || !input)
+    if (NULL == input || 0u == input_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Output buffer can't be NULL */
-    if (!output || !output_length)
+    if (NULL == output || NULL == output_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* For CBC and ECB No padding, input length has to be multiple of cipher block length */
     if ((alg == PSA_ALG_CBC_NO_PADDING || alg == PSA_ALG_ECB_NO_PADDING) &&
-        input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(psa_get_key_type(attributes)))
+        (0u != (input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(psa_get_key_type(attributes)))))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -196,7 +196,7 @@ psa_status_t ele_s2xx_opaque_cipher_encrypt(
      * However software implementation and the tests return SUCCESS
      * for 0 input. So adding this check here.
      */
-    if ((PSA_ALG_ECB_NO_PADDING == alg) && (0 == input_length))
+    if ((PSA_ALG_ECB_NO_PADDING == alg) && (0u == input_length))
     {
         *output_length = 0;
         return PSA_SUCCESS;
@@ -272,9 +272,9 @@ psa_status_t ele_s2xx_opaque_cipher_decrypt(
      * However software implementation and the tests return SUCCESS
      * for 0 input. So adding this check here.
      */
-    if ((PSA_ALG_ECB_NO_PADDING == alg) && (0 == input_length))
+    if ((PSA_ALG_ECB_NO_PADDING == alg) && (0u == input_length))
     {
-        *output_length = 0;
+        *output_length = 0u;
         return PSA_SUCCESS;
     }
 

@@ -31,7 +31,7 @@ static psa_status_t ele_psa_mac_alg_to_ele_mac_alg(psa_algorithm_t alg, sss_algo
     else
 #endif /* PSA_WANT_ALG_CMAC */
 #if defined(PSA_WANT_ALG_HMAC)
-        if (PSA_ALG_IS_HMAC(alg))
+        if (true == PSA_ALG_IS_HMAC(alg))
     {
         psa_status_t status = PSA_SUCCESS;
 
@@ -125,12 +125,12 @@ psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
     }
 
     /* Validations */
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!mac_length)
+    if (NULL == mac_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }

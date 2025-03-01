@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -40,7 +40,7 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
     sss_sscp_object_t sssKey = {0};
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -53,7 +53,7 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
     }
 
     /* Algorithm needs to be a CIPHER algo */
-    if (!PSA_ALG_IS_CIPHER(alg))
+    if (false == PSA_ALG_IS_CIPHER(alg))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -68,7 +68,7 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
                 case PSA_ALG_CBC_NO_PADDING:
                     ele_algo = kAlgorithm_SSS_AES_CBC;
                     /* IV buffer can't be NULL or size 0 */
-                    if (!iv || !iv_length)
+                    if (NULL == iv || 0u == iv_length)
                     {
                         return PSA_ERROR_INVALID_ARGUMENT;
                     }
@@ -81,7 +81,7 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
                      * However software implementation and the tests return SUCCESS
                      * for 0 input. So adding this check here.
                      */
-                    if (input_length == 0)
+                    if (input_length == 0u)
                     {
                         *output_length = 0;
                         return PSA_SUCCESS;
@@ -92,7 +92,7 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
                 case PSA_ALG_CTR:
                     ele_algo = kAlgorithm_SSS_AES_CTR;
                     /* IV buffer can't be NULL or size 0 */
-                    if (!iv || !iv_length)
+                    if (NULL == iv || 0u == iv_length)
                     {
                         return PSA_ERROR_INVALID_ARGUMENT;
                     }
@@ -111,7 +111,7 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
      * Special case for ECB where input = 0 may be allowed.
      * Taken care of in above code.
      */
-    if (!input_length || !input)
+    if (NULL == input || 0u == input_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -123,14 +123,14 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
     }
 
     /* Output buffer can't be NULL */
-    if (!output || !output_length)
+    if (NULL == output || NULL == output_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* For CBC and ECB No padding, input length has to be multiple of cipher block length */
     if ((alg == PSA_ALG_CBC_NO_PADDING || alg == PSA_ALG_ECB_NO_PADDING) &&
-        input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type))
+        (0u != (input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type))))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -207,7 +207,7 @@ psa_status_t ele_s2xx_transparent_cipher_decrypt(const psa_key_attributes_t *att
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!PSA_ALG_IS_CIPHER(alg))
+    if (false == PSA_ALG_IS_CIPHER(alg))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -254,20 +254,20 @@ psa_status_t ele_s2xx_transparent_cipher_decrypt(const psa_key_attributes_t *att
      * Special case for ECB where input = 0 may be allowed.
      * Taken care of in above code.
      */
-    if (!input_length || !input)
+    if (NULL == input || 0u == input_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Output buffer can't be NULL */
-    if (!output || !output_length)
+    if (NULL == output || NULL == output_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Input length has to be multiple of block size for decrypt operation */
     if ((alg == PSA_ALG_CBC_NO_PADDING || alg == PSA_ALG_ECB_NO_PADDING) &&
-        input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type))
+        (0u != (input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type))))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -33,7 +33,7 @@ static psa_status_t ele_psa_mac_alg_to_ele_mac_alg(psa_algorithm_t alg, sss_algo
     else
 #endif /* PSA_WANT_ALG_CMAC */
 #if defined(PSA_WANT_ALG_HMAC)
-        if (PSA_ALG_IS_HMAC(alg))
+        if (true == PSA_ALG_IS_HMAC(alg))
     {
         if (PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_256)
         {

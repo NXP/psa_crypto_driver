@@ -243,7 +243,7 @@ static psa_status_t get_ele_fw_version(uint8_t *ele_fw_version)
     return psa_status;
 }
 
-static psa_status_t ele2go_fw_loaded()
+static psa_status_t ele2go_fw_loaded(void)
 {
     uint32_t ele_version[2];
 
@@ -368,14 +368,14 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
     psa_status_t status = PSA_SUCCESS;
 
     /* Deal with the key part */
-    if (PSA_KEY_TYPE_IS_ASYMMETRIC(psa_get_key_type(attributes)))
+    if (true == PSA_KEY_TYPE_IS_ASYMMETRIC(psa_get_key_type(attributes)))
     {
-        if (PSA_KEY_TYPE_IS_PUBLIC_KEY(psa_get_key_type(attributes)))
+        if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(psa_get_key_type(attributes)))
         {
             *s2xx_key_part   = kSSS_KeyPart_Public;
             *allocation_size = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(psa_get_key_bits(attributes));
         }
-        else if (PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes)))
+        else if (true == PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes)))
         {
             *s2xx_key_part   = kSSS_KeyPart_Pair;
             *allocation_size = (PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(psa_get_key_bits(attributes)) + PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
@@ -474,7 +474,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
 
     /* Import blob into S200, if operation end with succes blob is valid */
 
-    if (sss_sscp_key_object_init(sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
+    if (sss_sscp_key_object_init_internal(sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
     {
         psa_status = PSA_ERROR_HARDWARE_FAILURE;
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Keyobject init failed");
@@ -491,8 +491,6 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
     {
         /* Handle not found, but we got passed a key; try to import it */
 
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-
         if (sss_sscp_key_object_init(sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
         {
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
@@ -505,6 +503,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
                                                 allocation_size,
                                                 algorithm_key_property) != kStatus_SSS_Success)
         {
+            (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
             PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Allocating handle failed");
         }
@@ -514,6 +513,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
                                           blob_size, 0,
                                           kSSS_blobType_EL2GO_TLV_blob) != kStatus_SSS_Success)
         {
+            (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
             PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Blob import failed");
         }

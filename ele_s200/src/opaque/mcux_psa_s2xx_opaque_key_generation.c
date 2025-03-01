@@ -23,9 +23,10 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     const uint8_t *data, size_t data_length, uint8_t *key_buffer,
     size_t key_buffer_size, size_t *key_buffer_length, size_t *bits)
 {
-    psa_status_t status      = PSA_ERROR_CORRUPTION_DETECTED;
-    sss_sscp_object_t sssKey = {0};
-
+    psa_status_t status         = PSA_ERROR_CORRUPTION_DETECTED;
+    sss_sscp_object_t sssKey    = {0};
+    sss_sscp_tunnel_t tunnelCtx = {0};
+    uint32_t resultState        = 0u;
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex))
@@ -35,8 +36,7 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
 
     if (false == (MCUXCLPSADRIVER_IS_LOCAL_STORAGE(location)))
     {
-        psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
-        if (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location) || MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location))
+        if (true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location)))
         {
             /* Validate blob attributes */
             status = ele_s2xx_validate_blob_attributes(attributes, data, data_length);
@@ -64,6 +64,42 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
 
             status = PSA_SUCCESS;
         }
+        else if (true == (MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location)))
+        {
+            /* Open the tunnel */
+            if (sss_sscp_tunnel_context_init(&tunnelCtx, &g_ele_ctx.sssSession, kSSS_tunnel_type_EL2GO_Data) != kStatus_SSS_Success)
+            {
+                status = PSA_ERROR_GENERIC_ERROR;
+                goto exit;
+            }
+
+            tunnelCtx.buffer = key_buffer;
+            tunnelCtx.bufferSize = key_buffer_size;
+
+            /* Pass the blob */
+            if (sss_sscp_tunnel(&tunnelCtx, (uint8_t *)data, data_length, &resultState) !=
+                kStatus_SSS_Success)
+            {
+                (void)sss_sscp_tunnel_context_free(&tunnelCtx);
+                status = PSA_ERROR_GENERIC_ERROR;
+                goto exit;
+            }
+
+            /* Free the tunnel */
+            if (sss_sscp_tunnel_context_free(&tunnelCtx) != kStatus_SSS_Success)
+            {
+                status = PSA_ERROR_GENERIC_ERROR;
+                goto exit;
+            }
+
+            *key_buffer_length = tunnelCtx.bufferSize;
+
+            status = PSA_SUCCESS;
+        }
+        else
+        {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+        }
 
         if (PSA_ERROR_NOT_SUPPORTED == status)
         {
@@ -85,6 +121,34 @@ exit:
     return status;
 }
 
+psa_status_t ele_s2xx_opaque_export_key(const psa_key_attributes_t *attributes,
+                                        const uint8_t *key_buffer,
+                                        size_t key_buffer_size,
+                                        uint8_t *data,
+                                        size_t data_size,
+                                        size_t *data_length)
+{
+    psa_status_t status         = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+
+    if (MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location))
+    {
+        /* At this point the data has already been retrieved from
+         * persistent storage and no ELE calls are needed.
+         */
+        (void)memcpy(data, key_buffer, key_buffer_size);
+        *data_length = key_buffer_size;
+        status = PSA_SUCCESS;
+    }
+    else
+    {
+        // TODO Add support for exporting keys from the S200 once FW is ready
+        status = PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    return status;
+}
+
 psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attributes,
                                                const uint8_t *key_buffer,
                                                size_t key_buffer_size, uint8_t *data,
@@ -94,7 +158,7 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
     sss_sscp_object_t sssKey = {0};
     size_t data_bitlen       = 0u;
 
-    if (!PSA_KEY_TYPE_IS_ECC(psa_get_key_type(attributes)))
+    if (false == PSA_KEY_TYPE_IS_ECC(psa_get_key_type(attributes)))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
@@ -104,7 +168,7 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
-    if (sss_sscp_key_object_init(&sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
+    if (sss_sscp_key_object_init_internal(&sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_HARDWARE_FAILURE;
         goto exit;
@@ -147,7 +211,7 @@ psa_status_t ele_s2xx_opaque_destroy_key(const psa_key_attributes_t *attributes,
     sss_sscp_object_t sssKey = {0};
 
     /* Retrieve the key handle */
-    if (sss_sscp_key_object_init(&sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
+    if (sss_sscp_key_object_init_internal(&sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_HARDWARE_FAILURE;
         goto exit;
@@ -159,7 +223,7 @@ psa_status_t ele_s2xx_opaque_destroy_key(const psa_key_attributes_t *attributes,
         goto exit;
     }
 
-    /* Delete the key */
+    /* Delete the key and free the key object */
     status = ele_s2xx_delete_key(&sssKey);
 
 exit:
@@ -301,7 +365,7 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
     sss_algorithm_t ele_alg         = {0};
 
     /* Only ECC keys for key agreement are supported by S200 */
-    if (!PSA_KEY_TYPE_IS_ECC(psa_get_key_type(attributes)))
+    if (false == PSA_KEY_TYPE_IS_ECC(psa_get_key_type(attributes)))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
@@ -352,12 +416,12 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
         return status;
     }
 
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!peer_key || !peer_key_length)
+    if (NULL == peer_key || 0u == peer_key_length)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
