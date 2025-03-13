@@ -247,8 +247,8 @@ static psa_status_t ele2go_fw_loaded(void)
 {
     uint32_t ele_version[2];
 
-    /* ELE will respond with 0x10200015d2497ed if EL2go FW SDK_FW_KW45_K32W1xx_MCXW71_1_2_0_1_RC1 is loaded*/
-    static const uint32_t el2go_fw_loaded[2] = {0x1020001, 0x5d2497ed};
+    /* ELE will respond with 0x20000011837b92d if EL2go FW KW45_K32W1xx_MCXW71_SDKFW2.0_RC1 is loaded*/
+    static const uint32_t el2go_fw_loaded[2] = {0x2000001, 0x1837b92d};
 
     if (get_ele_fw_version((uint8_t *)ele_version) != PSA_SUCCESS )
     {
@@ -363,8 +363,6 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
                                           sss_cipher_type_t *s2xx_cipher_type,
                                           size_t *allocation_size)
 {
-    // TODO deal with PSA_ALG_NONE according to the profile
-
     psa_status_t status = PSA_SUCCESS;
 
     /* Deal with the key part */
@@ -517,25 +515,6 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
             PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Blob import failed");
         }
-    }
-    else
-    {
-        // TODO this needs to be generalized to other types of key as well, not just AES
-        //      -> see profile, specifically the "fixed s200 key properties"
-//        /* The given key ID was found in the S2XX,
-//         * so check to the best of our ability if it's an el2go key
-//         */
-//        if (sss_sscp_key_object_get_properties(sssKey, &key_properties) != kStatus_SSS_Success)
-//        {
-//            psa_status = PSA_ERROR_HARDWARE_FAILURE;
-//            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, get key properties failed");
-//        }
-//
-//        if (EL2GO_AES_KEY_PROPERTIES != key_properties)
-//        {
-//            psa_status = PSA_ERROR_HARDWARE_FAILURE;
-//            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, key properties do not match el2go");
-//        }
     }
 
     psa_status = PSA_SUCCESS;

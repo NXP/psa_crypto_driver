@@ -140,9 +140,23 @@ psa_status_t ele_s2xx_opaque_export_key(const psa_key_attributes_t *attributes,
         *data_length = key_buffer_size;
         status = PSA_SUCCESS;
     }
+    else if (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
+    {
+        if (((psa_key_usage_t)0u == psa_get_key_usage_flags(attributes)) &&
+            (PSA_ALG_NONE == psa_get_key_algorithm(attributes)) &&
+            (PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1) == psa_get_key_type(attributes)))
+        {
+            /* Reuse public key export */
+            status = ele_s2xx_opaque_export_public_key(attributes, key_buffer, key_buffer_size, data, data_size, data_length);
+        }
+        else
+        {
+            /* Nothing else supported */
+            status = PSA_ERROR_NOT_SUPPORTED;
+        }
+    }
     else
     {
-        // TODO Add support for exporting keys from the S200 once FW is ready
         status = PSA_ERROR_NOT_SUPPORTED;
     }
 
