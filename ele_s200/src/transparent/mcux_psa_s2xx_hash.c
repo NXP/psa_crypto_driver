@@ -58,6 +58,7 @@ static psa_status_t ele_psa_hash_alg_to_ele_hash_alg(psa_algorithm_t alg, sss_al
     return PSA_SUCCESS;
 }
 
+#if defined(ELE_FEATURE_DIGEST_CLONE) && (ELE_FEATURE_DIGEST_CLONE == 1)
 /**
  * @brief Inverse to ele_psa_hash_alg_to_ele_hash_alg()
  */
@@ -95,6 +96,7 @@ static psa_status_t ele_ele_hash_alg_to_psa_hash_alg(sss_algorithm_t mode, psa_a
 
     return PSA_SUCCESS;
 }
+#endif /* ELE_FEATURE_DIGEST_CLONE */
 
 /** \defgroup psa_hash PSA driver entry points for hashing
  *
