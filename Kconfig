@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -343,6 +343,37 @@ menu "psaCryptoDriver"
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.mbedcrypto
+                bool "Component component.psa_crypto_driver.mbedcrypto"
+                select MCUX_COMPONENT_middleware.mbedcrypto
+          endchoice
+        endif
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ela_csec
+        bool "Component component.psa_crypto_driver.ela_csec"
+        select MCUX_COMPONENT_driver.ela_csec
+        if MCUX_COMPONENT_component.psa_crypto_driver.ela_csec
+          choice
+            prompt "Component component.psa_crypto_driver.osal_baremetal"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.osal_baremetal
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.osal_baremetal
+                bool "component.psa_crypto_driver.osal_baremetal"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.osal_frtos
+                bool "component.psa_crypto_driver.osal_frtos"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+          endchoice
+          choice
+            prompt "Component component.psa_crypto_driver.mbedtls_version"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedtls3x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedtls3x
+                bool "Component component.psa_crypto_driver.mbedtls3x"
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedcrypto
                 bool "Component component.psa_crypto_driver.mbedcrypto"
                 select MCUX_COMPONENT_middleware.mbedcrypto
           endchoice

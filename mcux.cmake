@@ -436,3 +436,29 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.caam)
     )
 
 endif()
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ela_csec)
+    mcux_add_source(
+        SOURCES ela_csec/ela_csec.h
+                ela_csec/include/common/mcux_psa_ela_csec_common_init.h
+                ela_csec/include/common/mcux_psa_ela_csec_entropy.h
+                ela_csec/src/common/mcux_psa_ela_csec_common_init.c
+                ela_csec/src/common/mcux_psa_ela_csec_entropy.c
+                ela_csec/include/transparent/mcux_psa_ela_csec_cipher.h
+                ela_csec/include/transparent/mcux_psa_ela_csec_init.h
+                ela_csec/include/transparent/mcux_psa_ela_csec_mac.h
+                ela_csec/src/transparent/mcux_psa_ela_csec_cipher.c
+                ela_csec/src/transparent/mcux_psa_ela_csec_init.c
+                ela_csec/src/transparent/mcux_psa_ela_csec_mac.c
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES ela_csec
+                 ela_csec/include/common
+                 ela_csec/include/transparent
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        CC  "-DPSA_CRYPTO_DRIVER_ELA_CSEC"
+    )
+endif()
