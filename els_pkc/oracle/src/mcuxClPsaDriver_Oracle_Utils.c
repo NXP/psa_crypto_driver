@@ -23,6 +23,7 @@
 #define PSA_CMD_TAG_KEY_TYPE            0x44U
 #define PSA_CMD_TAG_KEY_BITS            0x45U
 #define PSA_CMD_TAG_KEY_LIFETIME        0x46U
+#define PSA_CMD_TAG_KEY_LIFECYCLE       0x47U
 #define PSA_CMD_TAG_WRAPPING_KEY_ID     0x50U
 #define PSA_CMD_TAG_WRAPPING_ALGORITHM  0x51U
 #define PSA_CMD_TAG_IV                  0x52U
@@ -264,6 +265,9 @@ static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_si
                 break;
             case PSA_CMD_TAG_KEY_LIFETIME:
                 psa_set_key_lifetime(&psa_cmd->attributes, (psa_key_lifetime_t)get_uint32_val(cmd_ptr));
+                break;
+            case PSA_CMD_TAG_KEY_LIFECYCLE:
+                /* Nothing to do */
                 break;
             case PSA_CMD_TAG_WRAPPING_KEY_ID:
                 psa_cmd->wrapping_key_id = get_uint32_val(cmd_ptr);
