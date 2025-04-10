@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -391,4 +391,48 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200)
     mcux_add_macro(
         CC  "-DPSA_CRYPTO_DRIVER_ELE_S2XX"
     )
+endif()
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.caam)
+    mcux_add_source(
+        SOURCES caam/caam_crypto_primitives.h
+                caam/caam.h
+                caam/src/mcux_psa_caam_common_aead.c
+                caam/src/mcux_psa_caam_common_asymmetric_encryption.c
+                caam/src/mcux_psa_caam_common_asymmetric_signature.c
+                caam/src/mcux_psa_caam_common_cipher.c
+                caam/src/mcux_psa_caam_common_init.c
+                caam/src/mcux_psa_caam_common_key_generation.c
+                caam/src/mcux_psa_caam_common_mac.c
+                caam/src/mcux_psa_caam_entropy.c
+                caam/src/mcux_psa_caam_hash.c
+                caam/src/mcux_psa_caam_init.c
+                caam/src/mcux_psa_caam_utils.c
+                caam/include/mcux_psa_caam_common_aead.h
+                caam/include/mcux_psa_caam_common_asymmetric_encryption.h
+                caam/include/mcux_psa_caam_common_asymmetric_signature.h
+                caam/include/mcux_psa_caam_common_cipher.h
+                caam/include/mcux_psa_caam_common_init.h
+                caam/include/mcux_psa_caam_common_key_generation.h
+                caam/include/mcux_psa_caam_common_mac.h
+                caam/include/mcux_psa_caam_entropy.h
+                caam/include/mcux_psa_caam_hash.h
+                caam/include/mcux_psa_caam_init.h
+                caam/include/mcux_psa_caam_utils.h
+                caam/common/src/mcux_psa_common_key_management.c
+                caam/common/src/mcux_psa_mbedtls_origin.c
+                caam/common/include/mcux_psa_common_key_management.h
+                caam/common/include/mcux_psa_mbedtls_origin.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES caam
+        INCLUDES caam/include
+        INCLUDES caam/common/include
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        CC  "-DPSA_CRYPTO_DRIVER_CAAM"
+    )
+
 endif()

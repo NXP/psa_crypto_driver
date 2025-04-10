@@ -180,14 +180,14 @@ status_t CRYPTO_InitHardware(void)
             break;
         }
 
-#if defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
+#if defined(CONFIG_PSA_SECURE_STORAGE)
         /* Init secure storage */
         if (PSA_SUCCESS != secure_storage_its_initialize())
         {
             result = kStatus_Fail;
             break;
         }
-#endif /* MBEDTLS_PSA_CRYPTO_STORAGE_C */
+#endif /* CONFIG_PSA_SECURE_STORAGE */
 
         result = kStatus_Success;
 
