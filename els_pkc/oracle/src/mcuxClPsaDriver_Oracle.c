@@ -265,7 +265,7 @@ psa_status_t mcuxClPsaDriver_Oracle_LoadKey(mcuxClKey_Descriptor_t *pKey)
         {
             key_recipe_t *recipe = NULL;
             // derive the NXP_DIE_EL2GOIMPORTTFM_KEK_SK or NXP_CUST_DIE_EL2GOIMPORTTFM_KEK_SK key in the keyslot
-            mcuxClEls_KeyIndex_t el2goimporttfm_kek_sk_slot;
+            mcuxClEls_KeyIndex_t el2goimporttfm_kek_sk_slot = 0;
             import_operation_data_t import_op_data;
 
             psa_status = mcuxClPsaDriver_Oracle_Utils_ExtractWrappingKeyDetails(pKey->container.pData, pKey->container.length,
