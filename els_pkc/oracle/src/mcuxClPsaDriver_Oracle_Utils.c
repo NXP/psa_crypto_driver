@@ -376,8 +376,11 @@ static psa_status_t get_recipe_from_key_id(mbedtls_svc_key_id_t source_key_id, k
     mbedtls_svc_key_id_t key_id;
     key_recipe_step_t step;
 
-    for (size_t recipe_idx = 0U; recipe_idx < KEY_RECIPES_NUMBER; recipe_idx++)
+    for (size_t recipe_idx = 0U; recipe_idx < key_recipes_directory_size; recipe_idx++)
     {
+        if (key_recipes_directory[recipe_idx] == NULL)
+          goto exit;
+
         step.operation = key_recipes_directory[recipe_idx]->steps[key_recipes_directory[recipe_idx]->number_of_steps - 1U].operation; 
         switch (step.operation)
         {

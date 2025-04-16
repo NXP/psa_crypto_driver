@@ -101,8 +101,6 @@ typedef enum key_recipe_operation_t
 #define DERIVATION_DATA_SOURCE_STATIC      0x00U
 #define DERIVATION_DATA_SOURCE_DYNAMIC      0x01U
 
-#define KEY_RECIPES_NUMBER          0x08U
-
 typedef struct _key_recipe_step_ckdf_t
 {
 #if defined(MCUXCL_FEATURE_PLATFORM_MCXN)
@@ -155,6 +153,8 @@ typedef struct _key_recipe_t
 } key_recipe_t;
 
 extern const key_recipe_t *key_recipes_directory[];
+
+extern size_t key_recipes_directory_size;
 
 typedef struct _auth_operation_data_t
 {

@@ -196,4 +196,7 @@ const key_recipe_t recipe_die_kek_sk = {
 const key_recipe_t *key_recipes_directory[] = {&recipe_cust_die_el2goimportfm_kek_sk, &recipe_cust_die_el2goimport_auth_sk,
                                                &recipe_el2goimport_kek_sk, &recipe_el2goimporttfm_kek_sk, &recipe_el2goimport_auth_sk,
                                                &recipe_el2goconn_auth_prk, &recipe_el2goattest_auth_prk, &recipe_die_kek_sk};
+
+size_t key_recipes_directory_size = sizeof(key_recipes_directory) / sizeof(key_recipes_directory[0]);
+
 #endif //_MCUXCLPSADRIVER_ORACLE_KEYRECIPES_
