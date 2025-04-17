@@ -188,6 +188,35 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc)
     )
 endif()
 
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.dcp)
+    mcux_add_source(
+        SOURCES dcp/dcp.h
+                dcp/dcp_crypto_primitives.h
+                dcp/common/include/mcux_psa_common_entropy.h
+                dcp/common/include/mcux_psa_common_key_management.h
+                dcp/common/src/mcux_psa_common_entropy.c
+                dcp/common/src/mcux_psa_common_key_management.c
+                dcp/include/mcux_psa_dcp_cipher.h
+                dcp/include/mcux_psa_dcp_common_init.h
+                dcp/include/mcux_psa_dcp_hash.h
+                dcp/include/mcux_psa_dcp_init.h
+                dcp/src/mcux_psa_dcp_cipher.c
+                dcp/src/mcux_psa_dcp_common_init.c
+                dcp/src/mcux_psa_dcp_hash.c
+                dcp/src/mcux_psa_dcp_init.c
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES dcp
+                 dcp/include
+                 dcp/common/include
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        CC  "-DPSA_CRYPTO_DRIVER_DCP"
+    )
+endif()
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng)
     mcux_add_source(
         SOURCES ele_s4xx/ele_s4xx.h
