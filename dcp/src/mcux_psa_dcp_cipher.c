@@ -61,7 +61,7 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((key_type == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
+    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
         /* PSA specification is not very clear on 0 input for ECB.
          * However software implementation and the tests return SUCCESS
          * for 0 input. So adding this check here.
@@ -283,7 +283,7 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((key_type == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
+    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
         /* PSA specification is not very clear on 0 input for ECB.
          * However software implementation and the tests return SUCCESS
          * for 0 input. So adding this check here.
