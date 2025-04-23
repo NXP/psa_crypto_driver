@@ -394,7 +394,7 @@ static psa_status_t get_recipe_from_key_id(mbedtls_svc_key_id_t source_key_id, k
                 key_id = key_recipes_directory[recipe_idx]->steps[key_recipes_directory[recipe_idx]->number_of_steps - 1U].kdelete.target_key_id; 
                 break;
               default:
-                PSA_DRIVER_ERROR("Unknown recipe operation: 0x%x", recipe.steps[recipe.number_of_steps].operation);
+                PSA_DRIVER_ERROR("Unknown recipe operation: 0x%x", step.operation);
                 goto exit;
         }
 
