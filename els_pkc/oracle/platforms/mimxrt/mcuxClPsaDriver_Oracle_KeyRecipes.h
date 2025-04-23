@@ -161,4 +161,10 @@ const key_recipe_t recipe_die_kek_sk = {
         },
 };
 
+const key_recipe_t *key_recipes_directory[] = {&recipe_el2goimport_kek_sk, &recipe_el2goimporttfm_kek_sk, &recipe_el2goimport_auth_sk,
+                                               &recipe_el2goconn_auth_prk, &recipe_el2goattest_auth_prk, &recipe_die_kek_sk};
+
+// This value should be changed to the number of elements of key_recipes_directory[] when EL2GO suuport will be added 
+size_t key_recipes_directory_size = 0u;
+
 #endif //_MCUXCLPSADRIVER_ORACLE_KEYRECIPES_
