@@ -380,28 +380,31 @@ static psa_status_t get_recipe_from_key_id(mbedtls_svc_key_id_t source_key_id, k
     {
         if (key_recipes_directory[recipe_idx] == NULL)
           goto exit;
-
-        step.operation = key_recipes_directory[recipe_idx]->steps[key_recipes_directory[recipe_idx]->number_of_steps - 1U].operation; 
-        switch (step.operation)
+        
+        for ( size_t recipe_steps = 0U; recipe_steps < key_recipes_directory[recipe_idx]->number_of_steps; recipe_steps++)
         {
-            case OP_CKDF:
-                key_id = key_recipes_directory[recipe_idx]->steps[key_recipes_directory[recipe_idx]->number_of_steps - 1U].ckdf.target_key_id; 
-                break;
-             case OP_KEYGEN:
-                key_id = key_recipes_directory[recipe_idx]->steps[key_recipes_directory[recipe_idx]->number_of_steps - 1U].keygen.target_key_id; 
-                break;
-              case OP_KDELETE:
-                key_id = key_recipes_directory[recipe_idx]->steps[key_recipes_directory[recipe_idx]->number_of_steps - 1U].kdelete.target_key_id; 
-                break;
-              default:
-                PSA_DRIVER_ERROR("Unknown recipe operation: 0x%x", step.operation);
-                goto exit;
-        }
+            step.operation = key_recipes_directory[recipe_idx]->steps[recipe_steps].operation; 
+            switch (step.operation)
+            {
+                case OP_CKDF:
+                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].ckdf.target_key_id; 
+                  break;
+                case OP_KEYGEN:
+                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].keygen.target_key_id; 
+                  break;
+                case OP_KDELETE:
+                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].kdelete.target_key_id; 
+                  break;
+                default:
+                  PSA_DRIVER_ERROR("Unknown recipe operation: 0x%x", step.operation);
+                  goto exit;
+            }
 
-        if ( mbedtls_svc_key_id_equal(source_key_id, key_id) != 0)
-        {
-            *target_recipe = (key_recipe_t *)key_recipes_directory[recipe_idx];
-            return PSA_SUCCESS;
+            if ( mbedtls_svc_key_id_equal(source_key_id, key_id) != 0)
+            {
+                *target_recipe = (key_recipe_t *)key_recipes_directory[recipe_idx];
+                return PSA_SUCCESS;
+            }    
         }
     }
 
