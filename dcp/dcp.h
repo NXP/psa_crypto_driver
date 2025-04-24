@@ -16,8 +16,7 @@
  *
  *  - Symmetric ciphers:                      mcux_psa_dcp_cipher.h
  *  - Hashing:                                mcux_psa_dcp_hash.h
- *
- * \note TODO
+ *  - Entropy extraction:                     mcux_psa_common_entropy.h
  */
 #if defined(PSA_CRYPTO_DRIVER_DCP)
 #ifndef PSA_CRYPTO_DRIVER_PRESENT
@@ -37,6 +36,7 @@
 #include "mcux_psa_dcp_hash.h"
 #include "mcux_psa_dcp_common_init.h"
 #include "mcux_psa_dcp_init.h"
+#include "mcux_psa_common_entropy.h"
 
 
 #endif /* DCP_H */

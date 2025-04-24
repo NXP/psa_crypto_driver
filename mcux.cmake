@@ -193,9 +193,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.dcp)
         SOURCES dcp/dcp.h
                 dcp/dcp_crypto_primitives.h
                 dcp/common/include/mcux_psa_common_entropy.h
-                dcp/common/include/mcux_psa_common_key_management.h
                 dcp/common/src/mcux_psa_common_entropy.c
-                dcp/common/src/mcux_psa_common_key_management.c
                 dcp/include/mcux_psa_dcp_cipher.h
                 dcp/include/mcux_psa_dcp_common_init.h
                 dcp/include/mcux_psa_dcp_hash.h

@@ -56,7 +56,7 @@ status_t CRYPTO_InitHardware(void)
         return kStatus_Success;
     }
 
-    /* Mutex for access to caam_crypto HW */
+    /* Mutex for access to DCP HW */
     if (mcux_mutex_init(&dcp_hwcrypto_mutex)) {
         return kStatus_Fail;
     }

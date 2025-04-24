@@ -24,16 +24,6 @@
 
 #include "fsl_dcp.h"
 
-/* typedef enum _mcux_psa_caam_key_type
-   {
-    MCUX_PSA_CAAM_KEY_TYPE_NONE = 0,
-    MCUX_PSA_CAAM_KEY_TYPE_ECB  = 1,
-    MCUX_PSA_CAAM_KEY_TYPE_CCM  = 2,
-   } mcux_psa_caam_key_type_t; */
-
-/* #define PSA_CRYPTO_DRIVER_CAAM_OPAQUE_ECB (MCUX_PSA_CAAM_KEY_TYPE_ECB)
- #define PSA_CRYPTO_DRIVER_CAAM_OPAQUE_CCM (MCUX_PSA_CAAM_KEY_TYPE_CCM) */
-
 /* MUTEX FOR HW Modules*/
 extern mcux_mutex_t dcp_hwcrypto_mutex;
 
