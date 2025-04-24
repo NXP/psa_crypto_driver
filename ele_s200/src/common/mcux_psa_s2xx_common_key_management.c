@@ -485,7 +485,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
     }
 
     /* Check if this key has already been imported */
-    if (sss_sscp_key_object_get_handle(sssKey, psa_get_key_id(attributes)) != kStatus_SSS_Success)
+    if (sss_sscp_key_object_get_handle(sssKey, MBEDTLS_SVC_KEY_ID_GET_KEY_ID(psa_get_key_id(attributes))) != kStatus_SSS_Success)
     {
         /* Handle not found, but we got passed a key; try to import it */
 
@@ -496,7 +496,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
         }
 
         /* Use the PSA key ID as the S200 key ID - easier to keep track of it */
-        if (sss_sscp_key_object_allocate_handle(sssKey, psa_get_key_id(attributes),
+        if (sss_sscp_key_object_allocate_handle(sssKey, MBEDTLS_SVC_KEY_ID_GET_KEY_ID(psa_get_key_id(attributes)),
                                                 key_part, cipher_type,
                                                 allocation_size,
                                                 algorithm_key_property) != kStatus_SSS_Success)

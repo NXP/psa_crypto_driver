@@ -188,7 +188,7 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
         goto exit;
     }
 
-    if (sss_sscp_key_object_get_handle(&sssKey, psa_get_key_id(attributes)) != kStatus_SSS_Success)
+    if (sss_sscp_key_object_get_handle(&sssKey, MBEDTLS_SVC_KEY_ID_GET_KEY_ID(psa_get_key_id(attributes))) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_INVALID_HANDLE;
         goto exit;
@@ -231,7 +231,7 @@ psa_status_t ele_s2xx_opaque_destroy_key(const psa_key_attributes_t *attributes,
         goto exit;
     }
 
-    if (sss_sscp_key_object_get_handle(&sssKey, psa_get_key_id(attributes)) != kStatus_SSS_Success)
+    if (sss_sscp_key_object_get_handle(&sssKey, MBEDTLS_SVC_KEY_ID_GET_KEY_ID(psa_get_key_id(attributes))) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_INVALID_HANDLE;
         goto exit;

@@ -307,7 +307,8 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedtls3x
                 bool "Component component.psa_crypto_driver.mbedtls3x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedcrypto
