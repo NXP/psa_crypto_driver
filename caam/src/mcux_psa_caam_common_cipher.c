@@ -261,7 +261,7 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
 #endif
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size) {
+    if ((key_buffer == NULL) || (key_buffer_size == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -278,7 +278,7 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
+    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0u)) {
         /* PSA specification is not very clear on 0 input for ECB.
          * However software implementation and the tests return SUCCESS
          * for 0 input. So adding this check here.
@@ -291,7 +291,7 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
      * Special case for ECB where input = 0 may be allowed.
      * Taken care of in above code.
      */
-    if (!input_length || !input) {
+    if ((input_length == 0u) || (input == NULL)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -301,7 +301,7 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
     }
 
     /* Output buffer can't be NULL */
-    if (!output || !output_length) {
+    if ((output == NULL) || (output_length == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -311,8 +311,8 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
             return status;
         }
     } else if (key_type == PSA_KEY_TYPE_DES) {
-        if (((key_bytes % CAAM_DES_KEY_SIZE) != 0) ||
-            ((key_bytes / CAAM_DES_KEY_SIZE) > 3)) {
+        if (((key_bytes % CAAM_DES_KEY_SIZE) != 0u) ||
+            ((key_bytes / CAAM_DES_KEY_SIZE) > 3u)) {
             return PSA_ERROR_INVALID_ARGUMENT;
         }
     }
@@ -320,7 +320,8 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
     /* IV buffer can't be NULL or size different to 16 */
     if ((alg == PSA_ALG_CBC_NO_PADDING) || (alg == PSA_ALG_CTR) || (alg == PSA_ALG_CFB) ||
         (alg == PSA_ALG_OFB)) {
-        if (!iv || ((key_type == PSA_KEY_TYPE_AES) && (iv_length != PSA_CIPHER_IV_MAX_SIZE)) ||
+        if ((iv == NULL) ||
+            ((key_type == PSA_KEY_TYPE_AES) && (iv_length != PSA_CIPHER_IV_MAX_SIZE)) ||
             ((key_type == PSA_KEY_TYPE_DES) && (iv_length != CAAM_DES_IV_SIZE))) {
             return PSA_ERROR_INVALID_ARGUMENT;
         }
@@ -328,11 +329,11 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
 
     /* For CBC and ECB No padding, input length has to be multiple of cipher block length */
     if (((alg == PSA_ALG_CBC_NO_PADDING) || (alg == PSA_ALG_ECB_NO_PADDING)) &&
-        (input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type))) {
+        ((input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type)) > 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
@@ -344,12 +345,14 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
         if (output_size < _input_length) {
             return PSA_ERROR_BUFFER_TOO_SMALL;
         }
-        _input = mbedtls_calloc(1, _input_length);
+        _input = mbedtls_calloc(1u, _input_length);
         if (_input == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
         memcpy(_input, input, input_length);
-        memset(&_input[input_length], _input_length - input_length, _input_length - input_length);
+        memset(&_input[input_length],
+               (int) (_input_length - input_length),
+               _input_length - input_length);
     }
 #endif
 
@@ -534,7 +537,7 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
     }
 #endif
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 
@@ -574,7 +577,7 @@ psa_status_t caam_internal_cipher_encrypt_blacken(mcux_psa_caam_key_type_t caam_
     size_t key_bytes = CAAM_OPAQUE_ALIGN(PSA_BITS_TO_BYTES(key_bits));
 
 #if defined(USE_MALLOC)
-    uint8_t *key_decap = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    uint8_t *key_decap = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (key_decap == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -779,7 +782,7 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
+    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0u)) {
         /* PSA specification is not very clear on 0 input for ECB.
          * However software implementation and the tests return SUCCESS
          * for 0 input. So adding this check here.
@@ -792,12 +795,12 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
      * Special case for ECB where input = 0 may be allowed.
      * Taken care of in above code.
      */
-    if (!input_length || !input) {
+    if ((input_length == 0u) || (input == NULL)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Output buffer can't be NULL */
-    if (!output || !output_length) {
+    if ((output == NULL) || (output_length == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -807,8 +810,8 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
             return status;
         }
     } else if (key_type == PSA_KEY_TYPE_DES) {
-        if (((key_bytes % CAAM_DES_KEY_SIZE) != 0) ||
-            ((key_bytes / CAAM_DES_KEY_SIZE) > 3)) {
+        if (((key_bytes % CAAM_DES_KEY_SIZE) != 0u) ||
+            ((key_bytes / CAAM_DES_KEY_SIZE) > 3u)) {
             return PSA_ERROR_INVALID_ARGUMENT;
         }
     }
@@ -832,7 +835,7 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
     /* Input length has to be multiple of block size for decrypt operation */
     if ((alg == PSA_ALG_CBC_NO_PADDING || alg == PSA_ALG_CBC_PKCS7 ||
          alg == PSA_ALG_ECB_NO_PADDING) &&
-        (expected_op_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type))) {
+        ((expected_op_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type)) > 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -842,14 +845,14 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
 
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     if (alg == PSA_ALG_CBC_PKCS7) {
-        _output = mbedtls_calloc(1, expected_op_length);
+        _output = mbedtls_calloc(1u, expected_op_length);
         if (_output == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
     }
 #endif
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
@@ -1031,7 +1034,7 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
         }
     }
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         status = PSA_ERROR_BAD_STATE;
     }
 
@@ -1092,7 +1095,7 @@ psa_status_t caam_internal_cipher_decrypt_blacken(mcux_psa_caam_key_type_t caam_
     size_t key_bytes = CAAM_OPAQUE_ALIGN(PSA_BITS_TO_BYTES(key_bits));
 
 #if defined(USE_MALLOC)
-    uint8_t *key_decap = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    uint8_t *key_decap = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (key_decap == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }

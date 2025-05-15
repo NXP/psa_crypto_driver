@@ -86,7 +86,7 @@ static psa_status_t caam_internal_ecc_generate_key(mcux_psa_caam_key_type_t caam
         return err;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         err  = PSA_ERROR_BAD_STATE;
         err2 = PSA_ERROR_BAD_STATE;
     }
@@ -117,7 +117,7 @@ static psa_status_t caam_internal_ecc_generate_key(mcux_psa_caam_key_type_t caam
         }
     }
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         err2 = PSA_ERROR_BAD_STATE;
     }
 
@@ -146,22 +146,22 @@ static psa_status_t caam_internal_ecc_generate_key(mcux_psa_caam_key_type_t caam
 }
 
 static inline psa_status_t psa_to_caam_rsa_key_type(mcux_psa_caam_key_type_t caam_key_type,
-                                                    caam_rsa_key_type_t *ecc_key_type)
+                                                    caam_rsa_key_type_t *rsa_key_type)
 {
     switch (caam_key_type) {
         case MCUX_PSA_CAAM_KEY_TYPE_NONE:
         {
-            *ecc_key_type = kCAAM_Rsa_Key_Type_None;
+            *rsa_key_type = kCAAM_Rsa_Key_Type_None;
             break;
         }
         case MCUX_PSA_CAAM_KEY_TYPE_ECB:
         {
-            *ecc_key_type = kCAAM_Rsa_Key_Type_Ecb_Jkek;
+            *rsa_key_type = kCAAM_Rsa_Key_Type_Ecb_Jkek;
             break;
         }
         case MCUX_PSA_CAAM_KEY_TYPE_CCM:
         {
-            *ecc_key_type = kCAAM_Rsa_Key_Type_Ccm_Jkek;
+            *rsa_key_type = kCAAM_Rsa_Key_Type_Ccm_Jkek;
             break;
         }
         default:
@@ -190,13 +190,13 @@ static psa_status_t caam_internal_rsa_generate_key(mcux_psa_caam_key_type_t caam
     caam_handle_t caam_handle = { .jobRing = kCAAM_JobRing0 };
     caam_rsa_key_type_t rsa_key_type;
     uint8_t rsa_exp[4]; // Needed to make it working for cache
-    rsa_exp[0] = 0;
-    memcpy(&rsa_exp[1], &s_rsa_exponent, 3);
+    rsa_exp[0] = 0u;
+    memcpy(&rsa_exp[1], &s_rsa_exponent, 3u);
 
     struct mcux_rsa_keypair rsa_key;
     struct mcux_rsa_primes primes;
 
-    if (((key_bits % 1024) == 0) && ((uint8_t) ((key_bits / 4) - 1u) < 4u)) {
+    if ((key_bits % 1024u) != 0u) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -217,7 +217,7 @@ static psa_status_t caam_internal_rsa_generate_key(mcux_psa_caam_key_type_t caam
         return err;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         err  = PSA_ERROR_BAD_STATE;
         err2 = PSA_ERROR_BAD_STATE;
     }
@@ -234,7 +234,7 @@ static psa_status_t caam_internal_rsa_generate_key(mcux_psa_caam_key_type_t caam
                                        rsa_key.modulus,
                                        rsa_key.modulus_len,
                                        rsa_key.priv_exp,
-                                       rsa_key.priv_exp_len);
+                                       &rsa_key.priv_exp_len);
         err         = caam_to_psa_status(caam_status);
     }
 
@@ -242,18 +242,21 @@ static psa_status_t caam_internal_rsa_generate_key(mcux_psa_caam_key_type_t caam
         if (rsa_key_type != kCAAM_Rsa_Key_Type_None) {
             err = caam_opaque_encapsulate_key(caam_key_type,
                                               rsa_key.priv_exp,
-                                              key_bytes,
-                                              &key_buffer[rsa_key.modulus_len],
-                                              key_buffer_size - rsa_key.modulus_len,
+                                              rsa_key.priv_exp_len,
+                                              &key_buffer[rsa_key.modulus_len + sizeof(size_t)],
+                                              key_buffer_size - rsa_key.modulus_len- sizeof(size_t),
                                               key_buffer_length);
             if (err == PSA_SUCCESS) {
                 memcpy(key_buffer, rsa_key.modulus, rsa_key.modulus_len);
                 *key_buffer_length += rsa_key.modulus_len;
+                memcpy(&key_buffer[rsa_key.modulus_len], (uint8_t *) &rsa_key.priv_exp_len,
+                       sizeof(size_t));
+                *key_buffer_length += sizeof(size_t);
             }
         }
     }
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         err2 = PSA_ERROR_BAD_STATE;
     }
 
@@ -324,7 +327,7 @@ static psa_status_t caam_internal_aes_generate_key_transparent(
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         err  = PSA_ERROR_BAD_STATE;
         err2 = PSA_ERROR_BAD_STATE;
     }
@@ -340,7 +343,7 @@ static psa_status_t caam_internal_aes_generate_key_transparent(
         err         = caam_to_psa_status(caam_status);
     }
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         return PSA_ERROR_BAD_STATE;
     }
     if (err2 != PSA_SUCCESS) {
@@ -369,7 +372,7 @@ static psa_status_t caam_internal_aes_generate_key_blacken(mcux_psa_caam_key_typ
     caam_fifost_type_t fifost_key_type;
     size_t transparent_key_size = 0u;
 #if defined(USE_MALLOC)
-    uint8_t *blacken_key = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    uint8_t *blacken_key = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (blacken_key == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -403,7 +406,7 @@ static psa_status_t caam_internal_aes_generate_key_blacken(mcux_psa_caam_key_typ
     }
 
     if (err == PSA_SUCCESS) {
-        if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+        if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
             err  = PSA_ERROR_BAD_STATE;
             err2 = PSA_ERROR_BAD_STATE;
         }
@@ -436,7 +439,7 @@ static psa_status_t caam_internal_aes_generate_key_blacken(mcux_psa_caam_key_typ
     memset(blacken_key, 0, sizeof(blacken_key));
 #endif
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         return PSA_ERROR_BAD_STATE;
     }
     if (err2 != PSA_SUCCESS) {
@@ -515,7 +518,6 @@ psa_status_t caam_common_destroy_key(const psa_key_attributes_t *attributes,
                                      uint8_t *key_buffer,
                                      size_t key_buffer_size)
 {
-    // Nothing to do here, CAAM is not holding key material internally.
     return PSA_SUCCESS;
 }
 
@@ -591,7 +593,8 @@ size_t caam_common_size_function(psa_key_type_t key_type, size_t key_bits)
 #endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
 #if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
         if (PSA_KEY_TYPE_IS_RSA(key_type)) {
-            ret = key_bytes + CAAM_ENCAP_DATA_SIZE(RSA_ALIGN_PRIVATE_EXPONENT_SIZE(key_bytes));
+            ret = key_bytes + CAAM_ENCAP_DATA_SIZE(RSA_ALIGN_PRIVATE_EXPONENT_SIZE(key_bytes))+
+                  sizeof(size_t);
         } else
 #endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE */
         {

@@ -27,6 +27,7 @@
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
 #include "mbedtls/platform.h"
+#include "mbedtls/psa_util.h"
 
 psa_status_t caam_common_internal_rsa_encrypt(mcux_psa_caam_key_type_t caam_key_type,
                                               caam_rsa_format_type_t format,
@@ -52,7 +53,7 @@ psa_status_t caam_common_internal_rsa_encrypt(mcux_psa_caam_key_type_t caam_key_
     uint8_t rsa_exp[4];
 
     // No check on input as input can be NULL
-    if (!output) {
+    if (output == NULL) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -61,9 +62,9 @@ psa_status_t caam_common_internal_rsa_encrypt(mcux_psa_caam_key_type_t caam_key_
     }
 
     /* Zero output length by default */
-    *output_length = 0;
+    *output_length = 0u;
 
-    if (((key_bits % 1024) == 0) && ((uint8_t) ((key_bits / 4) - 1u) < 4u)) {
+    if ((key_bits % 1024u) != 0u) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -80,13 +81,13 @@ psa_status_t caam_common_internal_rsa_encrypt(mcux_psa_caam_key_type_t caam_key_
             return err;
         }
     } else {
-        rsa_exp[0] = 0;
-        memcpy(&rsa_exp[1], &s_rsa_exponent, 3);
+        rsa_exp[0] = 0u;
+        memcpy(&rsa_exp[1], &s_rsa_exponent, 3u);
         rsa_key.modulus     = (uint8_t *) key_buffer;
         rsa_key.modulus_len = key_bytes;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         err  = PSA_ERROR_BAD_STATE;
         err2 = PSA_ERROR_BAD_STATE;
     }
@@ -107,7 +108,7 @@ psa_status_t caam_common_internal_rsa_encrypt(mcux_psa_caam_key_type_t caam_key_
         err = caam_to_psa_status(caam_status);
     }
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         err2 = PSA_ERROR_BAD_STATE;
     }
 
@@ -146,7 +147,7 @@ static psa_status_t caam_common_internal_rsa_encrypt_pkcs1_5(mcux_psa_caam_key_t
     uint32_t key_bytes = PSA_BITS_TO_BYTES(key_bits);
 
     /* Check for  input message length . For PKCS#1.5 padding is 11 bytes */
-    if (input_length > key_bytes - 11) {
+    if ((key_bytes < 11u) || (input_length > (key_bytes - 11u))) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -194,25 +195,25 @@ static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type
     }
 #endif
 
-    if (hash_size == 0) {
+    if (hash_size == 0u) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* first comparison checks for overflow */
-    if (key_bytes < input_length + 2 * hash_size + 2u) {
+    if (key_bytes < (input_length +(2u * hash_size) + 2u)) {
         return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
     }
 
 #if defined(USE_MALLOC)
     if (err == PSA_SUCCESS) {
-        _input = (uint8_t *) mbedtls_calloc(1, key_bytes);
+        _input = (uint8_t *) mbedtls_calloc(1u, key_bytes);
         if (_input == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
     }
 #endif
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         err  = PSA_ERROR_BAD_STATE;
         err2 = PSA_ERROR_BAD_STATE;
     }
@@ -229,7 +230,7 @@ static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type
         err         = caam_to_psa_status(caam_status);
     }
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         err2 = PSA_ERROR_BAD_STATE;
     }
 
@@ -245,7 +246,7 @@ static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type
                                key_bytes - hash_size - 1u,
                                _input + 1u,
                                hash_size,
-                               (mbedtls_md_type_t) alg);
+                               mbedtls_md_type_from_psa_alg(alg));
         err         = mbedtls_to_psa_error(mbedtls_err);
     }
 
@@ -254,7 +255,7 @@ static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type
                                hash_size,
                                _input + hash_size + 1u,
                                key_bytes - hash_size - 1u,
-                               (mbedtls_md_type_t) alg);
+                               mbedtls_md_type_from_psa_alg(alg));
         err         = mbedtls_to_psa_error(mbedtls_err);
     }
 
@@ -347,18 +348,18 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
 #endif
 
     /* If user sends a buffer with 0 size, return error */
-    if (!output || !output_size) {
+    if ((output == NULL) || (output_size == 0u)) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    if (!input || input_length != key_bytes) {
+    if ((input == NULL) || (input_length != key_bytes)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Zero output length by default */
-    *output_length = 0;
+    *output_length = 0u;
 
-    if (((key_bits % 1024) == 0) && ((uint8_t) ((key_bits / 4) - 1u) < 4u)) {
+    if ((key_bits % 1024u) != 0u) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -368,7 +369,7 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
     }
 
 #if defined(USE_MALLOC)
-    _output = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    _output = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (_output == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -386,11 +387,12 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
     } else {
         err = mcux_alloc_raw_rsa(&rsa_key, key_bytes, MCUX_KEY_TYPE_KEYPAIR, true);
         if (err == PSA_SUCCESS) {
+            memcpy((uint8_t *) &rsa_key.priv_exp_len, &key_buffer[key_bytes], sizeof(size_t));
             err = caam_opaque_decapsulate_key(caam_key_type,
-                                              &key_buffer[key_bytes],
-                                              key_buffer_size - key_bytes,
+                                              &key_buffer[key_bytes+sizeof(size_t)],
+                                              key_buffer_size - key_bytes-sizeof(size_t),
                                               rsa_key.priv_exp,
-                                              key_bytes);
+                                              rsa_key.priv_exp_len);
         }
         if (err == PSA_SUCCESS) {
             memcpy(rsa_key.modulus, key_buffer, key_bytes);
@@ -398,7 +400,7 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
     }
 
     if (err == PSA_SUCCESS) {
-        if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+        if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
             err  = PSA_ERROR_BAD_STATE;
             err2 = PSA_ERROR_BAD_STATE;
         }
@@ -411,7 +413,7 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
                                        rsa_key.modulus,
                                        rsa_key.modulus_len,
                                        rsa_key.priv_exp,
-                                       key_bytes,
+                                       rsa_key.priv_exp_len,
                                        rsa_key_type,
                                        kCAAM_Rsa_Encryption_Type_None,
                                        format,
@@ -420,7 +422,7 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
         err         = caam_to_psa_status(caam_status);
     }
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         err2 = PSA_ERROR_BAD_STATE;
     }
 
@@ -505,17 +507,17 @@ static psa_status_t caam_common_internal_rsa_decrypt_oaep(mcux_psa_caam_key_type
     }
 #endif
 
-    *output_length = 0;
+    *output_length = 0u;
 
-    if (hash_size == 0) {
+    if (hash_size == 0u) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (2 * hash_size + 2 > input_length) {
+    if (((2u * hash_size) + 2u) > input_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (input_length - 2 * hash_size - 2 > output_size) {
+    if (((input_length - (2u * hash_size)) - 2u) > output_size) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
 
@@ -539,42 +541,44 @@ static psa_status_t caam_common_internal_rsa_decrypt_oaep(mcux_psa_caam_key_type
     }
 
     mbedtls_err =
-        mgf_mask(output + 1, hash_size, output + hash_size + 1, input_length - hash_size - 1,
-                 (mbedtls_md_type_t) alg);
+        mgf_mask(output + 1u, hash_size, output + hash_size + 1u, (input_length - hash_size) - 1u,
+                 mbedtls_md_type_from_psa_alg(alg));
     err = mbedtls_to_psa_error(mbedtls_err);
     if (err != PSA_SUCCESS) {
         return err;
     }
 
     mbedtls_err =
-        mgf_mask(output + hash_size + 1, input_length - hash_size - 1, output + 1, hash_size,
-                 (mbedtls_md_type_t) alg);
+        mgf_mask(output + hash_size + 1u, (input_length - hash_size) - 1u, output + 1u, hash_size,
+                 mbedtls_md_type_from_psa_alg(alg));
     err = mbedtls_to_psa_error(mbedtls_err);
     if (err != PSA_SUCCESS) {
         return err;
     }
 
-    if (output[0] != 0) {
+    if (output[0] != 0u) {
         return PSA_ERROR_BAD_STATE;
     }
 
 #if defined(USE_MALLOC)
-    hash = (uint8_t *) mbedtls_calloc(1, hash_size * 2);
+    hash = (uint8_t *) mbedtls_calloc(1u, hash_size * 2u);
     if (hash == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
 #endif
 
     /* Generate lHash */
-    md_info = mbedtls_md_info_from_type(alg);
+    md_info = mbedtls_md_info_from_type(mbedtls_md_type_from_psa_alg(alg));
     if (md_info == NULL) {
-        return PSA_ERROR_BAD_STATE;
+        err = PSA_ERROR_BAD_STATE;
     }
-    mbedtls_err = mbedtls_md(md_info, label, label_len, hash);
-    err         = mbedtls_to_psa_error(mbedtls_err);
+    if (err == PSA_SUCCESS) {
+        mbedtls_err = mbedtls_md(md_info, label, label_len, hash);
+        err         = mbedtls_to_psa_error(mbedtls_err);
+    }
 
     if (err == PSA_SUCCESS) {
-        if (memcmp(hash, &output[hash_size + 1], hash_size) != 0) {
+        if (memcmp(hash, &output[hash_size + 1u], hash_size) != 0u) {
             err = PSA_ERROR_BAD_STATE;
         }
     }
@@ -589,22 +593,22 @@ static psa_status_t caam_common_internal_rsa_decrypt_oaep(mcux_psa_caam_key_type
         return err;
     }
 
-    pad_len = 0;
-    for (i = 0; i < input_length - 2 * hash_size - 2; i++) {
-        if (output[2 * hash_size + 1 + i] == 0) {
+    pad_len = 0u;
+    for (i = 0u; i < input_length - (2u * hash_size) - 2u; i++) {
+        if (output[(2u * hash_size) + 1u + i] == 0u) {
             pad_len += 1;
         } else {
             break;
         }
     }
 
-    if (output[2 * hash_size + 1 + pad_len] != 1) {
+    if (output[(2 * hash_size) + 1u + pad_len] != 1u) {
         return PSA_ERROR_BAD_STATE;
     }
 
-    *output_length = key_bytes - (2 * hash_size + 2 + pad_len);
+    *output_length = key_bytes - ((2u * hash_size) + 2u + pad_len);
     memcpy(output, &output[key_bytes - *output_length], *output_length);
-    memset(&output[*output_length], 0, key_bytes - *output_length);
+    memset(&output[*output_length], 0u, key_bytes - *output_length);
 
     return PSA_SUCCESS;
 }
@@ -632,7 +636,7 @@ psa_status_t caam_common_asymmetric_encrypt(mcux_psa_caam_key_type_t caam_key_ty
     psa_status_t status     = PSA_ERROR_NOT_SUPPORTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
 
-    *output_length = 0;
+    *output_length = 0u;
 
 #if defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
     if ((alg == PSA_ALG_RSA_PKCS1V15_CRYPT) && PSA_KEY_TYPE_IS_RSA(key_type)) {
@@ -687,7 +691,7 @@ psa_status_t caam_common_asymmetric_decrypt(mcux_psa_caam_key_type_t caam_key_ty
     psa_status_t status     = PSA_ERROR_NOT_SUPPORTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
 
-    *output_length = 0;
+    *output_length = 0u;
 
 #if defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
     if ((alg == PSA_ALG_RSA_PKCS1V15_CRYPT) && PSA_KEY_TYPE_IS_RSA(key_type)) {

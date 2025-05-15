@@ -19,6 +19,7 @@
 #include "mcux_psa_mbedtls_origin.h"
 #include "mcux_psa_caam_common_asymmetric_encryption.h"
 #include "mcux_psa_caam_utils.h"
+#include "psa_crypto_random_impl.h"
 
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"
@@ -26,6 +27,7 @@
 #include "mbedtls/build_info.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/error.h"
+#include "mbedtls/psa_util.h"
 
 /** \defgroup psa_asym_sign PSA driver entry points for rsa sign/verify
  *
@@ -171,7 +173,7 @@ static psa_status_t caam_common_internal_ecc_sign(mcux_psa_caam_key_type_t caam_
         }
     }
 
-    if ((err == PSA_SUCCESS) && mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if ((err == PSA_SUCCESS) && (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0)) {
         err  = PSA_ERROR_BAD_STATE;
         err2 = PSA_ERROR_BAD_STATE;
     }
@@ -189,7 +191,7 @@ static psa_status_t caam_common_internal_ecc_sign(mcux_psa_caam_key_type_t caam_
         err         = caam_to_psa_status(caam_status);
     }
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         err2 = PSA_ERROR_BAD_STATE;
     }
 
@@ -268,7 +270,7 @@ static psa_status_t caam_common_internal_ecc_verify(mcux_psa_caam_key_type_t caa
 
 #if defined(USE_MALLOC)
     if (err == PSA_SUCCESS) {
-        tmp = (uint8_t *) mbedtls_calloc(1, key_bytes * 2);
+        tmp = (uint8_t *) mbedtls_calloc(1u, key_bytes * 2u);
         if (tmp == NULL) {
             err = PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -276,7 +278,7 @@ static psa_status_t caam_common_internal_ecc_verify(mcux_psa_caam_key_type_t caa
 #endif
 
     if (err == PSA_SUCCESS) {
-        if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+        if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
             err  = PSA_ERROR_BAD_STATE;
             err2 = PSA_ERROR_BAD_STATE;
         }
@@ -295,7 +297,7 @@ static psa_status_t caam_common_internal_ecc_verify(mcux_psa_caam_key_type_t caa
         err         = caam_to_psa_status(caam_status);
     }
 
-    if ((err2 == PSA_SUCCESS) && mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         err2 = PSA_ERROR_BAD_STATE;
     }
 
@@ -318,7 +320,6 @@ static psa_status_t caam_common_internal_ecc_verify(mcux_psa_caam_key_type_t caa
 
     return err;
 }
-
 
 static psa_status_t caam_common_internal_rsa_pkcs1_5_sign(mcux_psa_caam_key_type_t caam_key_type,
                                                           const psa_key_attributes_t *attributes,
@@ -346,7 +347,7 @@ static psa_status_t caam_common_internal_rsa_pkcs1_5_sign(mcux_psa_caam_key_type
 #endif
 
     /* If user sends a buffer with 0 size, return error */
-    if (!signature) {
+    if (signature == NULL) {
         return PSA_ERROR_INVALID_SIGNATURE;
     }
 
@@ -354,22 +355,26 @@ static psa_status_t caam_common_internal_rsa_pkcs1_5_sign(mcux_psa_caam_key_type
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    if (input_length > key_bytes - 11) {
+    if ((key_bytes < 11u) || (input_length > (key_bytes - 11u))) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (hash_size && hash_size != input_length) {
+    if ((hash_size > 0u) && (hash_size != input_length)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
 #if defined(USE_MALLOC)
-    _input = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    _input = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (_input == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
 #endif
 
-    mbedtls_err = rsa_rsassa_pkcs1_v15_encode(alg, input_length, input, key_bytes, _input);
+    mbedtls_err = rsa_rsassa_pkcs1_v15_encode(mbedtls_md_type_from_psa_alg(alg),
+                                              input_length,
+                                              input,
+                                              key_bytes,
+                                              _input);
     if (mbedtls_err != 0) {
         err = PSA_ERROR_BAD_STATE;
     }
@@ -428,7 +433,7 @@ static psa_status_t caam_common_internal_rsa_pkcs1_5_verify(mcux_psa_caam_key_ty
 #endif
 
     // No check on input as input can be NULL
-    if (!signature) {
+    if (signature == NULL) {
         return PSA_ERROR_INVALID_SIGNATURE;
     }
 
@@ -437,20 +442,20 @@ static psa_status_t caam_common_internal_rsa_pkcs1_5_verify(mcux_psa_caam_key_ty
     }
 
     /* Check for  input message length . For PKCS#1.5 padding is 11 bytes */
-    if (input_length > key_bytes - 11) {
+    if ((key_bytes < 11u) || (input_length > (key_bytes - 11u))) {
         return PSA_ERROR_INVALID_SIGNATURE;
     }
 
-    if (hash_size && hash_size != input_length) {
+    if ((hash_size > 0u) && (hash_size != input_length)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
 #if defined(USE_MALLOC)
-    output = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    output = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (output == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
-    _input = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    _input = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (_input == NULL) {
         err = PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -471,7 +476,11 @@ static psa_status_t caam_common_internal_rsa_pkcs1_5_verify(mcux_psa_caam_key_ty
     }
 
     if (err == PSA_SUCCESS) {
-        mbedtls_err = rsa_rsassa_pkcs1_v15_encode(alg, input_length, input, key_bytes, _input);
+        mbedtls_err = rsa_rsassa_pkcs1_v15_encode(mbedtls_md_type_from_psa_alg(alg),
+                                                  input_length,
+                                                  input,
+                                                  key_bytes,
+                                                  _input);
         if (mbedtls_err != 0) {
             err = PSA_ERROR_BAD_STATE;
         }
@@ -521,28 +530,24 @@ static psa_status_t caam_common_internal_rsa_pss_sign(mcux_psa_caam_key_type_t c
 #endif
 
     /* If user sends a buffer with 0 size, return error */
-    if (!signature) {
+    if (signature == NULL) {
         return PSA_ERROR_INVALID_SIGNATURE;
     }
 
-    if (input_length > key_bytes - 11) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (hash_size && hash_size != input_length) {
+    if ((hash_size > 0u) && (hash_size != input_length)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
 #if defined(USE_MALLOC)
-    _input = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    _input = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (_input == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
 #endif
 
-    mbedtls_err = rsa_rsassa_pss_sign_encode(caam_mbedtls_rng,
-                                             NULL,
-                                             alg,
+    mbedtls_err = rsa_rsassa_pss_sign_encode(mbedtls_psa_get_random,
+                                             MBEDTLS_PSA_RANDOM_STATE,
+                                             mbedtls_md_type_from_psa_alg(alg),
                                              key_bytes,
                                              input_length,
                                              input,
@@ -602,7 +607,7 @@ static psa_status_t caam_common_internal_rsa_pss_verify(mcux_psa_caam_key_type_t
 #endif
 
     // No check on input as input can be NULL
-    if (!signature) {
+    if (signature == NULL) {
         return PSA_ERROR_INVALID_SIGNATURE;
     }
 
@@ -610,17 +615,12 @@ static psa_status_t caam_common_internal_rsa_pss_verify(mcux_psa_caam_key_type_t
         return PSA_ERROR_INVALID_SIGNATURE;
     }
 
-    /* Check for  input message length . For PKCS#1.5 padding is 11 bytes */
-    if (input_length > key_bytes - 11) {
-        return PSA_ERROR_INVALID_SIGNATURE;
-    }
-
-    if (hash_size && hash_size != input_length) {
+    if ((hash_size > 0u) && (hash_size != input_length)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
 #if defined(USE_MALLOC)
-    output = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    output = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (output == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -642,7 +642,7 @@ static psa_status_t caam_common_internal_rsa_pss_verify(mcux_psa_caam_key_type_t
 
     if (err == PSA_SUCCESS) {
         mbedtls_err = mbedtls_rsa_rsassa_pss_verify_check(
-            alg,
+            mbedtls_md_type_from_psa_alg(alg),
             key_bytes,
             input_length,
             input,
@@ -679,7 +679,7 @@ static psa_status_t caam_common_internal_sign_msg(mcux_psa_caam_key_type_t caam_
     size_t output_hash_size = 0;
 
 #if defined(USE_MALLOC)
-    uint8_t *hash = (uint8_t *) mbedtls_calloc(1, hash_size);
+    uint8_t *hash = (uint8_t *) mbedtls_calloc(1u, hash_size);
     if (hash == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -729,7 +729,7 @@ static psa_status_t caam_common_internal_verify_msg(mcux_psa_caam_key_type_t caa
     size_t output_hash_size = 0;
 
 #if defined(USE_MALLOC)
-    uint8_t *hash = (uint8_t *) mbedtls_calloc(1, hash_size);
+    uint8_t *hash = (uint8_t *) mbedtls_calloc(1u, hash_size);
     if (hash == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }

@@ -98,12 +98,12 @@ psa_status_t caam_common_mac_compute(const psa_key_attributes_t *attributes,
     caam_handle_t caam_handle = { .jobRing = kCAAM_JobRing0 };
 
     /* Chec input*/
-    if (!input || !input_length) {
+    if ((input == NULL) || (input_length == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Check MAC buffer */
-    if (!mac || !mac_length) {
+    if ((mac == NULL) || (mac_length == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -113,7 +113,7 @@ psa_status_t caam_common_mac_compute(const psa_key_attributes_t *attributes,
         return status;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 
@@ -132,7 +132,7 @@ psa_status_t caam_common_mac_compute(const psa_key_attributes_t *attributes,
     }
     status = caam_to_psa_status(caam_status);
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0u) {
         return PSA_ERROR_BAD_STATE;
     }
 

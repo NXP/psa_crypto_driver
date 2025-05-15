@@ -49,13 +49,13 @@ psa_status_t caam_get_entropy(uint32_t flags,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    *estimate_bits = 0;
+    *estimate_bits = 0u;
 
-    if (output_size == 0) {
+    if (output_size == 0u) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         err  = PSA_ERROR_BAD_STATE;
         err2 = PSA_ERROR_BAD_STATE;
     }
@@ -70,7 +70,7 @@ psa_status_t caam_get_entropy(uint32_t flags,
     err    = caam_to_psa_status(result);
 
     if ((err2 == PSA_SUCCESS) &&
-        (mcux_mutex_unlock(&caam_hwcrypto_mutex))) {
+        (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
         err2 = PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -94,7 +94,7 @@ psa_status_t caam_get_entropy(uint32_t flags,
  */
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
-    size_t estimate_bits;
+    size_t estimate_bits  = 0u;
     psa_status_t status = caam_get_entropy(0, &estimate_bits, output, len);
 
     *olen = estimate_bits / 8;

@@ -159,7 +159,7 @@ psa_status_t psa_to_caam_ecc_key_algo(psa_key_type_t key_type,
                                       caam_ecc_ecdsel_t *ecc_ecdsel,
                                       mbedtls_ecp_group_id *ecp_grou_id)
 {
-    uint32_t family = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
+    psa_ecc_family_t family = (psa_ecc_family_t) PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
 
     switch (family) {
         case PSA_ECC_FAMILY_SECP_R1:
@@ -262,7 +262,7 @@ int caam_mbedtls_rng(void *userData, unsigned char *output, size_t output_size)
     caam_handle_t caam_handle = { .jobRing = kCAAM_JobRing0 };
     status_t result           = kStatus_Success;
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return MBEDTLS_ERR_ERROR_GENERIC_ERROR;
     }
 
@@ -274,7 +274,7 @@ int caam_mbedtls_rng(void *userData, unsigned char *output, size_t output_size)
                                     kCAAM_RngDataAny,
                                     NULL);
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return MBEDTLS_ERR_ERROR_GENERIC_ERROR;
     }
 

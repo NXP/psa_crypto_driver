@@ -8,18 +8,16 @@
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"
 #include "psa_crypto_ecp.h"
+#include "psa_crypto_random_impl.h"
 
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/psa_util.h"
 
 #include "mcux_psa_common_key_management.h"
 
 const uint32_t s_rsa_exponent = RSA_EXPONENT;
-const uint32_t a              = 2048 >> 4;
 
 // Functions
 psa_status_t mcux_key_buf_to_raw_ecc(psa_key_type_t key_type,
@@ -30,52 +28,54 @@ psa_status_t mcux_key_buf_to_raw_ecc(psa_key_type_t key_type,
                                      struct mcux_ecc_keypair *ecc_key)
 {
     psa_status_t status;
-    mbedtls_ecdsa_context *ecc;
+    mbedtls_ecdsa_context *ecc = NULL;
     int ret;
     size_t olen;
     size_t key_bits;
 
     (void) mbedtls_ecc_group_to_psa(ecp_grou_id, &key_bits);
 
-    /* Parse input - We will use mbedtls_ecdsa_context to parse the context into */
+    /* Parse input - We will use mbedtls_ecdsa_context to parse the context info */
     status = mbedtls_psa_ecp_load_representation(key_type,
                                                  key_bits,
                                                  key_buffer,
                                                  key_buffer_size,
                                                  &ecc);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
 
     if (status == PSA_SUCCESS) {
         /* Alocate MPI structure for public key */
         status = mcux_alloc_raw_ecc(ecc_key, PSA_BITS_TO_BYTES(key_bits), req_key_type, false);
+    } else {
+        ecc_key->private_key_len = 0u;
+        ecc_key->public_key_len  = 0u;
     }
 
-    if ((req_key_type == MCUX_KEY_TYPE_KEYPAIR) || (req_key_type == MCUX_KEY_TYPE_PUBLIC)) {
-        /* Check whether the public part is loaded. If not, load it. */
-        if (mbedtls_ecp_is_zero(&ecc->MBEDTLS_PRIVATE(Q))) {
-            ret = mbedtls_ecp_mul(&ecc->MBEDTLS_PRIVATE(grp),
-                                  &ecc->MBEDTLS_PRIVATE(Q),
-                                  &ecc->MBEDTLS_PRIVATE(d),
-                                  &ecc->MBEDTLS_PRIVATE(grp).G,
-                                  mbedtls_psa_get_random,
-                                  MBEDTLS_PSA_RANDOM_STATE);
-            if (ret < 0) {
-                status = PSA_ERROR_BAD_STATE;
+    if (status == PSA_SUCCESS) {
+        if ((req_key_type == MCUX_KEY_TYPE_KEYPAIR) || (req_key_type == MCUX_KEY_TYPE_PUBLIC)) {
+            /* Check whether the public part is loaded. If not, load it. */
+            if (mbedtls_ecp_is_zero(&ecc->MBEDTLS_PRIVATE(Q))) {
+                ret = mbedtls_ecp_mul(&ecc->MBEDTLS_PRIVATE(grp),
+                                      &ecc->MBEDTLS_PRIVATE(Q),
+                                      &ecc->MBEDTLS_PRIVATE(d),
+                                      &ecc->MBEDTLS_PRIVATE(grp).G,
+                                      mbedtls_psa_get_random,
+                                      MBEDTLS_PSA_RANDOM_STATE);
+                if (ret < 0u) {
+                    status = PSA_ERROR_BAD_STATE;
+                }
             }
-        }
 
-        if (status == PSA_SUCCESS) {
-            /* Read modulus data from MPI ctx structure */
-            ret = mbedtls_ecp_point_write_binary(&ecc->MBEDTLS_PRIVATE(grp),
-                                                 &ecc->MBEDTLS_PRIVATE(Q),
-                                                 MBEDTLS_ECP_PF_UNCOMPRESSED,
-                                                 &olen,
-                                                 (unsigned char *) ecc_key->public_key,
-                                                 ecc_key->public_key_len);
-            if (ret < 0) {
-                status = PSA_ERROR_BAD_STATE;
+            if (status == PSA_SUCCESS) {
+                /* Read modulus data from MPI ctx structure */
+                ret = mbedtls_ecp_point_write_binary(&ecc->MBEDTLS_PRIVATE(grp),
+                                                     &ecc->MBEDTLS_PRIVATE(Q),
+                                                     MBEDTLS_ECP_PF_UNCOMPRESSED,
+                                                     &olen,
+                                                     (unsigned char *) ecc_key->public_key,
+                                                     ecc_key->public_key_len);
+                if (ret < 0u) {
+                    status = PSA_ERROR_BAD_STATE;
+                }
             }
         }
     }
@@ -86,7 +86,7 @@ psa_status_t mcux_key_buf_to_raw_ecc(psa_key_type_t key_type,
             ret = mbedtls_mpi_write_binary(&ecc->MBEDTLS_PRIVATE(d),
                                            (unsigned char *) ecc_key->private_key,
                                            ecc_key->private_key_len);
-            if (ret < 0) {
+            if (ret < 0u) {
                 status = PSA_ERROR_BAD_STATE;
             }
         }
@@ -95,8 +95,11 @@ psa_status_t mcux_key_buf_to_raw_ecc(psa_key_type_t key_type,
     if (status != PSA_SUCCESS) {
         mcux_free_raw_ecc(ecc_key);
     }
-    mbedtls_ecdsa_free(ecc);
-    mbedtls_free(ecc);
+
+    if (ecc != NULL) {
+        mbedtls_ecdsa_free(ecc);
+        mbedtls_free(ecc);
+    }
 
     return status;
 }
@@ -119,7 +122,7 @@ psa_status_t mcux_raw_ecc_to_key_buf(psa_key_type_t key_type,
 
     ret = mbedtls_ecp_group_load(&ecc.MBEDTLS_PRIVATE(grp), ecp_grou_id);
 
-    if (ret == 0) {
+    if (ret == 0u) {
         mbedtls_ecp_point_init(&ecc.MBEDTLS_PRIVATE(Q));
 
         ret = mbedtls_ecp_point_read_binary(&ecc.MBEDTLS_PRIVATE(grp),
@@ -129,7 +132,7 @@ psa_status_t mcux_raw_ecc_to_key_buf(psa_key_type_t key_type,
     }
     /* ADD ECC curve */
 
-    if (ret == 0) {
+    if (ret == 0u) {
         if (only_public) {
             key_type = PSA_KEY_TYPE_CATEGORY_PUBLIC_KEY;
         } else {
@@ -142,7 +145,7 @@ psa_status_t mcux_raw_ecc_to_key_buf(psa_key_type_t key_type,
         }
     }
 
-    if (ret < 0) {
+    if (ret < 0u) {
         status = PSA_ERROR_BAD_STATE;
     }
 
@@ -176,12 +179,12 @@ psa_status_t mcux_alloc_raw_ecc(struct mcux_ecc_keypair *ecc_key,
     ecc_key->private_key = NULL;
     ecc_key->public_key  = NULL;
 #endif
-    ecc_key->private_key_len = 0;
-    ecc_key->public_key_len  = 0;
+    ecc_key->private_key_len = 0u;
+    ecc_key->public_key_len  = 0u;
 
     if ((key_type == MCUX_KEY_TYPE_PRIVATE) || (key_type == MCUX_KEY_TYPE_KEYPAIR)) {
 #if defined(USE_MALLOC)
-        ecc_key->private_key = (uint8_t *) mbedtls_calloc(1, privKeyLen);
+        ecc_key->private_key = (uint8_t *) mbedtls_calloc(1u, privKeyLen);
         if (ecc_key->private_key == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -196,9 +199,9 @@ psa_status_t mcux_alloc_raw_ecc(struct mcux_ecc_keypair *ecc_key,
     if ((key_type == MCUX_KEY_TYPE_PUBLIC) || (key_type == MCUX_KEY_TYPE_KEYPAIR)) {
 #if defined(USE_MALLOC)
         /* Alocate MPI structure for Private exponent */
-        ecc_key->public_key = (uint8_t *) mbedtls_calloc(1, pubKeyLen);
+        ecc_key->public_key = (uint8_t *) mbedtls_calloc(1u, pubKeyLen);
         if (ecc_key->public_key == NULL) {
-            if (ecc_key->private_key_len > 0) {
+            if (ecc_key->private_key_len > 0u) {
                 mbedtls_free(ecc_key->private_key);
             }
             err = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -211,7 +214,7 @@ psa_status_t mcux_alloc_raw_ecc(struct mcux_ecc_keypair *ecc_key,
         if (err == PSA_SUCCESS) {
             ecc_key->public_key_len = pubKeyLen;
         } else {
-            ecc_key->private_key_len = 0;
+            ecc_key->private_key_len = 0u;
         }
     }
 
@@ -221,16 +224,16 @@ psa_status_t mcux_alloc_raw_ecc(struct mcux_ecc_keypair *ecc_key,
 psa_status_t mcux_free_raw_ecc(struct mcux_ecc_keypair *ecc_key)
 {
 #if defined(USE_MALLOC)
-    if (ecc_key->private_key_len && ecc_key->private_key) {
+    if ((ecc_key->private_key_len > 0u) && (ecc_key->private_key != NULL)) {
         mbedtls_free(ecc_key->private_key);
     }
 
-    if (ecc_key->public_key_len && ecc_key->public_key) {
+    if ((ecc_key->public_key_len > 0u) && (ecc_key->public_key != NULL)) {
         mbedtls_free(ecc_key->public_key);
     }
 #endif
 
-    memset(ecc_key, 0, sizeof(*ecc_key));
+    memset(ecc_key, 0u, sizeof(*ecc_key));
 
     return PSA_SUCCESS;
 }
@@ -247,21 +250,24 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
     mbedtls_rsa_context *rsa = NULL;
     int ret;
 
-    /* Parse input - We will use mbedtls_rsa_context to parse the context info */
+    /* Parse input - We will use mbedtls_rsa_context to parse the context into*/
     status = mbedtls_psa_rsa_load_representation(key_type, key_buffer, key_buffer_size, &rsa);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
 
     /* Alocate MPI structure for Public modulus */
-    status = mcux_alloc_raw_rsa(rsa_key,
-                                key_bytes,
-                                (is_public) ? MCUX_KEY_TYPE_PUBLIC : MCUX_KEY_TYPE_KEYPAIR,
-                                false);
+    if (status == PSA_SUCCESS) {
+        status =
+            mcux_alloc_raw_rsa(rsa_key,
+                               key_bytes,
+                               (is_public) ? MCUX_KEY_TYPE_PUBLIC : MCUX_KEY_TYPE_KEYPAIR,
+                               false);
+    } else {
+        rsa_key->modulus_len  = 0u;
+        rsa_key->priv_exp_len = 0u;
+    }
     if (status == PSA_SUCCESS) {
         if (is_public) {
             ret = mbedtls_mpi_write_binary(&rsa->MBEDTLS_PRIVATE(E), rsa_exp, 4);
-            if (ret < 0) {
+            if (ret < 0u) {
                 status = PSA_ERROR_BAD_STATE;
             }
         } else {
@@ -269,7 +275,7 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
             ret = mbedtls_mpi_write_binary(&rsa->MBEDTLS_PRIVATE(D),
                                            (unsigned char *) rsa_key->priv_exp,
                                            rsa_key->priv_exp_len);
-            if (ret < 0) {
+            if (ret < 0u) {
                 status = PSA_ERROR_BAD_STATE;
             }
         }
@@ -281,7 +287,7 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
                                        (unsigned char *) rsa_key->modulus,
                                        key_bytes);
 
-        if (ret < 0) {
+        if (ret < 0u) {
             status = PSA_ERROR_BAD_STATE;
         }
     }
@@ -290,15 +296,17 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
         mcux_free_raw_rsa(rsa_key);
     }
 
-    mbedtls_rsa_free(rsa);
-    mbedtls_free(rsa);
+    if (rsa != NULL) {
+        mbedtls_rsa_free(rsa);
+        mbedtls_free(rsa);
+    }
 
     return status;
 }
 
 psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
                                      bool only_public,
-                                     struct mcux_rsa_keypair *rsa_key,
+                                     const struct mcux_rsa_keypair *rsa_key,
                                      const uint8_t *key_buffer,
                                      size_t key_buffer_size,
                                      size_t *key_buffer_length)
@@ -316,11 +324,11 @@ psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
         mbedtls_mpi_read_binary(&rsa.MBEDTLS_PRIVATE(N),
                                 (const unsigned char *) rsa_key->modulus,
                                 rsa_key->modulus_len);
-    if (ret == 0) {
-        ret = mbedtls_mpi_lset(&rsa.MBEDTLS_PRIVATE(E), s_rsa_exponent);
+    if (ret == 0u) {
+        ret = mbedtls_mpi_lset(&rsa.MBEDTLS_PRIVATE(E), (mbedtls_mpi_sint) s_rsa_exponent);
     }
 
-    if (ret == 0) {
+    if (ret == 0u) {
         /* Set Ctx length */
         rsa.MBEDTLS_PRIVATE(len) = mbedtls_mpi_size(&rsa.MBEDTLS_PRIVATE(N));
 
@@ -334,7 +342,7 @@ psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
                                           (const unsigned char *) rsa_key->priv_exp,
                                           rsa_key->priv_exp_len);
 
-            if (ret == 0) {
+            if (ret == 0u) {
                 /* Compute P and Q in CTX. */
                 /* Needed as key buffer needs to be in PKCS1 format*/
                 ret = mbedtls_rsa_complete(&rsa);
@@ -342,7 +350,7 @@ psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
         }
     }
 
-    if (ret < 0) {
+    if (ret < 0u) {
         status = PSA_ERROR_BAD_STATE;
     }
 
@@ -376,12 +384,12 @@ psa_status_t mcux_alloc_raw_rsa(struct mcux_rsa_keypair *rsa_key,
     rsa_key->modulus  = NULL;
     rsa_key->priv_exp = NULL;
 #endif
-    rsa_key->modulus_len  = 0;
-    rsa_key->priv_exp_len = 0;
+    rsa_key->modulus_len  = 0u;
+    rsa_key->priv_exp_len = 0u;
 
     if ((key_type == MCUX_KEY_TYPE_PUBLIC) || (key_type == MCUX_KEY_TYPE_KEYPAIR)) {
 #if defined(USE_MALLOC)
-        rsa_key->modulus = (uint8_t *) mbedtls_calloc(1, modulusLen);
+        rsa_key->modulus = (uint8_t *) mbedtls_calloc(1u, modulusLen);
         if (rsa_key->modulus == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -396,9 +404,9 @@ psa_status_t mcux_alloc_raw_rsa(struct mcux_rsa_keypair *rsa_key,
     if ((key_type == MCUX_KEY_TYPE_PRIVATE) || (key_type == MCUX_KEY_TYPE_KEYPAIR)) {
 #if defined(USE_MALLOC)
         /* Alocate MPI structure for Private exponent */
-        rsa_key->priv_exp = (uint8_t *) mbedtls_calloc(1, privExpLen);
+        rsa_key->priv_exp = (uint8_t *) mbedtls_calloc(1u, privExpLen);
         if (rsa_key->priv_exp == NULL) {
-            if (rsa_key->modulus > 0) {
+            if (rsa_key->modulus > 0u) {
                 mbedtls_free(rsa_key->modulus);
             }
             err = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -411,7 +419,7 @@ psa_status_t mcux_alloc_raw_rsa(struct mcux_rsa_keypair *rsa_key,
         if (err == PSA_SUCCESS) {
             rsa_key->priv_exp_len = privExpLen;
         } else {
-            rsa_key->modulus_len = 0;
+            rsa_key->modulus_len = 0u;
         }
     }
     return err;
@@ -420,11 +428,11 @@ psa_status_t mcux_alloc_raw_rsa(struct mcux_rsa_keypair *rsa_key,
 psa_status_t mcux_free_raw_rsa(struct mcux_rsa_keypair *rsa_key)
 {
 #if defined(USE_MALLOC)
-    if (rsa_key->modulus_len && rsa_key->modulus) {
+    if ((rsa_key->modulus_len > 0u) && (rsa_key->modulus != NULL)) {
         mbedtls_free(rsa_key->modulus);
     }
 
-    if (rsa_key->priv_exp_len && rsa_key->priv_exp) {
+    if ((rsa_key->priv_exp_len > 0u) && (rsa_key->priv_exp != NULL)) {
         mbedtls_free(rsa_key->priv_exp);
     }
 #endif
@@ -468,22 +476,20 @@ psa_status_t mcux_rsa_generate_primes(size_t bit_size, struct mcux_rsa_primes *p
 
     // Generate two prime numbers for RSA
     do {
-        if (status == 0) {
             status =
                 mbedtls_mpi_gen_prime(&P,
                                       bit_size >> 1,
                                       prime_quality,
-                                      mbedtls_ctr_drbg_random,
-                                      &ctr_drbg);
-        }
+                                      mbedtls_psa_get_random,
+                                      MBEDTLS_PSA_RANDOM_STATE);
 
         if (status == 0) {
             status =
                 mbedtls_mpi_gen_prime(&Q,
                                       bit_size >> 1,
                                       prime_quality,
-                                      mbedtls_ctr_drbg_random,
-                                      &ctr_drbg);
+                                      mbedtls_psa_get_random,
+                                      MBEDTLS_PSA_RANDOM_STATE);
         }
 
         if (status == 0) {
@@ -491,12 +497,12 @@ psa_status_t mcux_rsa_generate_primes(size_t bit_size, struct mcux_rsa_primes *p
         }
         if (status == 0) {
             /* make sure the difference between p and q is not too small (FIPS 186-4 §B.3.3 step 5.4) */
-            if (mbedtls_mpi_bitlen(&H) <= ((bit_size >= 200) ? ((bit_size >> 1) - 99) : 0)) {
+            if (mbedtls_mpi_bitlen(&H) <= ((bit_size >= 200u) ? ((bit_size >> 1) - 99u) : 0u)) {
                 continue;
             }
 
             /* not required by any standards, but some users rely on the fact that P > Q */
-            if (H.MBEDTLS_PRIVATE(s) < 0) {
+            if (H.MBEDTLS_PRIVATE(s) < 0u) {
                 mbedtls_mpi_swap(&P, &Q);
             }
             break;
@@ -505,8 +511,8 @@ psa_status_t mcux_rsa_generate_primes(size_t bit_size, struct mcux_rsa_primes *p
 
     if (status == 0) {
 #if defined(USE_MALLOC)
-        primes->p = (uint8_t *) mbedtls_calloc(1, primes->len);
-        primes->q = (uint8_t *) mbedtls_calloc(1, primes->len);
+        primes->p = (uint8_t *) mbedtls_calloc(1u, primes->len);
+        primes->q = (uint8_t *) mbedtls_calloc(1u, primes->len);
         if ((primes->p == NULL) || (primes->q == NULL)) {
             status = PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -527,8 +533,7 @@ psa_status_t mcux_rsa_generate_primes(size_t bit_size, struct mcux_rsa_primes *p
     // Cleanup
     mbedtls_mpi_free(&P);
     mbedtls_mpi_free(&Q);
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
+    mbedtls_mpi_free(&H);
 
     if (status == 0) {
         return PSA_SUCCESS;
@@ -547,7 +552,7 @@ psa_status_t mcux_rsa_free_primes(struct mcux_rsa_primes *primes)
     if (primes->q != NULL) {
         mbedtls_free(primes->q);
     }
-    primes->len = 0;
+    primes->len = 0u;
 #else
     memset(primes, 0, sizeof(*primes));
 #endif

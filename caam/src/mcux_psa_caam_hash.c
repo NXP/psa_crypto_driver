@@ -82,7 +82,7 @@ psa_status_t caam_hash_setup(mcux_caam_hash_operation_t *operation, psa_algorith
     }
     operation->psa_mode = PSA_ALG_GET_HASH(alg);
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
@@ -94,7 +94,7 @@ psa_status_t caam_hash_setup(mcux_caam_hash_operation_t *operation, psa_algorith
                                  0u);
     status      = caam_to_psa_status(caam_status);
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 
@@ -143,14 +143,14 @@ psa_status_t caam_hash_update(mcux_caam_hash_operation_t *operation,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
     caam_status = CAAM_HASH_Update(&operation->ctx, input, input_length);
     status      = caam_to_psa_status(caam_status);
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 
@@ -179,21 +179,21 @@ psa_status_t caam_hash_finish(mcux_caam_hash_operation_t *operation,
         out_length = PSA_HASH_LENGTH(operation->psa_mode);
     }
 
-    if (!hash || hash_size < out_length) {
+    if ((hash == NULL) || (hash_size < out_length)) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    /* Assign the output buffer size to 0. This will be updated by ELE */
+    /* Assign the output buffer size to 0. This will be updated */
     *hash_length = 0;
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
     caam_status = CAAM_HASH_Finish(&operation->ctx, hash, hash_length);
     status      = caam_to_psa_status(caam_status);
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 
@@ -224,7 +224,7 @@ psa_status_t caam_hash_compute(psa_algorithm_t alg,
         return status;
     }
 
-    if (!hash || !hash_size) {
+    if ((hash == NULL) || (hash_size == 0u)) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
@@ -234,18 +234,16 @@ psa_status_t caam_hash_compute(psa_algorithm_t alg,
 
     /* If hash_size is 0 then hash may be NULL and then the
      * call to memset would have undefined behavior. */
-    if (hash_size != 0) {
-        memset(hash, '!', hash_size);
-    }
+    memset(hash, (int) '!', hash_size);
 
     if (hash_size < actual_hash_length) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    /* Assign the output buffer size to 0. This will be updated by ELE */
+    /* Assign the output buffer size to 0. This will be updated */
     *hash_length = 0;
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
@@ -260,7 +258,7 @@ psa_status_t caam_hash_compute(psa_algorithm_t alg,
                             hash_length);
     status      = caam_to_psa_status(caam_status);
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 

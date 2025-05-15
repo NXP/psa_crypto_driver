@@ -27,9 +27,9 @@
 extern "C" {
 #endif
 
-#define MAX_RSA_KEYSIZE (4096 / 8)
-#define MAX_ECC_KEYSIZE (576 / 8)
-#define MAX_AES_KEYSIZE (256 / 8)
+#define MAX_RSA_KEYSIZE (4096u / 8u)
+#define MAX_ECC_KEYSIZE (576u / 8u)
+#define MAX_AES_KEYSIZE (256u / 8u)
 
 #ifndef RSA_ALIGN_PRIVATE_EXPONENT_SIZE
 #define RSA_ALIGN_PRIVATE_EXPONENT_SIZE(x) (x)
@@ -45,7 +45,7 @@ extern "C" {
 #define RSA_EXPONENT 65537u
 #endif /* RSA_EXPONENT */
 
-#define ECC_PUBLIC_KEY_SIZE(bytes) (bytes * 2 + 1)
+#define ECC_PUBLIC_KEY_SIZE(bytes) ((bytes) * 2u + 1u)
 
 #if defined(USE_MALLOC)
 struct mcux_rsa_primes {
@@ -70,8 +70,8 @@ struct mcux_ecc_keypair {
 #else
 struct mcux_rsa_primes {
     size_t len;
-    uint8_t p[MAX_RSA_KEYSIZE / 2];
-    uint8_t q[MAX_RSA_KEYSIZE / 2];
+    uint8_t p[MAX_RSA_KEYSIZE / 2u];
+    uint8_t q[MAX_RSA_KEYSIZE / 2u];
 };
 
 struct mcux_rsa_keypair {
@@ -193,7 +193,7 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
  * \param[in] key_type           RSA PSA key type.
  * \param[in] only_public        If true only public key is exported, otherwise both.
  * \param[in] rsa_key            Structure holding raw rsa keys
- * \param[out] key_buffer        Output key buffer where formated data are written.
+ * \param[out] key_buffer        Output key buffer where formatted data are written.
  * \param[in] key_buffer_size    Size of output key buffer.
  * \param[out] key_buffer_length Size of bytes written into buffer,
  *
@@ -201,7 +201,7 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
  */
 psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
                                      bool only_public,
-                                     struct mcux_rsa_keypair *rsa_key,
+                                     const struct mcux_rsa_keypair *rsa_key,
                                      const uint8_t *key_buffer,
                                      size_t key_buffer_size,
                                      size_t *key_buffer_length);

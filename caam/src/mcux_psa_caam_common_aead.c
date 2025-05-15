@@ -69,8 +69,8 @@ static psa_status_t check_aead_alg(psa_algorithm_t alg, psa_key_type_t key_type,
 #if defined(PSA_WANT_ALG_CCM)
         case PSA_ALG_CCM:
         {
-            if ((_tag_length > 0x10) || ((_tag_length & 0x1E) != _tag_length) ||
-                (_tag_length < 4)) {
+            if ((_tag_length > 0x10u) || ((_tag_length & 0x1Eu) != _tag_length) ||
+                (_tag_length < 4u)) {
                 return PSA_ERROR_INVALID_ARGUMENT;
             }
             break;
@@ -79,8 +79,8 @@ static psa_status_t check_aead_alg(psa_algorithm_t alg, psa_key_type_t key_type,
 #if defined(PSA_WANT_ALG_GCM)
         case PSA_ALG_GCM:
         {
-            if ((_tag_length > 0x10) ||
-                ((_tag_length < 12) && (_tag_length != 4) && (_tag_length != 8))) {
+            if ((_tag_length > 0x10u) ||
+                ((_tag_length < 12u) && (_tag_length != 4u) && (_tag_length != 8u))) {
                 return PSA_ERROR_INVALID_ARGUMENT;
             }
             break;
@@ -124,7 +124,7 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
     psa_key_type_t key_type   = psa_get_key_type(attributes);
     size_t key_bits           = psa_get_key_bits(attributes);
     size_t key_bytes          = PSA_BITS_TO_BYTES(key_bits);
-    size_t tag_length         = 0;
+    size_t tag_length         = 0u;
     caam_handle_t caam_handle = { .jobRing = kCAAM_JobRing0 };
     caam_key_type_t aes_key_type;
 
@@ -139,7 +139,7 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
     }
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size) {
+    if ((key_buffer == NULL) || (key_buffer_size == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -150,7 +150,7 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
     }
 
     /* Nonce can't be NULL */
-    if (!nonce || !nonce_length) {
+    if ((nonce == NULL) || (nonce_length == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -162,7 +162,7 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
     }
 
     /* Output buffer can't be NULL */
-    if (!ciphertext || !ciphertext_length) {
+    if ((ciphertext == NULL)  || (ciphertext_length == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -171,9 +171,9 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
         return status;
     }
 
-    *ciphertext_length = 0;
+    *ciphertext_length = 0u;
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
@@ -227,7 +227,7 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
     }
     status = caam_to_psa_status(caam_status);
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 
@@ -258,7 +258,7 @@ psa_status_t caam_internal_aead_encrypt_blacken(mcux_psa_caam_key_type_t caam_ke
     size_t key_bytes = CAAM_OPAQUE_ALIGN(PSA_BITS_TO_BYTES(key_bits));
 
 #if defined(USE_MALLOC)
-    uint8_t *key_decap = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    uint8_t *key_decap = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (key_decap == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -366,9 +366,9 @@ psa_status_t caam_internal_aead_decrypt(mcux_psa_caam_key_type_t caam_key_type,
     psa_key_type_t key_type   = psa_get_key_type(attributes);
     size_t key_bits           = psa_get_key_bits(attributes);
     size_t key_bytes          = PSA_BITS_TO_BYTES(key_bits);
-    size_t tag_length         = 0;
+    size_t tag_length         = 0u;
     uint8_t *tag              = NULL;
-    size_t cipher_length      = 0;
+    size_t cipher_length      = 0u;
     caam_handle_t caam_handle = { .jobRing = kCAAM_JobRing0 };
     caam_key_type_t aes_key_type;
 
@@ -383,7 +383,7 @@ psa_status_t caam_internal_aead_decrypt(mcux_psa_caam_key_type_t caam_key_type,
     }
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size) {
+    if ((key_buffer == NULL) || (key_buffer_size == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -394,11 +394,11 @@ psa_status_t caam_internal_aead_decrypt(mcux_psa_caam_key_type_t caam_key_type,
     }
 
     /* Input Buffer or size can't be NULL */
-    if (!ciphertext || !ciphertext_length) {
+    if ((ciphertext == NULL)  || (ciphertext_length == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!nonce || !nonce_length) {
+    if ((nonce == NULL) || (nonce_length == 0u)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -420,12 +420,12 @@ psa_status_t caam_internal_aead_decrypt(mcux_psa_caam_key_type_t caam_key_type,
      * check involving plaintext buffer.
      */
 
-    *plaintext_length = 0;
+    *plaintext_length = 0u;
 
     /* Tag is at the end of ciphertext */
     tag = (uint8_t *) (ciphertext + cipher_length);
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
@@ -479,7 +479,7 @@ psa_status_t caam_internal_aead_decrypt(mcux_psa_caam_key_type_t caam_key_type,
     }
     status = caam_to_psa_status(caam_status);
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 
@@ -520,7 +520,7 @@ psa_status_t caam_internal_aead_decrypt_blacken(mcux_psa_caam_key_type_t caam_ke
     size_t key_bytes = CAAM_OPAQUE_ALIGN(PSA_BITS_TO_BYTES(key_bits));
 
 #if defined(USE_MALLOC)
-    uint8_t *key_decap = (uint8_t *) mbedtls_calloc(1, key_bytes);
+    uint8_t *key_decap = (uint8_t *) mbedtls_calloc(1u, key_bytes);
     if (key_decap == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }

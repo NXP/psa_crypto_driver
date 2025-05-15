@@ -35,7 +35,7 @@ extern "C" {
 #define ECC_ALIGN_PRIVATE_KEY_SIZE(x)      (CAAM_OPAQUE_ALIGN(x))
 #endif
 
-#define CAAM_ENCAP_DATA_SIZE(x) (x + 32 + 16 + 16) // xbyte blob key + 32 bytes of data + 16bytes of MAC + 16 RNG
+#define CAAM_ENCAP_DATA_SIZE(x) ((x) + 32u + 16u + 16u) // xbyte blob key + 32 bytes of data + 16bytes of MAC + 16 RNG
 
 /*!
  * \brief Generate a random key

@@ -7,7 +7,7 @@
 
 #include "mcux_psa_caam_init.h" /* CAAM Crypto port layer */
 
-#ifdef CONFIG_PSA_SECURE_STORAGE
+#ifdef PSA_CAAM_SECURE_STORAGE
 #include "secure_storage.h"
 #endif
 
@@ -46,7 +46,7 @@ static caam_job_ring_interface_t s_jrif0;
 // static caam_job_ring_interface_t s_jrif3;
 #endif /* __DCACHE_PRESENT || FSL_FEATURE_HAS_L1CACHE */
 
-uint32_t g_isCryptoHWInitialized = false;
+static bool g_isCryptoHWInitialized = false;
 
 psa_status_t caam_to_psa_status(status_t caam_status)
 {
@@ -79,7 +79,7 @@ status_t CRYPTO_InitHardware(void)
 {
     status_t result          = kStatus_Fail;
     caam_config_t caamConfig = { .jobRingInterface = { NULL, NULL, NULL, NULL } };
-#ifdef CONFIG_PSA_SECURE_STORAGE
+#ifdef PSA_CAAM_SECURE_STORAGE
     psa_status_t err;
 #endif
 
@@ -104,20 +104,20 @@ status_t CRYPTO_InitHardware(void)
 
     result = CAAM_Init(PSA_CAAM, &caamConfig);
 
-#ifdef CONFIG_PSA_SECURE_STORAGE 
+#ifdef PSA_CAAM_SECURE_STORAGE
     if (result == kStatus_Success) {
         err = secure_storage_its_initialize();
         if (err != PSA_SUCCESS) {
             result = kStatus_Fail;
         }
     }
-#endif /* CONFIG_PSA_SECURE_STORAGE */
+#endif
 
     if (result == kStatus_Success) {
         g_isCryptoHWInitialized = true;
     }
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return kStatus_Fail;
     }
 
@@ -138,7 +138,7 @@ status_t CRYPTO_DeinitHardware(void)
         return kStatus_Success;
     }
 
-    if (mcux_mutex_lock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
         return kStatus_Fail;
     }
 
@@ -148,7 +148,7 @@ status_t CRYPTO_DeinitHardware(void)
         g_isCryptoHWInitialized = false;
     }
 
-    if (mcux_mutex_unlock(&caam_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
         return kStatus_Fail;
     }
 
