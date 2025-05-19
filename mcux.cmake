@@ -393,6 +393,62 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200)
     )
 endif()
 
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.casper)
+    mcux_add_source(
+        SOURCES casper/casper.h
+                casper/common/include/mcux_psa_common_key_management.h
+                casper/common/src/mcux_psa_common_key_management.c
+                casper/include/mcux_psa_casper_common_asymmetric_signature.h
+                casper/include/mcux_psa_casper_common_init.h
+                casper/include/mcux_psa_casper_ecdsa_port.h
+                casper/include/mcux_psa_casper_ecp_port.h
+                casper/include/mcux_psa_casper_init.h
+                casper/include/mcux_psa_casper_key_generation_port.h
+                casper/src/mcux_psa_casper_common_asymmetric_signature.c
+                casper/src/mcux_psa_casper_common_init.c
+                casper/src/mcux_psa_casper_ecdsa_port.c
+                casper/src/mcux_psa_casper_ecp_port.c
+                casper/src/mcux_psa_casper_init.c
+                casper/src/mcux_psa_casper_key_generation_port.c
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES casper
+                 casper/include
+                 casper/common/include
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        "PSA_CRYPTO_DRIVER_CASPER"
+    )
+endif()
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt)
+    mcux_add_source(
+        SOURCES hashcrypt/hashcrypt.h
+                hashcrypt/hashcrypt_crypto_primitives.h
+                hashcrypt/include/mcux_psa_hashcrypt_common_cipher.h
+                hashcrypt/include/mcux_psa_hashcrypt_common_init.h
+                hashcrypt/include/mcux_psa_hashcrypt_entropy.h
+                hashcrypt/include/mcux_psa_hashcrypt_hash.h
+                hashcrypt/include/mcux_psa_hashcrypt_init.h
+                hashcrypt/src/mcux_psa_hashcrypt_common_cipher.c
+                hashcrypt/src/mcux_psa_hashcrypt_common_init.c
+                hashcrypt/src/mcux_psa_hashcrypt_entropy.c
+                hashcrypt/src/mcux_psa_hashcrypt_hash.c
+                hashcrypt/src/mcux_psa_hashcrypt_init.c
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES hashcrypt
+                 hashcrypt/include
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        "PSA_CRYPTO_DRIVER_HASHCRYPT"
+    )
+endif()
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.caam)
     mcux_add_source(
         SOURCES caam/caam_crypto_primitives.h
@@ -461,4 +517,5 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ela_csec)
     mcux_add_macro(
         CC  "-DPSA_CRYPTO_DRIVER_ELA_CSEC"
     )
+
 endif()
