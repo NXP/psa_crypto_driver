@@ -7,7 +7,7 @@
 
 #include "mcux_psa_dcp_init.h"
 #include "mcux_psa_dcp_common_init.h"
-#include "mcux_psa_common_entropy.h"
+#include "mcux_psa_dcp_entropy.h"
 
 mcux_mutex_t rng_hwcrypto_mutex;
 
@@ -24,7 +24,7 @@ psa_status_t dcp_common_init(void)
     }
 
     /* Init RNG peripheral */
-    status = mcux_psa_common_entropy_init(&rng_hwcrypto_mutex);
+    status = mcux_psa_dcp_entropy_init(&rng_hwcrypto_mutex);
 
     return status;
 }
@@ -38,7 +38,7 @@ psa_status_t dcp_common_free(void)
     status = dcp_to_psa_status(dcp_status);
 
     /* Deinit RNG peripheral */
-    mcux_psa_common_entropy_deinit();
+    mcux_psa_dcp_entropy_deinit();
 
     return status;
 }

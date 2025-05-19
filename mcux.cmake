@@ -192,14 +192,14 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.dcp)
     mcux_add_source(
         SOURCES dcp/dcp.h
                 dcp/dcp_crypto_primitives.h
-                dcp/common/include/mcux_psa_common_entropy.h
-                dcp/common/src/mcux_psa_common_entropy.c
                 dcp/include/mcux_psa_dcp_cipher.h
                 dcp/include/mcux_psa_dcp_common_init.h
+                dcp/include/mcux_psa_dcp_entropy.h
                 dcp/include/mcux_psa_dcp_hash.h
                 dcp/include/mcux_psa_dcp_init.h
                 dcp/src/mcux_psa_dcp_cipher.c
                 dcp/src/mcux_psa_dcp_common_init.c
+                dcp/src/mcux_psa_dcp_entropy.c
                 dcp/src/mcux_psa_dcp_hash.c
                 dcp/src/mcux_psa_dcp_init.c
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
