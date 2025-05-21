@@ -18,9 +18,21 @@
 #include "fsl_sscp_mu.h"
 #include "fsl_sss_sscp.h"
 
+
+/* Hash operation */
 typedef struct
 {
     sss_sscp_digest_t ctx;
 } ele_s2xx_hash_operation_t;
+
+
+/* Multipart MAC operation */
+#define ELE_S2XX_MULTIPART_MAC_BLOB_SIZE (384u)
+
+typedef struct {
+    sss_sscp_object_t key_object;
+    sss_algorithm_t   algorithm;
+    uint8_t           context_blob[ELE_S2XX_MULTIPART_MAC_BLOB_SIZE];
+} ele_s2xx_transparent_mac_operation_t,ele_s2xx_opaque_mac_operation_t,ele_s2xx_mac_operation_t;
 
 #endif /* ELE_S2XX_CRYPTO_PRIMITIVES_H */

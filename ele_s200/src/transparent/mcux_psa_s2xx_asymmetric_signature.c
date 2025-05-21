@@ -25,8 +25,8 @@
 #define MAX_PUB_KEY_SIZE_IN_BYTES  (132u + 1u)
 #define MAX_PAIR_KEY_SIZE_IN_BYTES (MAX_PUB_KEY_SIZE_IN_BYTES + 66u)
 
-#define NISTP521_BITLEN (521)
-#define ED25519_BITLEN  (255)
+#define NISTP521_BITLEN (521u)
+#define ED25519_BITLEN  (255u)
 
 static psa_status_t ele_s2xx_psa_2_ele_asym_alg(const psa_key_attributes_t *attributes,
                                                 psa_algorithm_t alg,
@@ -129,31 +129,40 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
     uint8_t public_key_data[MAX_PAIR_KEY_SIZE_IN_BYTES] = {0u};
     size_t public_key_data_length                       = 0u;
 
-    status = PSA_SUCCESS;
     if (true == PSA_KEY_TYPE_IS_KEY_PAIR(key_type))
     {
         /* In PSA, an ECC key pair is represented by the secret value,
          * so we need to also export the public part for S2XX and position them
          * correctly in memory [pub_x, pub_y, private] */
         key_part        = kSSS_KeyPart_Pair;
-        allocation_size = allocation_size * 3;
+        allocation_size = allocation_size * 3u;
 
         status = psa_export_public_key(psa_get_key_id(attributes), public_key_data, MAX_PAIR_KEY_SIZE_IN_BYTES, &public_key_data_length);
 
-        key_data      = public_key_data + 1;
-        key_data_size = public_key_data_length - 1;
+        if (PSA_SUCCESS != status)
+        {
+            return status;
+        }
 
-        memcpy(key_data + key_data_size, key_buffer, PSA_BITS_TO_BYTES(key_bits));
+        if (0u == public_key_data_length)
+        {
+            return PSA_ERROR_GENERIC_ERROR;
+        }
+
+        key_data      = public_key_data + 1;
+        key_data_size = public_key_data_length - 1u;
+
+        (void)memcpy(key_data + key_data_size, key_buffer, PSA_BITS_TO_BYTES(key_bits));
         key_data_size = key_data_size + PSA_BITS_TO_BYTES(key_bits);
     }
     else if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(key_type))
     {
         /* Set required S2XX flags and skip the first Byte of the ECC public key */
         key_part        = kSSS_KeyPart_Public;
-        allocation_size = allocation_size * 2;
+        allocation_size = allocation_size * 2u;
 
         key_data      = (uint8_t *)key_buffer + 1;
-        key_data_size = PSA_BITS_TO_BYTES(key_bits) * 2;
+        key_data_size = PSA_BITS_TO_BYTES(key_bits) * 2u;
     }
     else
     {
@@ -163,14 +172,10 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
         key_data      = (uint8_t *)key_buffer;
         key_data_size = key_buffer_size;
     }
-    if (PSA_SUCCESS != status)
-    {
-        return status;
-    }
 
     /* Preemptively inflate the allocation size, due to possible additional
      * Bytes required for 521bit public/keypair keys */
-    allocation_size = allocation_size + 6;
+    allocation_size = allocation_size + 6u;
 
     status = PSA_SUCCESS;
     switch (PSA_KEY_TYPE_ECC_GET_FAMILY(key_type))
@@ -278,7 +283,7 @@ psa_status_t ele_s2xx_transparent_sign_hash(const psa_key_attributes_t *attribut
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_BAD_STATE;
     }
@@ -299,7 +304,7 @@ psa_status_t ele_s2xx_transparent_sign_hash(const psa_key_attributes_t *attribut
 exit:
     (void)sss_sscp_key_object_free(&sssKey, kSSS_keyObjFree_KeysStoreDefragment);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_BAD_STATE;
     }
@@ -366,7 +371,7 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
@@ -386,7 +391,7 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
 exit:
     (void)sss_sscp_key_object_free(&sssKey, kSSS_keyObjFree_KeysStoreDefragment);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_BAD_STATE;
     }
