@@ -189,7 +189,6 @@ static psa_status_t mac_common_setup(ele_s2xx_transparent_mac_operation_t *opera
     sss_sscp_mac_t mac_ctx = {0};
     size_t key_size_bits   = psa_get_key_bits(attributes);
     size_t blob_size       = ELE_S2XX_MULTIPART_MAC_BLOB_SIZE;
-    uint32_t key_id        = (uint32_t)psa_get_key_id(attributes);
 
     /* Workaround : we need 1 Byte allocated for 0-bit HMAC key support */
     size_t key_handle_alloc_size = (0u != key_size_bits)
@@ -221,7 +220,7 @@ static psa_status_t mac_common_setup(ele_s2xx_transparent_mac_operation_t *opera
     }
 
     if (sss_sscp_key_object_allocate_handle(&operation->key_object,
-                                            key_id,
+                                            0u, /* Let S200 choose key ID */
                                             kSSS_KeyPart_Default,
                                             kSSS_CipherType_MAC,
                                             key_handle_alloc_size,
