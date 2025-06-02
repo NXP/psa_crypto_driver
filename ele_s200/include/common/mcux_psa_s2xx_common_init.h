@@ -24,9 +24,9 @@
 #include "fsl_sss_sscp.h"
 #include "fsl_sscp_mu.h"
 
-#if defined(CONFIG_PSA_SECURE_STORAGE)
+#if defined(SECURE_STORAGE)
 #include "secure_storage.h"
-#endif /* CONFIG_PSA_SECURE_STORAGE */
+#endif /* SECURE_STORAGE */
 
 typedef struct
 {
