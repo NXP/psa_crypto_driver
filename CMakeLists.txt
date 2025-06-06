@@ -54,6 +54,12 @@ if(CONFIG_SOC_SERIES_RW6XX)
             MBEDTLS_MCUX_ENTROPY
     )
 
+    target_compile_definitions(
+        McuxPsaCryptoDriverElsPkc 
+        PRIVATE
+            MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED
+    )
+
     target_include_directories(McuxPsaCryptoDriverElsPkc
         PUBLIC
             #psa-crypto-driver for els_pkc include paths
