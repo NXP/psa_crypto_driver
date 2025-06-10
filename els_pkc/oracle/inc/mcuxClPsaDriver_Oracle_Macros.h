@@ -18,6 +18,7 @@
 /* oracle is part of TF-M S */
 #define PRINTF(...)
 #define PSA_DRIVER_ERROR(...)
+#define PSA_DRIVER_WARNING(...)
 #else /* PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER */
 /* define PRINTF */
 #include <stdio.h>
@@ -45,6 +46,17 @@
         break;                                               \
     }
 #endif /* PSA_DRIVER_ERROR */
+
+#ifndef PSA_DRIVER_WARNING
+#define PSA_DRIVER_WARNING(...)                                \
+    for (;;)                                                   \
+    {                                                          \
+        (void)PRINTF("WARNING: %s L#%d ", __func__, __LINE__); \
+        (void)PRINTF(__VA_ARGS__);                             \
+        (void)PRINTF("\r\n");                                  \
+        break;                                                 \
+    }
+#endif /* PSA_DRIVER_WARNING */
 
 #define PSA_DRIVER_EXIT_STATUS_MSG(STATUS, ...) \
     psa_status = STATUS;                        \

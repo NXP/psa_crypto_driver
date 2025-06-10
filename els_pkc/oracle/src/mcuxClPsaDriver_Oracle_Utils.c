@@ -298,7 +298,7 @@ static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_si
                 psa_cmd->signature_size = cmd_len;
                 break;
             default:
-                PSA_DRIVER_ERROR("Unknown tag: 0x%x", tag);
+                PSA_DRIVER_WARNING("Unknown tag: 0x%x", tag);
                 break;
         }
         cmd_ptr += cmd_len;
