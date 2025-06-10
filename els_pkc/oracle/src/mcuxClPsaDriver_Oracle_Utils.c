@@ -30,6 +30,7 @@
 #define PSA_CMD_TAG_SIGNATURE_KEY_ID    0x53U
 #define PSA_CMD_TAG_SIGNATURE_ALGORITHM 0x54U
 #define PSA_CMD_TAG_KEYIN_CMD           0x55U
+#define PSA_CMD_TAG_PROVISIONING_ID     0x56U
 #define PSA_CMD_TAG_SIGNATURE           0x5EU
 
 // Algorithms used in EL2GO blobs
@@ -284,6 +285,9 @@ static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_si
                 break;
             case PSA_CMD_TAG_SIGNATURE_ALGORITHM:
                 psa_cmd->signature_algorithm = get_uint32_val(cmd_ptr);
+                break;
+            case PSA_CMD_TAG_PROVISIONING_ID:
+                /* Nothing to do */
                 break;
             case PSA_CMD_TAG_KEYIN_CMD:
                 psa_cmd->keyincmd      = cmd_ptr;
