@@ -20,47 +20,30 @@
 #endif
 
 #include "mcux_psa_dcp_entropy.h"
-#include "fsl_adapter_rng.h"
+#include "fsl_trng.h"
 
 static mcux_mutex_t *s_mutex = NULL;
 
-psa_status_t hal_rng_to_psa_status(hal_rng_status_t status)
-{
-    psa_status_t res;
-
-    switch (status) {
-        case kStatus_HAL_RngSuccess:
-            res = PSA_SUCCESS;
-            break;
-        case kStatus_HAL_RngInvalidArgumen:
-            res = PSA_ERROR_INVALID_ARGUMENT;
-            break;
-        default:
-            res = PSA_ERROR_HARDWARE_FAILURE;
-            break;
-    }
-
-    return res;
-}
-
 psa_status_t mcux_psa_dcp_entropy_init(mcux_mutex_t *mutex)
 {
+    trng_config_t config;
 
-    hal_rng_status_t status = HAL_RngInit();
+    (void)TRNG_GetDefaultConfig(&config);
+    config.sampleMode = kTRNG_SampleModeVonNeumann;
 
-    if ((status == kStatus_HAL_RngSuccess) || (status == KStatus_HAL_RngNotSupport))
+    if (kStatus_Success != TRNG_Init(TRNG, (void *)&config))
     {
-        s_mutex = mutex;
-
-        return PSA_SUCCESS;
+        return PSA_ERROR_HARDWARE_FAILURE;
     }
 
-    return hal_rng_to_psa_status(status);
+    s_mutex = mutex;
+
+    return PSA_SUCCESS;
 }
 
 void mcux_psa_dcp_entropy_deinit(void)
 {
-    HAL_RngDeinit();
+    TRNG_Deinit(TRNG);
 
     s_mutex = NULL;
 }
@@ -75,47 +58,46 @@ void mcux_psa_dcp_entropy_deinit(void)
  *  @{
  */
 psa_status_t mcux_psa_dcp_entropy_get(uint32_t flags,
-                                         size_t *estimate_bits,
-                                         uint8_t *output,
-                                         size_t output_size)
+                                      size_t *estimate_bits,
+                                      uint8_t *output,
+                                      size_t output_size)
 {
-    status_t result   = kStatus_Success;
-    psa_status_t err  = PSA_ERROR_CORRUPTION_DETECTED;
+    (void)flags; /* Unused */
 
-    if (output == NULL) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
-    if (estimate_bits == NULL) {
+    if ((NULL == output) || (NULL == estimate_bits) || (0u == output_size))
+    {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     *estimate_bits = 0u;
 
-    if (output_size == 0u) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (mcux_mutex_lock(s_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
-    }
-
-    result = HAL_RngHwGetData((uint8_t *) output, output_size);
-    if (result == KStatus_HAL_RngNotSupport)
+    if (mcux_mutex_lock(s_mutex) != 0)
     {
-        result = HAL_RngGetData((uint8_t *) output, output_size);
-    }
-    err = hal_rng_to_psa_status(result);
-
-    if (mcux_mutex_unlock(s_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
 
-    if (err == PSA_SUCCESS) {
+    if (kStatus_Success != TRNG_GetRandomData(TRNG, output, output_size))
+    {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+    }
+    else
+    {
+        status = PSA_SUCCESS;
+    }
+
+    if (mcux_mutex_unlock(s_mutex) != 0)
+    {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    if (PSA_SUCCESS == status)
+    {
         *estimate_bits = output_size * 8u;
     }
 
-    return err;
+    return status;
 }
 /** @} */ // end of psa_entropy
 
@@ -127,8 +109,8 @@ psa_status_t mcux_psa_dcp_entropy_get(uint32_t flags,
  */
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
-    size_t estimate_bits  = 0u;
-    psa_status_t status = mcux_psa_dcp_entropy_get(0u, &estimate_bits, output, len);
+    size_t estimate_bits = 0u;
+    psa_status_t status  = mcux_psa_dcp_entropy_get(0u, &estimate_bits, output, len);
 
     *olen = estimate_bits / 8u;
 
