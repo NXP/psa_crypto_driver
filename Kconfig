@@ -448,5 +448,46 @@ menu "psaCryptoDriver"
                 select MCUX_COMPONENT_middleware.mbedcrypto
           endchoice
         endif
+		
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
+        bool "SGI Common"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
+        bool "SGI Transparent"
+		
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi
+        bool "SGI"
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
+        select MCUX_COMPONENT_component.sgi_pkc.sgi
+        select MCUX_COMPONENT_component.sgi_pkc.pkc
+		
+        if MCUX_COMPONENT_component.psa_crypto_driver.sgi
+          choice
+            prompt "OSAL Selection"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.osal_baremetal
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.osal_baremetal
+                bool "Baremetal"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.osal_frtos
+                bool "FreeRTOS"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+          endchoice
+          choice
+            prompt "Mbed TLS Version"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedtls3x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedtls3x
+                bool "Mbed TLS 3.x"
+                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedcrypto
+                bool "Mbed Crypto"
+                select MCUX_COMPONENT_middleware.mbedcrypto
+          endchoice
+        endif
 
 endmenu

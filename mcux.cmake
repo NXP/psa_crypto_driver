@@ -519,3 +519,44 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ela_csec)
     )
 
 endif()
+
+if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.common)
+  mcux_add_source(
+    SOURCES
+    sgi/include/common/mcux_psa_sgi_common_init.h
+    sgi/include/common/mcux_psa_sgi_entropy.h
+    sgi/src/common/mcux_psa_sgi_common_init.c
+    sgi/src/common/mcux_psa_sgi_entropy.c
+    BASE_PATH
+    ${SdkRootDirPath}/components/psa_crypto_driver/)
+  mcux_add_include(INCLUDES sgi/include/common BASE_PATH
+                   ${SdkRootDirPath}/components/psa_crypto_driver/)
+endif()
+
+if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent)
+  mcux_add_source(
+    SOURCES
+    sgi/include/transparent/mcux_psa_sgi_cipher.h
+    sgi/include/transparent/mcux_psa_sgi_aead.h
+    sgi/include/transparent/mcux_psa_sgi_hash.h
+    sgi/include/transparent/mcux_psa_sgi_init.h
+    sgi/include/transparent/mcux_psa_sgi_mac.h
+    sgi/src/transparent/mcux_psa_sgi_aead.c
+    sgi/src/transparent/mcux_psa_sgi_cipher.c
+    sgi/src/transparent/mcux_psa_sgi_hash.c
+    sgi/src/transparent/mcux_psa_sgi_init.c
+    sgi/src/transparent/mcux_psa_sgi_mac.c
+    BASE_PATH
+    ${SdkRootDirPath}/components/psa_crypto_driver/)
+  mcux_add_include(INCLUDES sgi/include/transparent BASE_PATH
+                   ${SdkRootDirPath}/components/psa_crypto_driver/)
+endif()
+
+if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi)
+  mcux_add_source(SOURCES sgi/sgi_crypto_primitives.h sgi/sgi.h BASE_PATH
+                  ${SdkRootDirPath}/components/psa_crypto_driver/)
+  mcux_add_include(INCLUDES sgi BASE_PATH
+                   ${SdkRootDirPath}/components/psa_crypto_driver/)
+  mcux_add_macro(CC "-DPSA_CRYPTO_DRIVER_SGI")
+  mcux_add_macro(CC "-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED")
+endif()

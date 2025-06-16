@@ -1,0 +1,171 @@
+/*
+ * Copyright 2025 NXP
+ *
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+/** \file mcux_psa_sgi_entropy.c
+ *
+ * This file contains the implementation of the entry points associated
+ * to the entropy capability as described by the PSA Cryptoprocessor
+ * Driver interface specification
+ *
+ */
+
+#if !defined(MBEDTLS_CONFIG_FILE)
+#include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
+
+#if defined(MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED)
+#if defined(FSL_FEATURE_SOC_TRNG_COUNT) && (FSL_FEATURE_SOC_TRNG_COUNT > 0)
+#include "fsl_trng.h"
+#ifndef TRNG0
+#define TRNG0 TRNG
+#endif /* ifndef TRNG0 */
+#endif /* FSL_FEATURE_SOC_TRNG_COUNT */
+#else
+#include <mcuxClRandom.h>
+#include <mcuxClRandomModes.h>
+#endif /* MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256 || MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED */
+
+#include "mcux_psa_sgi_entropy.h"
+
+/** \defgroup psa_entropy PSA driver entry points for entropy collection
+ *
+ *  Entry points for entropy collection from the TRNG source as described by the
+ *  PSA Cryptoprocessor Driver interface specification. The TRNG
+ *  operates by sampling the output of a fast free-running ring oscillator in a
+ *  different (slower) clock domain
+ *
+ *  @{
+ */
+psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *output, size_t output_size)
+{
+    if (output == NULL)
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (estimate_bits == NULL)
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (output_size == 0u)
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+#if defined(MBEDTLS_THREADING_C)
+    if (mbedtls_mutex_lock(&sgi_hwcrypto_mutex) != 0)
+    {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+#endif
+#if defined(MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED)
+    
+            /* Get random data from trng driver*/
+    if(TRNG_GetRandomData(TRNG0, output, output_size) != kStatus_Success)
+       {
+             return PSA_ERROR_GENERIC_ERROR;
+     }
+#else
+    
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
+    /* Allocate and initialize session */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLEXAMPLE_MAX_WA(MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, MCUXCLRANDOM_NCINIT_WACPU_SIZE), 0u);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    
+
+    /**************************************************************************/
+    /* Random init                                                            */
+    /**************************************************************************/
+
+    /* Initialize the RNG context, with maximum size */
+    uint32_t rng_ctx[MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE_IN_WORDS] = {0u};                                                 \
+    mcuxClRandom_Context_t pRng_ctx = (mcuxClRandom_Context_t)rng_ctx;  
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(
+        retRandomInit, tokenRandInit,
+        mcuxClRandom_init(session, pRng_ctx, mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3));
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_init) != tokenRandInit) || (MCUXCLRANDOM_STATUS_OK != retRandomInit))
+    {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+    
+//    /* Initialize the PRNG */                                                                                               \
+//    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(prngInit_result, prngInit_token, mcuxClRandom_ncInit(session));                          \
+//    if((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_ncInit) != prngInit_token) || (MCUXCLRANDOM_STATUS_OK != prngInit_result))   \
+//    {                                                                                                                       \
+//        return PSA_ERROR_GENERIC_ERROR;                                                                                   \
+//    }                                                                                                                       \
+//    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /**************************************************************************/
+    /* Generate random values.                                                */
+    /**************************************************************************/
+
+    /* Generate random values of smaller amount than one word size. */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(retRandGen, tokenRandGen, mcuxClRandom_generate(session, output, output_size));
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_generate) != tokenRandGen) || (MCUXCLRANDOM_STATUS_OK != retRandGen))
+    {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(cleanup_result, cleanup_token, mcuxClSession_cleanup(session));
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_cleanup) != cleanup_token) ||
+        (MCUXCLSESSION_STATUS_OK != cleanup_result))
+    {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(destroy_result, destroy_token, mcuxClSession_destroy(session));
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != destroy_token) ||
+        (MCUXCLSESSION_STATUS_OK != destroy_result))
+    {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+    
+#endif
+#if defined(MBEDTLS_THREADING_C)
+    if (mbedtls_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
+    {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+#endif
+
+    *estimate_bits = output_size * 8;
+
+    return PSA_SUCCESS;
+}
+
+/*
+ * FixMe: This function is required to integrate into Mbed TLS as the PSA
+ * subsystem does not yet support entropy entry points. See the header
+ * entropy_poll.h for details. This needs to be revised once Mbed TLS adds
+ * support for entropy.
+ */
+int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
+{
+    size_t estimate_bits = 0u;
+    int status           = ele_get_entropy(0u, &estimate_bits, output, len);
+
+    *olen = estimate_bits / 8u;
+
+    return status;
+}
+/** @} */ // end of psa_entropy
