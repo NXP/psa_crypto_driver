@@ -461,6 +461,7 @@ menu "psaCryptoDriver"
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
         select MCUX_COMPONENT_component.sgi_pkc.sgi
         select MCUX_COMPONENT_component.sgi_pkc.pkc
+        select MCUX_COMPONENT_component.sgi_pkc.example
 		
         if MCUX_COMPONENT_component.psa_crypto_driver.sgi
           choice
