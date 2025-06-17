@@ -42,7 +42,7 @@
  *
  *  @{
  */
-psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *output, size_t output_size)
+psa_status_t sgi_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *output, size_t output_size)
 {
     if (output == NULL)
     {
@@ -162,7 +162,7 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
     size_t estimate_bits = 0u;
-    int status           = ele_get_entropy(0u, &estimate_bits, output, len);
+    int status           = sgi_get_entropy(0u, &estimate_bits, output, len);
 
     *olen = estimate_bits / 8u;
 

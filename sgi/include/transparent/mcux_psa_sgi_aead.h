@@ -91,7 +91,7 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
                                                size_t plaintext_size,
                                                size_t *plaintext_length);
 
-/* These are not implemented for now as ELE doesn't support multi-part operations */
+/* These are not implemented for now */
 #if 0
 
 /*!
@@ -111,7 +111,7 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
  * \retval #PSA_ERROR_NOT_SUPPORTED
  */
 psa_status_t sgi_aead_encrypt_setup(
-    ele_s2xx_aead_operation_t *operation,
+    sgi_aead_operation_t *operation,
     const psa_key_attributes_t *attributes,
     const uint8_t *key_buffer, size_t key_buffer_size,
     psa_algorithm_t alg);
@@ -133,7 +133,7 @@ psa_status_t sgi_aead_encrypt_setup(
  * \retval #PSA_ERROR_NOT_SUPPORTED
  */
 psa_status_t sgi_aead_decrypt_setup(
-    ele_s2xx_aead_operation_t *operation,
+    sgi_aead_operation_t *operation,
     const psa_key_attributes_t *attributes,
     const uint8_t *key_buffer, size_t key_buffer_size,
     psa_algorithm_t alg);
@@ -153,7 +153,7 @@ psa_status_t sgi_aead_decrypt_setup(
  * \retval #PSA_ERROR_DATA_INVALID
  */
 psa_status_t sgi_aead_set_nonce(
-    ele_s2xx_aead_operation_t *operation,
+    sgi_aead_operation_t *operation,
     const uint8_t *nonce,
     size_t nonce_length);
 
@@ -170,7 +170,7 @@ psa_status_t sgi_aead_set_nonce(
  * \retval #PSA_ERROR_NOT_SUPPORTED
  */
 psa_status_t sgi_aead_set_lengths(
-    ele_s2xx_aead_operation_t *operation,
+    sgi_aead_operation_t *operation,
     size_t ad_length,
     size_t plaintext_length);
 
@@ -188,7 +188,7 @@ psa_status_t sgi_aead_set_lengths(
  * \retval #PSA_ERROR_DATA_INVALID
  */
 psa_status_t sgi_aead_update_ad(
-    ele_s2xx_aead_operation_t *operation,
+    sgi_aead_operation_t *operation,
     const uint8_t *input,
     size_t input_size);
 
@@ -209,7 +209,7 @@ psa_status_t sgi_aead_update_ad(
  * \retval #PSA_ERROR_DATA_INVALID
  */
 psa_status_t sgi_aead_update(
-    ele_s2xx_aead_operation_t *operation,
+    sgi_aead_operation_t *operation,
     const uint8_t *input,
     size_t input_length,
     uint8_t *output,
@@ -233,7 +233,7 @@ psa_status_t sgi_aead_update(
  * \retval #PSA_ERROR_NOT_SUPPORTED
  */
 psa_status_t sgi_aead_finish(
-    ele_s2xx_aead_operation_t *operation,
+    sgi_aead_operation_t *operation,
     uint8_t *ciphertext,
     size_t ciphertext_size,
     size_t *ciphertext_length,
@@ -257,7 +257,7 @@ psa_status_t sgi_aead_finish(
  * \retval #PSA_ERROR_NOT_SUPPORTED
  */
 psa_status_t sgi_aead_verify(
-    ele_s2xx_aead_operation_t *operation,
+    sgi_aead_operation_t *operation,
     uint8_t *plaintext,
     size_t plaintext_size,
     size_t *plaintext_length,
@@ -271,7 +271,7 @@ psa_status_t sgi_aead_verify(
  * \retval #PSA_SUCCESS
  * \retval #PSA_ERROR_NOT_SUPPORTED
  */
-psa_status_t sgi_aead_abort(ele_s2xx_aead_operation_t *operation);
+psa_status_t sgi_aead_abort(sgi_aead_operation_t *operation);
 
 #endif // Not Supported
 

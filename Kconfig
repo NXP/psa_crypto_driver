@@ -440,7 +440,6 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedcrypto

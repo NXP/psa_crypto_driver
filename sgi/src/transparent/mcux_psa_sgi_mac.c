@@ -85,7 +85,7 @@ psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
     
     mac_size = PSA_MAC_LENGTH(key_type, key_bits, alg);
 
-    if (mcux_mutex_lock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
@@ -135,7 +135,7 @@ psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
   }
   MCUX_CSSL_FP_FUNCTION_CALL_END();
   
-  uint32_t mac_length_tmp = 0u;
+  uint32_t mac_length_tmp = mac_size;
   
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mc_status, mc_token, mcuxClMac_compute(
     /* mcuxClSession_Handle_t session:  */ session,
@@ -156,7 +156,7 @@ psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
     *mac_length = mac_length_tmp;
 
 
-    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
@@ -170,7 +170,7 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
                                 size_t key_buffer_size, psa_algorithm_t alg)
 {
 
-    if (mcux_mutex_lock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
@@ -236,7 +236,7 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
   MCUX_CSSL_FP_FUNCTION_CALL_END();
 
   
-    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }

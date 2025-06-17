@@ -22,28 +22,6 @@ mcux_mutex_t sgi_hwcrypto_mutex;
 
 uint32_t g_isCryptoHWInitialized = false;
 
-psa_status_t ele_to_psa_status(status_t ele_status)
-{
-    psa_status_t status = PSA_ERROR_HARDWARE_FAILURE;
-    switch (ele_status)
-    {
-        case kStatus_InvalidArgument:
-            status = PSA_ERROR_INVALID_ARGUMENT;
-            break;
-        case kStatus_Success:
-            status = PSA_SUCCESS;
-            break;
-        case kStatus_Fail:
-            status = PSA_ERROR_HARDWARE_FAILURE;
-            break;
-        default:
-            status = PSA_ERROR_HARDWARE_FAILURE;
-            break;
-    }
-
-    return status;
-}
-
 /*!
  * @brief Application init for Crypto blocks.
  *
@@ -59,8 +37,8 @@ status_t CRYPTO_InitHardware(void)
         return 0;
     }
 
-    /* Mutex for access to ele_crypto HW */
-    if (mcux_mutex_init(&sgi_hwcrypto_mutex))
+    /* Mutex for access to sgi crypto HW */
+    if (mcux_mutex_init(&sgi_hwcrypto_mutex) != 0)
     {
         PRINTF("NO memory - init failed\n");
         return kStatus_Fail;
@@ -81,7 +59,7 @@ status_t CRYPTO_InitHardware(void)
     } while (0);
     
 
-    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
     {
         PRINTF("Mutex unlock failed\n");
         return kStatus_Fail;
@@ -105,7 +83,7 @@ status_t CRYPTO_DeinitHardware(void)
         return 0;
     }
 
-    if (mcux_mutex_lock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0)
     {
         return kStatus_Fail;
     }
@@ -115,14 +93,14 @@ status_t CRYPTO_DeinitHardware(void)
         g_isCryptoHWInitialized = false;
     }
 
-    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
     {
         return kStatus_Fail;
     }
 
     if (result == kStatus_Success)
     {
-        mcux_mutex_free(&sgi_hwcrypto_mutex);
+        (void)mcux_mutex_free(&sgi_hwcrypto_mutex);
     }
 
     return result;

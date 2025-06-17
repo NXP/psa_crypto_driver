@@ -131,7 +131,7 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -163,7 +163,7 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mcux_mutex_lock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
@@ -242,11 +242,6 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
   }
   MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex))
-    {
-        return PSA_ERROR_BAD_STATE;
-    }
-
     /* Update ciphertext_length by tag size, as they are in the same buffer */
     *ciphertext_length += tag_length;
     
@@ -260,6 +255,12 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     return MCUXCLEXAMPLE_STATUS_ERROR;
   }
   MCUX_CSSL_FP_FUNCTION_CALL_END();
+  
+  
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
+    {
+        return PSA_ERROR_BAD_STATE;
+    }
 
     return PSA_SUCCESS;
 }
@@ -448,7 +449,7 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
   
     
 
-    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_BAD_STATE;
     }

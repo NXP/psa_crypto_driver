@@ -74,7 +74,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     size_t key_bytes        = PSA_BITS_TO_BYTES(key_bits);
 
     /* Key buffer or size can't be NULL */
-    if (!key_buffer || !key_buffer_size)
+    if (NULL == key_buffer || 0u == key_buffer_size)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -139,7 +139,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mcux_mutex_lock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     };
@@ -231,7 +231,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_BAD_STATE;
     }
@@ -318,7 +318,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    if (mcux_mutex_lock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_COMMUNICATION_FAILURE;
     }
@@ -417,7 +417,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
         }
         MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-            if (mcux_mutex_unlock(&sgi_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_BAD_STATE;
     }

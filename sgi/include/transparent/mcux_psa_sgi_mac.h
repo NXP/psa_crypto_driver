@@ -85,7 +85,7 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
  *          failure
  */
 
-/* These are not implemented for now as ELE doesn't support multi-part operations */
+/* These are not implemented for now */
 #if 0
 psa_status_t sgi_mac_verify_setup(sgi_mac_operation_t *operation,
                                   const psa_key_attributes_t *attributes,
@@ -103,7 +103,7 @@ psa_status_t sgi_mac_verify_setup(sgi_mac_operation_t *operation,
  *          failure
  */
 
-psa_status_t ele_s2xx_transparent_mac_update(sgi_mac_operation_t *operation,
+psa_status_t sgi_mac_update(sgi_mac_operation_t *operation,
                             const uint8_t *input, size_t input_length);
 /*!
  * \brief Finalize a MAC signing operation by producing the MAC value
