@@ -54,7 +54,6 @@ static inline uint8_t psa_cipher_to_sgi_alg(const psa_algorithm_t alg,
     }
 
     return iv_required;
-    ;
 }
 
 psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attributes,

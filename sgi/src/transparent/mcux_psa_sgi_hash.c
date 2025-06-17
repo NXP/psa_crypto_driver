@@ -113,11 +113,14 @@ psa_status_t sgi_hash_setup(mcux_sgi_hash_operation_t *operation, psa_algorithm_
     /**************************************************************************/
     /* Session clean-up                                                       */
     /**************************************************************************/
-    /** Destroy Session and cleanup Session **/
-    if (!mcuxClExample_Session_Clean(session)) {
-        return PSA_ERROR_BAD_STATE;
-    }
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }

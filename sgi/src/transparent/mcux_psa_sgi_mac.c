@@ -149,6 +149,14 @@ psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
 
     *mac_length = mac_length_tmp;
 
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_GENERIC_ERROR;
@@ -229,12 +237,18 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_GENERIC_ERROR;
     }
-
-    //session cleanup
 
     return PSA_SUCCESS;
 }

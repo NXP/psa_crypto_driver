@@ -252,7 +252,15 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_BAD_STATE;
     }
@@ -448,6 +456,15 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_BAD_STATE;
     }
 
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
     if (MCUXCLAEAD_STATUS_OK == d_status) {
         return PSA_SUCCESS;
     } else if (MCUXCLAEAD_STATUS_INVALID_TAG == d_status) {
@@ -458,10 +475,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
 
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-
-    //*plaintext_length = cipher_length;
-
-    //  return PSA_SUCCESS;
 }
 
 /** @} */ // end of psa_aead
