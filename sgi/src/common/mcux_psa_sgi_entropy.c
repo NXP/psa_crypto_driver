@@ -42,67 +42,69 @@
  *
  *  @{
  */
-psa_status_t sgi_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *output, size_t output_size)
+psa_status_t sgi_get_entropy(uint32_t flags,
+                             size_t *estimate_bits,
+                             uint8_t *output,
+                             size_t output_size)
 {
-    if (output == NULL)
-    {
+    if (output == NULL) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (estimate_bits == NULL)
-    {
+    if (estimate_bits == NULL) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (output_size == 0u)
-    {
+    if (output_size == 0u) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
 #if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_lock(&sgi_hwcrypto_mutex) != 0)
-    {
+    if (mbedtls_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_GENERIC_ERROR;
     }
 #endif
 #if defined(MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED)
-    
-            /* Get random data from trng driver*/
-    if(TRNG_GetRandomData(TRNG0, output, output_size) != kStatus_Success)
-       {
-             return PSA_ERROR_GENERIC_ERROR;
-     }
+
+    /* Get random data from trng driver*/
+    if (TRNG_GetRandomData(TRNG0, output, output_size) != kStatus_Success) {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
 #else
-    
+
     /* Initialize session */
     mcuxClSession_Descriptor_t sessionDesc;
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLEXAMPLE_MAX_WA(MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, MCUXCLRANDOM_NCINIT_WACPU_SIZE), 0u);
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLEXAMPLE_MAX_WA(
+                                                      MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE,
+                                                      MCUXCLRANDOM_NCINIT_WACPU_SIZE),
+                                                  0u);
 
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
-    
+
 
     /**************************************************************************/
     /* Random init                                                            */
     /**************************************************************************/
 
     /* Initialize the RNG context, with maximum size */
-    uint32_t rng_ctx[MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE_IN_WORDS] = {0u};                                                 \
-    mcuxClRandom_Context_t pRng_ctx = (mcuxClRandom_Context_t)rng_ctx;  
+    uint32_t rng_ctx[MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE_IN_WORDS] = { 0u };                                                 \
+    mcuxClRandom_Context_t pRng_ctx = (mcuxClRandom_Context_t) rng_ctx;
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(
         retRandomInit, tokenRandInit,
         mcuxClRandom_init(session, pRng_ctx, mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3));
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_init) != tokenRandInit) || (MCUXCLRANDOM_STATUS_OK != retRandomInit))
-    {
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_init) != tokenRandInit) ||
+        (MCUXCLRANDOM_STATUS_OK != retRandomInit)) {
         return PSA_ERROR_GENERIC_ERROR;
     }
 
     MCUX_CSSL_FP_FUNCTION_CALL_END();
-    
+
 //    /* Initialize the PRNG */                                                                                               \
 //    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(prngInit_result, prngInit_token, mcuxClRandom_ncInit(session));                          \
 //    if((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_ncInit) != prngInit_token) || (MCUXCLRANDOM_STATUS_OK != prngInit_result))   \
@@ -116,9 +118,11 @@ psa_status_t sgi_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
     /**************************************************************************/
 
     /* Generate random values of smaller amount than one word size. */
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(retRandGen, tokenRandGen, mcuxClRandom_generate(session, output, output_size));
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_generate) != tokenRandGen) || (MCUXCLRANDOM_STATUS_OK != retRandGen))
-    {
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(retRandGen, tokenRandGen, mcuxClRandom_generate(session,
+                                                                                     output,
+                                                                                     output_size));
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_generate) != tokenRandGen) ||
+        (MCUXCLRANDOM_STATUS_OK != retRandGen)) {
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -126,24 +130,21 @@ psa_status_t sgi_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(cleanup_result, cleanup_token, mcuxClSession_cleanup(session));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_cleanup) != cleanup_token) ||
-        (MCUXCLSESSION_STATUS_OK != cleanup_result))
-    {
+        (MCUXCLSESSION_STATUS_OK != cleanup_result)) {
         return PSA_ERROR_GENERIC_ERROR;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(destroy_result, destroy_token, mcuxClSession_destroy(session));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != destroy_token) ||
-        (MCUXCLSESSION_STATUS_OK != destroy_result))
-    {
+        (MCUXCLSESSION_STATUS_OK != destroy_result)) {
         return PSA_ERROR_GENERIC_ERROR;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
-    
+
 #endif
 #if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_unlock(&sgi_hwcrypto_mutex) != 0)
-    {
+    if (mbedtls_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_GENERIC_ERROR;
     }
 #endif

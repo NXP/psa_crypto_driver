@@ -43,16 +43,16 @@ extern "C" {
  *          failure
  */
 psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attributes,
-                                                 const uint8_t *key_buffer,
-                                                 size_t key_buffer_size,
-                                                 psa_algorithm_t alg,
-                                                 const uint8_t *iv,
-                                                 size_t iv_length,
-                                                 const uint8_t *input,
-                                                 size_t input_length,
-                                                 uint8_t *output,
-                                                 size_t output_size,
-                                                 size_t *output_length);
+                                            const uint8_t *key_buffer,
+                                            size_t key_buffer_size,
+                                            psa_algorithm_t alg,
+                                            const uint8_t *iv,
+                                            size_t iv_length,
+                                            const uint8_t *input,
+                                            size_t input_length,
+                                            uint8_t *output,
+                                            size_t output_size,
+                                            size_t *output_length);
 /*!
  * \brief Perform a one-shot decryption operation
  *
@@ -71,14 +71,14 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
  *          failure
  */
 psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attributes,
-                                                 const uint8_t *key_buffer,
-                                                 size_t key_buffer_size,
-                                                 psa_algorithm_t alg,
-                                                 const uint8_t *input,
-                                                 size_t input_length,
-                                                 uint8_t *output,
-                                                 size_t output_size,
-                                                 size_t *output_length);
+                                            const uint8_t *key_buffer,
+                                            size_t key_buffer_size,
+                                            psa_algorithm_t alg,
+                                            const uint8_t *input,
+                                            size_t input_length,
+                                            uint8_t *output,
+                                            size_t output_size,
+                                            size_t *output_length);
 
 #ifdef __cplusplus
 }

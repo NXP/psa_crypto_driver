@@ -44,14 +44,14 @@ extern "C" {
  *          failure
  */
 psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
-                                              const uint8_t *key_buffer,
-                                              size_t key_buffer_size,
-                                              psa_algorithm_t alg,
-                                              const uint8_t *input,
-                                              size_t input_length,
-                                              uint8_t *mac,
-                                              size_t mac_size,
-                                              size_t *mac_length);
+                             const uint8_t *key_buffer,
+                             size_t key_buffer_size,
+                             psa_algorithm_t alg,
+                             const uint8_t *input,
+                             size_t input_length,
+                             uint8_t *mac,
+                             size_t mac_size,
+                             size_t *mac_length);
 
 /*!
  * \brief Setup a MAC signing object

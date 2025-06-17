@@ -34,7 +34,10 @@ extern "C" {
  * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
  *          failure
  */
-psa_status_t sgi_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *output, size_t output_size);
+psa_status_t sgi_get_entropy(uint32_t flags,
+                             size_t *estimate_bits,
+                             uint8_t *output,
+                             size_t output_size);
 #ifdef __cplusplus
 }
 #endif

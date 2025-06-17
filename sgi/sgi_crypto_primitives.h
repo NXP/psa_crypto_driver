@@ -20,8 +20,7 @@
 
 #include <mcuxClMacModes.h>
 
-typedef struct
-{
+typedef struct {
     uint32_t ctx[MCUXCLHASH_CONTEXT_SIZE_SHA2_512_IN_WORDS];
 } mcux_sgi_hash_operation_t;
 

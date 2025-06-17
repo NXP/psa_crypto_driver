@@ -43,7 +43,7 @@ psa_status_t sgi_hash_setup(mcux_sgi_hash_operation_t *operation, psa_algorithm_
  *          failure
  */
 psa_status_t sgi_hash_clone(const mcux_sgi_hash_operation_t *source_operation,
-                                            mcux_sgi_hash_operation_t *target_operation);
+                            mcux_sgi_hash_operation_t *target_operation);
 /*!
  * \brief Updates an hash operation with some new input data
  *
@@ -55,8 +55,8 @@ psa_status_t sgi_hash_clone(const mcux_sgi_hash_operation_t *source_operation,
  *          failure
  */
 psa_status_t sgi_hash_update(mcux_sgi_hash_operation_t *operation,
-                                             const uint8_t *input,
-                                             size_t input_length);
+                             const uint8_t *input,
+                             size_t input_length);
 /*!
  * \brief Finish an hash operation and produce the hash output
  *
@@ -69,9 +69,9 @@ psa_status_t sgi_hash_update(mcux_sgi_hash_operation_t *operation,
  *          failure
  */
 psa_status_t sgi_hash_finish(mcux_sgi_hash_operation_t *operation,
-                                             uint8_t *hash,
-                                             size_t hash_size,
-                                             size_t *hash_length);
+                             uint8_t *hash,
+                             size_t hash_size,
+                             size_t *hash_length);
 /*!
  * \brief Abort an hash operation
  *
@@ -96,11 +96,11 @@ psa_status_t sgi_hash_abort(mcux_sgi_hash_operation_t *operation);
  *          failure
  */
 psa_status_t sgi_hash_compute(psa_algorithm_t alg,
-                                              const uint8_t *input,
-                                              size_t input_length,
-                                              uint8_t *hash,
-                                              size_t hash_size,
-                                              size_t *hash_length);
+                              const uint8_t *input,
+                              size_t input_length,
+                              uint8_t *hash,
+                              size_t hash_size,
+                              size_t *hash_length);
 #ifdef __cplusplus
 }
 #endif
