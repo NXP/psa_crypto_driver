@@ -29,4 +29,18 @@ config MCUX_PSA_CRYPTO_DRIVER_USE_ELS_PKC_SHA1
 	bool "Enables use of SHA1 from els-pkc via psa-crypto-driver"
 	depends on MCUX_ELS_PKC && MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
 	help
-	    Enables use of SHA1 from els-pkc via psa-crypto-driver component.
+	    Enables use of SHA1 from els-pkc via psa-crypto-driver component
+
+config PSA_CRYPTO_DRIVER_DCP
+	bool "Enables DCP support in psa-crypto-driver"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	default n
+	help
+	    Enables DCP support in psa-crypto-driver component.
+
+config PSA_CRYPTO_DRIVER_THREAD_EN
+	bool "Enables PSA Crypto Thread"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	default n
+	help
+	    Enables PSA_CRYPTO_THREAD
