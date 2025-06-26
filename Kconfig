@@ -103,8 +103,8 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedcrypto
@@ -136,7 +136,7 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.mbedcrypto
@@ -171,7 +171,7 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedcrypto
@@ -226,7 +226,7 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedcrypto
@@ -263,7 +263,7 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedcrypto
@@ -306,8 +306,8 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedcrypto
@@ -345,7 +345,7 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.mbedcrypto
@@ -377,7 +377,7 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.mbedcrypto
@@ -408,7 +408,7 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.mbedcrypto
@@ -446,13 +446,13 @@ menu "psaCryptoDriver"
                 select MCUX_COMPONENT_middleware.mbedcrypto
           endchoice
         endif
-		
+
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
         bool "SGI Common"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
         bool "SGI Transparent"
-		
+
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi
         bool "SGI"
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
@@ -460,7 +460,7 @@ menu "psaCryptoDriver"
         select MCUX_COMPONENT_component.sgi_pkc.sgi
         select MCUX_COMPONENT_component.sgi_pkc.pkc
         select MCUX_COMPONENT_component.sgi_pkc.example
-		
+
         if MCUX_COMPONENT_component.psa_crypto_driver.sgi
           choice
             prompt "OSAL Selection"
@@ -480,7 +480,7 @@ menu "psaCryptoDriver"
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
+                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
                 select MCUX_COMPONENT_middleware.mbedtls3x.crypto
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedcrypto
