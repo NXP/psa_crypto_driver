@@ -531,6 +531,45 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ela_csec)
 
 endif()
 
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb)
+    mcux_add_source(
+        SOURCES ele_hseb/ele_hseb_readme.md
+                ele_hseb/ele_hseb.h
+                ele_hseb/ele_hseb_crypto_primitives.h
+                ele_hseb/ele_hseb_crypto_composites.h
+                ele_hseb/include/common/mcux_psa_ele_hseb_common_init.h
+                ele_hseb/include/common/mcux_psa_ele_hseb_entropy.h
+                ele_hseb/include/common/mcux_psa_ele_hseb_translate.h
+                ele_hseb/include/common/mcux_psa_ele_hseb_key_management.h
+                ele_hseb/include/common/mcux_psa_ele_hseb_utils.h
+                ele_hseb/src/common/mcux_psa_ele_hseb_common_init.c
+                ele_hseb/src/common/mcux_psa_ele_hseb_entropy.c
+                ele_hseb/src/common/mcux_psa_ele_hseb_translate.c
+                ele_hseb/src/common/mcux_psa_ele_hseb_key_management.c
+                ele_hseb/src/common/mcux_psa_ele_hseb_utils.c
+                ele_hseb/include/transparent/mcux_psa_ele_hseb_asymmetric_signature.h
+                ele_hseb/include/transparent/mcux_psa_ele_hseb_cipher.h
+                ele_hseb/include/transparent/mcux_psa_ele_hseb_hash.h
+                ele_hseb/include/transparent/mcux_psa_ele_hseb_init.h
+                ele_hseb/include/transparent/mcux_psa_ele_hseb_mac.h
+                ele_hseb/src/transparent/mcux_psa_ele_hseb_asymmetric_signature.c
+                ele_hseb/src/transparent/mcux_psa_ele_hseb_cipher.c
+                ele_hseb/src/transparent/mcux_psa_ele_hseb_hash.c
+                ele_hseb/src/transparent/mcux_psa_ele_hseb_init.c
+                ele_hseb/src/transparent/mcux_psa_ele_hseb_mac.c
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES ele_hseb
+                 ele_hseb/include/common
+                 ele_hseb/include/transparent
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        CC  "-DPSA_CRYPTO_DRIVER_ELE_HSEB"
+    )
+endif()
+
 if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.common)
   mcux_add_source(
     SOURCES

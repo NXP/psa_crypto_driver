@@ -456,6 +456,36 @@ menu "psaCryptoDriver"
           endchoice
         endif
 
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
+        bool "ELE HSEB"
+        select MCUX_COMPONENT_component.ele_hseb
+        if MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
+          choice
+            prompt "OSAL Selection"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.osal_baremetal
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.osal_baremetal
+                bool "Baremetal"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.osal_frtos
+                bool "FreeRTOS"
+                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+          endchoice
+          choice
+            prompt "Mbed TLS Version"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.mbedtls3x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.mbedtls3x
+                bool "Mbed TLS 3.x"
+                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.mbedcrypto
+                bool "Mbed Crypto"
+                select MCUX_COMPONENT_middleware.mbedcrypto
+          endchoice
+        endif
+
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
         bool "SGI Common"
 
