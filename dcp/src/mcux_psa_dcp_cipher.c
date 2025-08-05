@@ -39,6 +39,10 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
     uint8_t *_input = NULL;
     size_t _input_length;
 #endif
+#if DCP_USE_DCACHE == 1u
+    uint8_t *_input_cache = NULL;
+    uint8_t *_output_cache = NULL;
+#endif
 
     dcp_handle_t m_handle;
     m_handle.channel    = kDCP_Channel0;
@@ -56,6 +60,11 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    /* DCP support only 128 bit keys */
+    if (key_bits != 128u){
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+    
     /* Algorithm needs to be a CIPHER algo */
     if (!PSA_ALG_IS_CIPHER(alg)) {
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -70,7 +79,7 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
         return PSA_SUCCESS;
     }
 
-    /* If input length or input buffer NULL, it;s an error.
+    /* If input length or input buffer NULL, it is an error.
      * Special case for ECB where input = 0 may be allowed.
      * Taken care of in above code.
      */
@@ -110,6 +119,23 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
         return dcp_to_psa_status(status);
     }
 
+#if DCP_USE_DCACHE == 1u
+    /* Allocate aligned buffers with sufficient traling memory for safe clean/invalidate */
+    _input_cache = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(input_length));
+    if (_input_cache == NULL) {
+        return PSA_ERROR_INSUFFICIENT_MEMORY;
+    }
+ 
+    _output_cache = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(output_size));
+    if (_output_cache == NULL) {
+        return PSA_ERROR_INSUFFICIENT_MEMORY;
+    }
+    /* Copy and clean input data in working buffer */
+    memcpy(_input_cache, input, input_length);
+    SCB_CleanDCache_by_Addr(_input_cache, input_length);
+#endif /* DCP_USE_DCACHE */
+
+    
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     /* Apply PKCS7 padding -> Append bytes to fill block length
        with number containing amount of missing bytes. */
@@ -120,12 +146,19 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
         if (output_size < _input_length) {
             return PSA_ERROR_BUFFER_TOO_SMALL;
         }
+#if DCP_USE_DCACHE == 1u
+        _input = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(_input_length));
+#else
         _input = mbedtls_calloc(1, _input_length);
+#endif /* DCP_USE_DCACHE */
         if (_input == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
         memcpy(_input, input, input_length);
         memset(&_input[input_length], _input_length - input_length, _input_length - input_length);
+#if DCP_USE_DCACHE == 1u
+        SCB_CleanDCache_by_Addr(_input, ALIGNED_SIZE(_input_length));
+#endif /* DCP_USE_DCACHE */
     }
 #endif
 
@@ -137,32 +170,55 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
                 case PSA_ALG_CBC_PKCS7:
                 {
+#if DCP_USE_DCACHE == 1u
+                    dcp_status = DCP_AES_EncryptCbc(PSA_DCP,
+                                                    &m_handle,
+                                                    _input,
+                                                    _output_cache,
+                                                    _input_length,
+                                                    iv);
+#else
                     dcp_status = DCP_AES_EncryptCbc(PSA_DCP,
                                                     &m_handle,
                                                     _input,
                                                     output,
                                                     _input_length,
-                                                    iv);
+                                                    iv);                    
+#endif /* DCP_USE_DCACHE */
                     break;
                 }
 #endif /* PSA_WANT_ALG_CBC_PKCS7 */
 #if defined(PSA_WANT_ALG_CBC_NO_PADDING)
                 case PSA_ALG_CBC_NO_PADDING:
                 {
+#if DCP_USE_DCACHE == 1u
+                    dcp_status = DCP_AES_EncryptCbc(PSA_DCP,
+                                                    &m_handle,
+                                                    _input_cache,
+                                                    _output_cache,
+                                                    input_length,
+                                                    iv);
+#else
                     dcp_status = DCP_AES_EncryptCbc(PSA_DCP,
                                                     &m_handle,
                                                     input,
                                                     output,
                                                     input_length,
                                                     iv);
+#endif /* DCP_USE_DCACHE */
                     break;
                 }
 #endif /* PSA_WANT_ALG_CBC_NO_PADDING */
 #if defined(PSA_WANT_ALG_ECB_NO_PADDING)
                 case PSA_ALG_ECB_NO_PADDING:
                 {
+#if DCP_USE_DCACHE == 1u
+                    dcp_status =
+                        DCP_AES_EncryptEcb(PSA_DCP, &m_handle, _input_cache, _output_cache, input_length);
+#else
                     dcp_status =
                         DCP_AES_EncryptEcb(PSA_DCP, &m_handle, input, output, input_length);
+#endif /* DCP_USE_DCACHE */
                     break;
                 }
 #endif /* PSA_WANT_ALG_ECB_NO_PADDING */
@@ -185,6 +241,22 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     if (_input != NULL) {
         mbedtls_free(_input);
+    }
+#endif
+
+#if DCP_USE_DCACHE == 1u
+    /* Invalidate and copy result from working buffer */
+    SCB_InvalidateDCache_by_Addr(_output_cache, output_size);
+    memcpy(output, _output_cache, output_size);
+
+    /* Clean-up the data */
+    memset(_output_cache, 0xff, output_size);
+    if (_output_cache != NULL) {
+        mbedtls_free(_output_cache);
+    }
+    memset(_input_cache, 0xff, input_length);
+    if (_input_cache != NULL) {
+        mbedtls_free(_input_cache);
     }
 #endif
 
@@ -230,7 +302,11 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     uint8_t *_output = NULL;
     uint8_t i;
 #endif
-
+#if DCP_USE_DCACHE == 1u
+    uint8_t *_input_cache = NULL;
+    uint8_t *_output_cache = NULL;
+#endif
+    
     dcp_handle_t m_handle;
     m_handle.channel    = kDCP_Channel0;
     m_handle.swapConfig = kDCP_NoSwap;
@@ -279,6 +355,11 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    /* DCP support only 128 bit keys */
+    if (key_bits != 128u){
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+    
     if (!PSA_ALG_IS_CIPHER(alg)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -336,15 +417,35 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
         return dcp_to_psa_status(status);
     }
 
+#if DCP_USE_DCACHE == 1u
+    /* Allocate aligned buffers with sufficient traling memory for safe clean/invalidate */
+    _input_cache = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(input_length));
+    if (_input_cache == NULL) {
+        return PSA_ERROR_INSUFFICIENT_MEMORY;
+    }
+ 
+    _output_cache = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(output_size));
+    if (_output_cache == NULL) {
+        return PSA_ERROR_INSUFFICIENT_MEMORY;
+    }
+    /* Copy and clean input data in working buffer */
+    memcpy(_input_cache, input, input_length);
+    SCB_CleanDCache_by_Addr(_input_cache, input_length);
+#endif
+
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     if (alg == PSA_ALG_CBC_PKCS7) {
+#if DCP_USE_DCACHE == 1u
+        _output = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(expected_op_length));
+#else
         _output = mbedtls_calloc(1, expected_op_length);
+#endif
         if (_output == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
     }
-#endif
-
+#endif /* DCP_USE_DCACHE */
+    
     switch (key_type) {
 #if defined(PSA_WANT_KEY_TYPE_AES)
         case PSA_KEY_TYPE_AES:
@@ -354,12 +455,21 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
                 case PSA_ALG_CBC_PKCS7:
                 {
                     dcp_status =
-                        DCP_AES_DecryptCbc(PSA_DCP,
+#if DCP_USE_DCACHE == 1u
+                      DCP_AES_DecryptCbc(PSA_DCP,
+                                           &m_handle,
+                                           &_input_cache[iv_length],
+                                           _output,
+                                           expected_op_length,
+                                           input);
+#else
+                      DCP_AES_DecryptCbc(PSA_DCP,
                                            &m_handle,
                                            &input[iv_length],
                                            _output,
                                            expected_op_length,
                                            input);
+#endif /* DCP_USE_DCACHE */
                     break;
                 }
 #endif /* PSA_WANT_ALG_CBC_PKCS7 */
@@ -367,12 +477,21 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
                 case PSA_ALG_CBC_NO_PADDING:
                 {
                     dcp_status =
+#if DCP_USE_DCACHE == 1u
+                        DCP_AES_DecryptCbc(PSA_DCP,
+                                           &m_handle,
+                                           &_input_cache[iv_length],
+                                           _output_cache,
+                                           expected_op_length,
+                                           input);
+#else
                         DCP_AES_DecryptCbc(PSA_DCP,
                                            &m_handle,
                                            &input[iv_length],
                                            output,
                                            expected_op_length,
                                            input);
+#endif /* DCP_USE_DCACHE */
                     break;
                 }
 #endif /* PSA_WANT_ALG_CBC_NO_PADDING */
@@ -380,7 +499,11 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
                 case PSA_ALG_ECB_NO_PADDING:
                 {
                     dcp_status =
+#if DCP_USE_DCACHE == 1u
+                        DCP_AES_DecryptEcb(PSA_DCP, &m_handle, _input_cache, _output_cache, input_length);
+#else
                         DCP_AES_DecryptEcb(PSA_DCP, &m_handle, input, output, input_length);
+#endif /* DCP_USE_DCACHE */
                     break;
                 }
 #endif /* PSA_WANT_ALG_ECB_NO_PADDING */
@@ -407,11 +530,14 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     if (status == PSA_SUCCESS) {
         status = dcp_to_psa_status(dcp_status);
     }
-
+    
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     /* Based on last byte, identify plaintext and copy to the final buffer. */
     if (alg == PSA_ALG_CBC_PKCS7) {
-        if (status == PSA_SUCCESS) {
+#if DCP_USE_DCACHE == 1u
+       SCB_InvalidateDCache_by_Addr(_output, ALIGNED_SIZE(expected_op_length));
+#endif /* DCP_USE_DCACHE */
+       if (status == PSA_SUCCESS) {
             if (_output[expected_op_length - 1] > PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type)) {
                 status = PSA_ERROR_INVALID_PADDING;
             }
@@ -438,10 +564,27 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     } else
 #endif
     {
+#if DCP_USE_DCACHE == 1u
+        /* Invalidate and copy result from working buffer */
+        SCB_InvalidateDCache_by_Addr(_output_cache, expected_op_length);
+        memcpy(output, _output_cache, output_size);
+#endif
         if (status == PSA_SUCCESS) {
             *output_length = expected_op_length;
         }
     }
 
+#if DCP_USE_DCACHE == 1u
+    /* Clean-up the data */
+    memset(_output_cache, 0xff, output_size);
+    if (_output_cache != NULL) {
+        mbedtls_free(_output_cache);
+    }
+    memset(_input_cache, 0xff, input_length);
+    if (_input_cache != NULL) {
+        mbedtls_free(_input_cache);
+    }
+#endif /* DCP_USE_DCACHE */
+    
     return status;
 }

@@ -19,6 +19,9 @@
 #include "psa/crypto.h"
 #include "mcux_psa_dcp_init.h"
 
+/* This macro computes cache line aligned size for input data size */
+#define ALIGNED_SIZE(size) (((size / FSL_FEATURE_L1DCACHE_LINESIZE_BYTE) + 1u) * FSL_FEATURE_L1DCACHE_LINESIZE_BYTE)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
