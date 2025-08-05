@@ -180,15 +180,6 @@ status_t CRYPTO_InitHardware(void)
             break;
         }
 
-#if defined(SECURE_STORAGE)
-        /* Init secure storage */
-        if (PSA_SUCCESS != secure_storage_its_initialize())
-        {
-            result = kStatus_Fail;
-            break;
-        }
-#endif /* SECURE_STORAGE */
-
         result = kStatus_Success;
 
         g_isCryptoHWInitialized = true;

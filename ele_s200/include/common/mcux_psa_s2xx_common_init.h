@@ -24,10 +24,6 @@
 #include "fsl_sss_sscp.h"
 #include "fsl_sscp_mu.h"
 
-#if defined(SECURE_STORAGE)
-#include "secure_storage.h"
-#endif /* SECURE_STORAGE */
-
 typedef struct
 {
     sss_sscp_key_store_t keyStore;
