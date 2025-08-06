@@ -18,6 +18,7 @@
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
 #include "mbedtls/platform.h"
+#include "fsl_os_abstraction.h"
 
 psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
                                 const uint8_t *key_buffer,
@@ -37,7 +38,7 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
     size_t key_bits         = psa_get_key_bits(attributes);
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     uint8_t *_input = NULL;
-    size_t _input_length;
+    size_t _input_length = 0;
 #endif
 #if DCP_USE_DCACHE == 1u
     uint8_t *_input_cache = NULL;
@@ -121,12 +122,12 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
 
 #if DCP_USE_DCACHE == 1u
     /* Allocate aligned buffers with sufficient traling memory for safe clean/invalidate */
-    _input_cache = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(input_length));
+    _input_cache = OSA_MemoryAllocateAlign(ALIGNED_SIZE(input_length), FSL_FEATURE_L1DCACHE_LINESIZE_BYTE);
     if (_input_cache == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
  
-    _output_cache = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(output_size));
+    _output_cache = OSA_MemoryAllocateAlign(ALIGNED_SIZE(output_size), FSL_FEATURE_L1DCACHE_LINESIZE_BYTE);
     if (_output_cache == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -147,9 +148,9 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
             return PSA_ERROR_BUFFER_TOO_SMALL;
         }
 #if DCP_USE_DCACHE == 1u
-        _input = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(_input_length));
+        _input = OSA_MemoryAllocateAlign(ALIGNED_SIZE(_input_length), FSL_FEATURE_L1DCACHE_LINESIZE_BYTE);
 #else
-        _input = mbedtls_calloc(1, _input_length);
+        _input = OSA_MemoryAllocate(_input_length);
 #endif /* DCP_USE_DCACHE */
         if (_input == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -240,7 +241,11 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
 
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     if (_input != NULL) {
-        mbedtls_free(_input);
+#if DCP_USE_DCACHE == 1u
+        OSA_MemoryFreeAlign(_input);
+#else
+        OSA_MemoryFree(_input);
+#endif
     }
 #endif
 
@@ -252,11 +257,11 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
     /* Clean-up the data */
     memset(_output_cache, 0xff, output_size);
     if (_output_cache != NULL) {
-        mbedtls_free(_output_cache);
+        OSA_MemoryFreeAlign(_output_cache);
     }
     memset(_input_cache, 0xff, input_length);
     if (_input_cache != NULL) {
-        mbedtls_free(_input_cache);
+        OSA_MemoryFreeAlign(_input_cache);
     }
 #endif
 
@@ -419,12 +424,12 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
 
 #if DCP_USE_DCACHE == 1u
     /* Allocate aligned buffers with sufficient traling memory for safe clean/invalidate */
-    _input_cache = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(input_length));
+    _input_cache = OSA_MemoryAllocateAlign(ALIGNED_SIZE(input_length), FSL_FEATURE_L1DCACHE_LINESIZE_BYTE);
     if (_input_cache == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
  
-    _output_cache = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(output_size));
+    _output_cache = OSA_MemoryAllocateAlign(ALIGNED_SIZE(output_size), FSL_FEATURE_L1DCACHE_LINESIZE_BYTE);
     if (_output_cache == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -436,9 +441,9 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     if (alg == PSA_ALG_CBC_PKCS7) {
 #if DCP_USE_DCACHE == 1u
-        _output = aligned_alloc(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE, ALIGNED_SIZE(expected_op_length));
+        _output = OSA_MemoryAllocateAlign(ALIGNED_SIZE(expected_op_length), FSL_FEATURE_L1DCACHE_LINESIZE_BYTE);
 #else
-        _output = mbedtls_calloc(1, expected_op_length);
+        _output = OSA_MemoryAllocate(expected_op_length);
 #endif
         if (_output == NULL) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -559,7 +564,11 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
             }
         }
         if (_output != NULL) {
-            mbedtls_free(_output);
+#if DCP_USE_DCACHE == 1u
+            OSA_MemoryFreeAlign(_output);
+#else
+            OSA_MemoryFree(_output);
+#endif
         }
     } else
 #endif
@@ -578,11 +587,11 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     /* Clean-up the data */
     memset(_output_cache, 0xff, output_size);
     if (_output_cache != NULL) {
-        mbedtls_free(_output_cache);
+        OSA_MemoryFreeAlign(_output_cache);
     }
     memset(_input_cache, 0xff, input_length);
     if (_input_cache != NULL) {
-        mbedtls_free(_input_cache);
+        OSA_MemoryFreeAlign(_input_cache);
     }
 #endif /* DCP_USE_DCACHE */
     
