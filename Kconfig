@@ -117,6 +117,7 @@ menu "psaCryptoDriver"
         bool "DCP"
         select MCUX_COMPONENT_driver.dcp
         select MCUX_COMPONENT_driver.trng
+        select MCUX_COMPONENT_component.osa
         if MCUX_COMPONENT_component.psa_crypto_driver.dcp
           choice
             prompt "OSAL Selection"
