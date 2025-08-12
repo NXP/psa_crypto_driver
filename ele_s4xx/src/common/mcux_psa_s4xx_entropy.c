@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -55,7 +55,7 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
     }
 
 #if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_lock(&mbedtls_threading_hwcrypto_ele_mutex) != 0)
+    if (mbedtls_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
@@ -65,7 +65,7 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
     status = ele_to_psa_status(result);
 
 #if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_unlock(&mbedtls_threading_hwcrypto_ele_mutex) != 0)
+    if (mbedtls_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
