@@ -19,8 +19,9 @@
 
 psa_status_t psa_to_ecc_group_id(psa_key_type_t key_type, psa_algorithm_t key_algo, mbedtls_ecp_group_id *ecp_grou_id)
 {
-    uint32_t family = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
-    uint32_t algo   = PSA_ALG_GET_HASH(key_algo);
+    psa_status_t status = PSA_SUCCESS;
+    uint32_t family     = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
+    uint32_t algo       = PSA_ALG_GET_HASH(key_algo);
 
     switch (family)
     {
@@ -40,9 +41,11 @@ psa_status_t psa_to_ecc_group_id(psa_key_type_t key_type, psa_algorithm_t key_al
                 }
                 default:
                 {
-                    return PSA_ERROR_NOT_SUPPORTED;
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
                 }
             }
+            break;
         }
         case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
         {
@@ -65,17 +68,20 @@ psa_status_t psa_to_ecc_group_id(psa_key_type_t key_type, psa_algorithm_t key_al
                 }
                 default:
                 {
-                    return PSA_ERROR_NOT_SUPPORTED;
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
                 }
             }
+            break;
         }
         default:
         {
-            return PSA_ERROR_NOT_SUPPORTED;
+            status = PSA_ERROR_NOT_SUPPORTED;
+            break;
         }
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
 
 // Functions

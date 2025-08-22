@@ -37,6 +37,7 @@
  *  @{
  */
 
+#if defined(PSA_WANT_ALG_ECDSA) || defined(PSA_WANT_ALG_ECDSA_ANY)
 static psa_status_t casper_common_internal_ecc_sign(const psa_key_attributes_t *attributes,
                                                     const uint8_t *key,
                                                     size_t key_length,
@@ -141,7 +142,9 @@ static psa_status_t casper_common_internal_ecc_sign(const psa_key_attributes_t *
 
     return status;
 }
+#endif /* defined(PSA_WANT_ALG_ECDSA) || defined(PSA_WANT_ALG_ECDSA_ANY) */
 
+#if defined(PSA_WANT_ALG_ECDSA) || defined(PSA_WANT_ALG_ECDSA_ANY)
 static psa_status_t casper_common_internal_ecc_verify(const psa_key_attributes_t *attributes,
                                                       const uint8_t *key,
                                                       size_t key_length,
@@ -233,6 +236,7 @@ static psa_status_t casper_common_internal_ecc_verify(const psa_key_attributes_t
 
     return status;
 }
+#endif /* defined(PSA_WANT_ALG_ECDSA) || defined(PSA_WANT_ALG_ECDSA_ANY) */
 
 psa_status_t casper_common_asymmetric_sign_hash(const psa_key_attributes_t *attributes,
                                                 const uint8_t *key,
@@ -247,7 +251,7 @@ psa_status_t casper_common_asymmetric_sign_hash(const psa_key_attributes_t *attr
     psa_status_t status     = PSA_ERROR_NOT_SUPPORTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
 
-    *signature_length = 0;
+    *signature_length = 0u;
 
 #if defined(PSA_WANT_ALG_ECDSA) || defined(PSA_WANT_ALG_ECDSA_ANY)
     if ((PSA_ALG_IS_RANDOMIZED_ECDSA(alg) || PSA_ALG_IS_DETERMINISTIC_ECDSA(alg)) &&
@@ -264,6 +268,7 @@ psa_status_t casper_common_asymmetric_sign_hash(const psa_key_attributes_t *attr
     } else
 #endif /* PSA_WANT_ALG_ECDSA */
     {
+        (void)key_type;
     }
 
     return status;
@@ -295,6 +300,7 @@ psa_status_t casper_common_asymmetric_verify_hash(const psa_key_attributes_t *at
     } else
 #endif /* PSA_WANT_ALG_ECDSA */
     {
+        (void)key_type;
     }
 
     return status;
