@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2023,2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -120,7 +120,8 @@ static status_t ele_close_handles(void)
  */
 status_t CRYPTO_InitHardware(void)
 {
-    status_t result = kStatus_Fail;
+    status_t result     = kStatus_Fail;
+    uint32_t trng_state = 0u;
 #if defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
     ele_nvm_manager_t manager;
     manager.nvm_read = sd_file_read;
@@ -159,13 +160,11 @@ status_t CRYPTO_InitHardware(void)
                 break;
             }
 
-            uint32_t trng_state = 0u;
             do
             {
                 result = ELE_GetTrngState(S3MU, &trng_state);
-            } while (((trng_state & 0xFFu) != kELE_TRNG_ready) &&
-                     ((trng_state & 0xFF00u) != kELE_TRNG_CSAL_success << 8u ) &&
-                       result == kStatus_Success);
+            } while (!(((trng_state & 0xFFu) == kELE_TRNG_ready) &&
+                       ((trng_state & 0xFF00u) == kELE_TRNG_CSAL_success << 8u )));
 
             /****************** Initialize EdgeLock services ************/
             result = ELE_InitServices(S3MU);
