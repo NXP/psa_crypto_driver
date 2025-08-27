@@ -243,28 +243,26 @@ static psa_status_t get_ele_fw_version(uint8_t *ele_fw_version)
     return psa_status;
 }
 
-static psa_status_t ele2go_fw_loaded(void)
+static psa_status_t is_fw_loaded(void)
 {
-    uint32_t ele_version[2];
+    uint32_t ele_version[2] = { 0u };
 
-    /* ELE will respond with 0x20000022cdb3e8d if EL2go FW KW45_K32W1xx_MCXW71_SDKFW2.1_RFP is loaded*/
-    static const uint32_t el2go_fw_loaded[2] = {0x2000002u, 0x2cdb3e8du};
+    /* ELE will respond with the FW version equal to this iff no FW is loaded */
+    static const uint32_t no_fw_loaded[2] = { 0xffffffffu, 0xffffffffu };
 
     if (get_ele_fw_version((uint8_t *)ele_version) != PSA_SUCCESS )
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
 
-    if (memcmp(el2go_fw_loaded, ele_version, sizeof(el2go_fw_loaded)) == 0)
+    if (memcmp(no_fw_loaded, ele_version, sizeof(no_fw_loaded)) == 0)
     {
-        /* correct FW is loaded*/
-        return PSA_SUCCESS;
-    }
-    else
-    {
+        /* No FW loaded. We only support S200 baseline ROM functionality */
         return PSA_ERROR_GENERIC_ERROR;
     }
-    /* Unreachable */
+
+    /* Some FW is loaded */
+    return PSA_SUCCESS;
 }
 
 static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_size, psa_cmd_t *psa_cmd)
@@ -457,7 +455,7 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
     size_t allocation_size = 0u;
 
     /* Check if EL2go FW is loaded into S200; if not load it */
-    if (ele2go_fw_loaded() != PSA_SUCCESS)
+    if (is_fw_loaded() != PSA_SUCCESS)
     {
 #if (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
         if (ELEMU_loadFw(ELEMUA, (uint32_t *)fw) != kStatus_Success)
