@@ -335,7 +335,7 @@ psa_status_t mcuxClPsaDriver_Oracle_LoadKey(mcuxClKey_Descriptor_t *pKey)
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in getting the slot from the key ID");
         psa_status = mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot(key_slot, pKey);
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", psa_status);
-    }    
+    }
     else
     {
         pKey->location.status = MCUXCLKEY_LOADSTATUS_MEMORY;
@@ -410,10 +410,10 @@ psa_status_t mcuxClPsaDriver_Oracle_ImportKey(
     }
     else if (MCUXCLPSADRIVER_IS_S50_RFC3394_STORAGE(location))
     {
-      
+
         // We can also do a KEYIN to check if blob gets imported successfully, then copy the blob in PSA key store.
         data_length = mcuxClPsaDriver_Oracle_Utils_RFC3394ContainerSize(attributes);
-      
+
         // Store the blob as is in the PSA keystore.
         if (key_buffer_size < data_length)
         {
@@ -424,7 +424,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ImportKey(
         *key_buffer_length = data_length;
 
         return PSA_SUCCESS;
-      
+
     }
 #ifdef MCUXCLPSADRIVER_KEY_RECIPE_IMPORT_ENABLE
     else if (MCUXCLPSADRIVER_IS_S50_KEY_GEN_STORAGE(location))
@@ -561,7 +561,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ReserveKey(mcuxClKey_Descriptor_t *pKey)
     // "oracle keys" (cryptolib issue). Keep the return success for now. return PSA_ERROR_NOT_SUPPORTED;
     psa_key_attributes_t *attributes = (psa_key_attributes_t *)pKey->container.pAuxData;
     psa_key_location_t location      = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
-       
+
     if (MCUXCLPSADRIVER_IS_S50_RFC3394_STORAGE(location))
     {
         // Not reserving slot in Oracle as we may not have the key ID available if it is volatile key.
@@ -569,20 +569,20 @@ psa_status_t mcuxClPsaDriver_Oracle_ReserveKey(mcuxClKey_Descriptor_t *pKey)
         mcuxClKey_setLoadStatus(pKey, MCUXCLKEY_LOADSTATUS_COPRO);
         return PSA_SUCCESS;
     }
-    
+
     // TODO: check which return code is better to use
-    return PSA_ERROR_NOT_SUPPORTED;   
+    return PSA_ERROR_NOT_SUPPORTED;
 }
 
-// Placeholder - Corresponding to ReserveKey we should expose a FreeKey also.                                                        
+// Placeholder - Corresponding to ReserveKey we should expose a FreeKey also.
 psa_status_t mcuxClPsaDriver_Oracle_FreeKey(mcuxClKey_Descriptor_t *pKey)
-{     
+{
    // TODO: check which return code is better to use
-    return PSA_SUCCESS;     
+    return PSA_SUCCESS;
 }
 
 psa_status_t mcuxClPsaDriver_Oracle_StoreKey(mcuxClKey_Descriptor_t *pKey)
-{ 
+{
     psa_status_t psa_status = PSA_ERROR_INVALID_ARGUMENT;
 
     uint32_t key_buffer_size               = pKey->container.length;
@@ -597,27 +597,27 @@ psa_status_t mcuxClPsaDriver_Oracle_StoreKey(mcuxClKey_Descriptor_t *pKey)
 
         // Get blob length based on key size
         blob_length = mcuxClPsaDriver_Oracle_Utils_RFC3394ContainerSize(attributes);
-        
+
         //  Check if container length is enough
         if (key_buffer_size < blob_length)
         {
             return PSA_ERROR_INVALID_ARGUMENT;
         }
-        
+
         // derive the NXP_DIE_KEK_SK key in the keyslot
         psa_status =
             mcuxClPsaDriver_Oracle_Utils_ExecuteKeyRecipe(die_kek_sk_id, // psa reference
                                                           &recipe_die_kek_sk, &die_kek_sk_slot);
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in dispatching the key command to ELS");
-        
+
         // Export blob from S50 slot
         psa_status = mcxClPsaDriver_Oracle_ElsUtils_Key_Export(die_kek_sk_slot,
                                                                mcuxClKey_getLoadedKeySlot(pKey),
                                                                key_buffer);
-        
+
         // TBD - Fill the used size - size of RFC3394 blob
         mcuxClKey_setKeyContainerUsedSize(pKey, blob_length);
-             
+
         //  regardless of the status of the Key export, we need to free the keyslot of the wrap key
         psa_status_t psa_status_remove_key = mcuxClPsaDriver_Oracle_Utils_RemoveKeyFromEls(die_kek_sk_id);
         if (PSA_SUCCESS != psa_status_remove_key)
@@ -625,15 +625,15 @@ psa_status_t mcuxClPsaDriver_Oracle_StoreKey(mcuxClKey_Descriptor_t *pKey)
             PSA_DRIVER_ERROR("Error, DIE_KEK_SK key removal failed");
         }
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, KeyExport command failed");
-        
+
         return PSA_SUCCESS;
     }
-    
+
     // TODO: check which return code is better to use
     return PSA_ERROR_NOT_SUPPORTED;
-    
+
 exit:
-    return psa_status;    
+    return psa_status;
 }
 
 psa_status_t mcuxClPsaDriver_Oracle_GetKeyBufferSizeFromKeyData(const psa_key_attributes_t *attributes,
@@ -659,8 +659,6 @@ psa_status_t mcuxClPsaDriver_Oracle_GetKeyBufferSizeFromKeyData(const psa_key_at
     {
         return mcuxClPsaDriver_Oracle_GetKeyBufferSize(attributes, key_buffer_length);
     }
-    // TODO: check which return code is better to use
-    return PSA_ERROR_NOT_SUPPORTED;
 }
 
 psa_status_t mcuxClPsaDriver_Oracle_GetKeyBufferSize(const psa_key_attributes_t *attributes,

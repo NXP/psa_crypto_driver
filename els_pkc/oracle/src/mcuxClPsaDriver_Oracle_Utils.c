@@ -87,11 +87,12 @@ static psa_status_t pad_iso7816d4(uint8_t *data, size_t unpadded_length, size_t 
 static psa_status_t unpad_iso7816d4(uint8_t *data, size_t *data_size)
 {
     psa_status_t psa_status = PSA_SUCCESS;
+    uint32_t count          = 0u;
 
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(data_size != NULL && *data_size > 0u, PSA_ERROR_INVALID_ARGUMENT,
                                          "iso_7816_unpad failed, null data");
 
-    uint32_t count = *data_size - 1u;
+    count = *data_size - 1u;
     while (count > 0u && data[count] == 0u)
     {
         count--;
@@ -384,20 +385,20 @@ static psa_status_t get_recipe_from_key_id(mbedtls_svc_key_id_t source_key_id, k
     {
         if (key_recipes_directory[recipe_idx] == NULL)
           goto exit;
-        
+
         for ( size_t recipe_steps = 0U; recipe_steps < key_recipes_directory[recipe_idx]->number_of_steps; recipe_steps++)
         {
-            step.operation = key_recipes_directory[recipe_idx]->steps[recipe_steps].operation; 
+            step.operation = key_recipes_directory[recipe_idx]->steps[recipe_steps].operation;
             switch (step.operation)
             {
                 case OP_CKDF:
-                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].ckdf.target_key_id; 
+                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].ckdf.target_key_id;
                   break;
                 case OP_KEYGEN:
-                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].keygen.target_key_id; 
+                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].keygen.target_key_id;
                   break;
                 case OP_KDELETE:
-                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].kdelete.target_key_id; 
+                  key_id = key_recipes_directory[recipe_idx]->steps[recipe_steps].kdelete.target_key_id;
                   break;
                 default:
                   PSA_DRIVER_ERROR("Unknown recipe operation: 0x%x", step.operation);
@@ -408,7 +409,7 @@ static psa_status_t get_recipe_from_key_id(mbedtls_svc_key_id_t source_key_id, k
             {
                 *target_recipe = (key_recipe_t *)key_recipes_directory[recipe_idx];
                 return PSA_SUCCESS;
-            }    
+            }
         }
     }
 
@@ -448,7 +449,8 @@ static psa_status_t execute_ckdf_step(mbedtls_svc_key_id_t key_id,
     psa_status_t psa_status = PSA_SUCCESS;
     mcuxClEls_KeyIndex_t source_key_slot = 0U;
     uint8_t dd_data[MCUXCLELS_CKDF_DERIVATIONDATA_SIZE] = { 0 };
-    
+    mbedtls_svc_key_id_t target_key_id = MBEDTLS_SVC_KEY_ID_INIT;
+
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(step != NULL, PSA_ERROR_INVALID_ARGUMENT, "Invalid input pointer");
 
     *target_key_slot = get_usable_key_slot(get_key_bits(&step->ckdf.key_properties));
@@ -460,7 +462,7 @@ static psa_status_t execute_ckdf_step(mbedtls_svc_key_id_t key_id,
     } else {
        source_key_slot = step->ckdf.source_key_slot;
     }
-    
+
     if (step->ckdf.dd_src == DERIVATION_DATA_SOURCE_DYNAMIC) {
         (*(step->ckdf.derivation_fn))(dd_data);
     } else {
@@ -473,12 +475,12 @@ static psa_status_t execute_ckdf_step(mbedtls_svc_key_id_t key_id,
         SYSCON0->ELS_KDF_MASK = step->ckdf.kdf_mask;
     }
 #endif
-    
+
     psa_status = mcuxClPsaDriver_Oracle_ElsUtils_Ckdf(source_key_slot, *target_key_slot,
                                                       step->ckdf.key_properties, dd_data);
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in ELS CKDF function execution");
 
-    mbedtls_svc_key_id_t target_key_id = (step->storage == STORAGE_TEMP_KEY) ? step->ckdf.target_key_id : key_id;
+    target_key_id = (step->storage == STORAGE_TEMP_KEY) ? step->ckdf.target_key_id : key_id;
     save_key_in_slot_handler(*target_key_slot, target_key_id, (uint8_t)step->storage, NULL, 0U);
 
 exit:
@@ -492,6 +494,7 @@ static psa_status_t execute_keygen_step(mbedtls_svc_key_id_t key_id,
     psa_status_t psa_status = PSA_SUCCESS;
 
     uint8_t *public_key = NULL;
+    mbedtls_svc_key_id_t target_key_id = MBEDTLS_SVC_KEY_ID_INIT;
 
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(step != NULL, PSA_ERROR_INVALID_ARGUMENT, "Invalid input pointer");
 
@@ -517,7 +520,7 @@ static psa_status_t execute_keygen_step(mbedtls_svc_key_id_t key_id,
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in ELS ECC Key Generation function execution");
 
     // Hand over ownership of the public key
-    mbedtls_svc_key_id_t target_key_id = (step->storage == STORAGE_TEMP_KEY) ? step->keygen.target_key_id : key_id;
+    target_key_id = (step->storage == STORAGE_TEMP_KEY) ? step->keygen.target_key_id : key_id;
     save_key_in_slot_handler(*target_key_slot, target_key_id, (uint8_t)step->storage, public_key, PUBLIC_KEY_SIZE);
     public_key = NULL;
 
@@ -529,10 +532,11 @@ exit:
 static psa_status_t execute_kdelete_step(mbedtls_svc_key_id_t key_id, const key_recipe_step_t *step)
 {
     psa_status_t psa_status = PSA_SUCCESS;
+    mbedtls_svc_key_id_t target_key_id = MBEDTLS_SVC_KEY_ID_INIT;
 
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(step != NULL, PSA_ERROR_INVALID_ARGUMENT, "Invalid input pointer");
 
-    mbedtls_svc_key_id_t target_key_id = (step->storage == STORAGE_TEMP_KEY) ? step->kdelete.target_key_id : key_id;
+    target_key_id = (step->storage == STORAGE_TEMP_KEY) ? step->kdelete.target_key_id : key_id;
 
     mcuxClEls_KeyIndex_t target_key_slot;
     psa_status = get_slot_from_key_id(target_key_id, &target_key_slot, true);
@@ -690,7 +694,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteElsKeyIn(const psa_key_attribut
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
     psa_key_type_t key_type = psa_get_key_type(attributes);
-    
+
     // Using Location to determine blob type. We can declare an enum too
     if (MCUXCLPSADRIVER_IS_S50_RFC3394_STORAGE(location))
     {
@@ -698,26 +702,26 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteElsKeyIn(const psa_key_attribut
         *target_key_slot = get_usable_key_slot(psa_get_key_bits(attributes));
         PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(*target_key_slot < MCUXCLELS_KEY_SLOTS, PSA_ERROR_BAD_STATE,
                                          "No usable keyslot found");
-        
+
         keyin_buf = psa_import_blob;
         keyin_buf_size = psa_import_blob_size;
     }
     else // EL2GO Blob
-    {     
+    {
         PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(target_key_slot != NULL, PSA_ERROR_INVALID_ARGUMENT,
                                              "target_key_slot is NULL");
 
         *target_key_slot = get_usable_key_slot(psa_get_key_bits(&import_op_data->attributes));
         PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(*target_key_slot < MCUXCLELS_KEY_SLOTS, PSA_ERROR_BAD_STATE,
                                              "No usable keyslot found");
-        
+
         keyin_buf = import_op_data->keyincmd;
         keyin_buf_size = import_op_data->keyincmd_size;
-        
+
         /* Overwrite the keytype from EL2GO blob */
         key_type = psa_get_key_type(&import_op_data->attributes);
     }
-    
+
     psa_status =
         mcuxClPsaDriver_Oracle_ElsUtils_KeyIn(keyin_buf, keyin_buf_size, wrap_key_slot, *target_key_slot);
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in ELS keyin command execution");
@@ -729,19 +733,19 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteElsKeyIn(const psa_key_attribut
         mcuxClEls_KeyProp_t keyProperties;
         psa_status = mcuxClPsaDriver_Oracle_ElsUtils_GetKeyProperties(*target_key_slot, &keyProperties);
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_ElsUtils_GetKeyProperties failed");
-        
+
         if (keyProperties.bits.ukgsrc != MCUXCLELS_KEYPROPERTY_INPUT_FOR_ECC_TRUE)
         {
           psa_status = PSA_ERROR_INVALID_ARGUMENT;
             PSA_DRIVER_SUCCESS_OR_EXIT_MSG("The RFC blob for ECC Key Pair is invalid");
         }
-        
+
         mcuxClEls_EccKeyGenOption_t key_gen_options;
         key_gen_options.word.value    = 0u;
         key_gen_options.bits.kgsign   = MCUXCLELS_ECC_PUBLICKEY_SIGN_DISABLE;
         key_gen_options.bits.kgsrc    = MCUXCLELS_ECC_OUTPUTKEY_DETERMINISTIC;
         key_gen_options.bits.skip_pbk = MCUXCLELS_ECC_GEN_PUBLIC_KEY;
-        
+
         public_key = mbedtls_calloc(1, PUBLIC_KEY_SIZE);
         PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(public_key != NULL, PSA_ERROR_INSUFFICIENT_MEMORY,
                                              "Insufficient memory for public key allocation");
@@ -754,7 +758,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteElsKeyIn(const psa_key_attribut
     // Hand over ownership of the public key
     save_key_in_slot_handler(*target_key_slot, key_id, STORAGE_FINAL_KEY, public_key, PUBLIC_KEY_SIZE);
     public_key = NULL;
-    
+
 exit:
     mbedtls_free(public_key);
     return psa_status;
@@ -766,6 +770,9 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ValidateBlobAttributes(const psa_key_a
                                                                  auth_operation_data_t *auth_op_data)
 {
     psa_status_t psa_status = PSA_SUCCESS;
+
+    /* This gets set later based on attributes */
+    psa_key_location_t location = PSA_KEY_LOCATION_LOCAL_STORAGE;
 
     psa_cmd_t psa_cmd;
     psa_status = parse_psa_import_command(psa_import_blob, psa_import_blob_size, &psa_cmd);
@@ -813,7 +820,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ValidateBlobAttributes(const psa_key_a
                                          "provided key_lifetime does not match with blob key_lifetime");
 
     // Validate blob lifetime and wrapping parameters
-    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
     if (MCUXCLPSADRIVER_IS_S50_BLOB_STORAGE(location))
     {
         PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG( (NXP_DIE_EL2GOIMPORT_KEK_SK_ID == psa_cmd.wrapping_key_id)
@@ -846,7 +853,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ValidateBlobAttributes(const psa_key_a
 
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(CMAC_BLOCK_SIZE == psa_cmd.signature_size, PSA_ERROR_INVALID_ARGUMENT,
                                          "Invalid blob CMAC size");
-    
+
     auth_op_data->signature_key_id = psa_cmd.signature_key_id;
     auth_op_data->signature_algorithm = psa_cmd.signature_algorithm;
     auth_op_data->signature = psa_cmd.signature;
@@ -863,6 +870,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ValidateBlobSignature(const uint8_t *p
 {
     psa_status_t psa_status = PSA_SUCCESS;
 
+    size_t psa_import_blob_tbs_padded_length = 0;
     uint8_t *psa_import_blob_tbs = NULL;
     // We do allocate enough memory here to also fit the padding into the buffer. This is achieved implicitly because
     // the blob size used here still includes the CMAC. The CMAC, however is excluded from the data to be signed and
@@ -876,7 +884,6 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ValidateBlobSignature(const uint8_t *p
     (void)memcpy(psa_import_blob_tbs, psa_import_blob, psa_import_blob_size);
 
     // pad data
-    size_t psa_import_blob_tbs_padded_length = 0;
     psa_status =
         pad_iso7816d4(psa_import_blob_tbs, psa_import_blob_size, CMAC_BLOCK_SIZE, &psa_import_blob_tbs_padded_length);
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("padding data failed");
@@ -913,19 +920,22 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(
 {
     psa_status_t psa_status = PSA_ERROR_NOT_SUPPORTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
-    
+
     // Generate ECC key Pair 1 in s50 slot.  Retain it and delete the private key from slot
-    mcuxClEls_KeyIndex_t ecc_key1_index = mcuxClPsaDriver_Oracle_ElsUtils_GetFreeKeySlot(2);    
-  
+    mcuxClEls_KeyIndex_t ecc_key1_index = mcuxClPsaDriver_Oracle_ElsUtils_GetFreeKeySlot(2);
+
+    uint8_t *public_key1 = NULL;
+    uint8_t *public_key2 = NULL;
+
     mcuxClEls_KeyProp_t  keyProp;
     keyProp.word.value       = 0;
     keyProp.bits.ksize       = MCUXCLELS_KEYPROPERTY_KEY_SIZE_256;
     keyProp.bits.kactv       = MCUXCLELS_KEYPROPERTY_ACTIVE_TRUE;
     keyProp.bits.ukgsrc      = MCUXCLELS_KEYPROPERTY_INPUT_FOR_ECC_TRUE;
-#if defined(MBEDTLS_PSA_CRYPTO_SPM)    
+#if defined(MBEDTLS_PSA_CRYPTO_SPM)
     keyProp.bits.upprot_priv = MCUXCLELS_KEYPROPERTY_PRIVILEGED_TRUE;
     keyProp.bits.upprot_sec  = MCUXCLELS_KEYPROPERTY_SECURE_TRUE;
-#endif    
+#endif
 
     mcuxClEls_EccKeyGenOption_t KeyGenOptions;
     KeyGenOptions.word.value    = 0u;
@@ -934,70 +944,70 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(
     KeyGenOptions.bits.kgsrc    = MCUXCLELS_ECC_OUTPUTKEY_RANDOM;
     KeyGenOptions.bits.skip_pbk = MCUXCLELS_ECC_GEN_PUBLIC_KEY;
 
-    uint8_t *public_key1 = mbedtls_calloc(1, PUBLIC_KEY_SIZE);
+    public_key1 = mbedtls_calloc(1, PUBLIC_KEY_SIZE);
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(public_key1 != NULL, PSA_ERROR_INSUFFICIENT_MEMORY,
                                         "Insufficient memory for public key allocation");
-   
+
     psa_status =  mcuxClPsaDriver_Oracle_ElsUtils_EccKeyGen(KeyGenOptions, ecc_key1_index, keyProp, public_key1);
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in generating first key pair in ELS");
-    
+
     // Delete the private key
     psa_status = mcuxClPsaDriver_Oracle_ElsUtils_KeyDelete(ecc_key1_index);
-    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Deletion in ELS"); 
-    
+    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Deletion in ELS");
+
     // Generate ECC key pair 2 with Key exchange property set.
     keyProp.word.value       = 0;
     keyProp.bits.ksize       = MCUXCLELS_KEYPROPERTY_KEY_SIZE_256;
     keyProp.bits.kactv       = MCUXCLELS_KEYPROPERTY_ACTIVE_TRUE;
-#if defined(MBEDTLS_PSA_CRYPTO_SPM)    
+#if defined(MBEDTLS_PSA_CRYPTO_SPM)
     keyProp.bits.upprot_priv = MCUXCLELS_KEYPROPERTY_PRIVILEGED_TRUE;
     keyProp.bits.upprot_sec  = MCUXCLELS_KEYPROPERTY_SECURE_TRUE;
-#endif    
+#endif
 
     KeyGenOptions.word.value    = 0u;
     KeyGenOptions.bits.kgsign   = MCUXCLELS_ECC_PUBLICKEY_SIGN_DISABLE;
     KeyGenOptions.bits.kgtypedh = MCUXCLELS_ECC_OUTPUTKEY_KEYEXCHANGE;
-    KeyGenOptions.bits.kgsrc    = MCUXCLELS_ECC_OUTPUTKEY_RANDOM;    
+    KeyGenOptions.bits.kgsrc    = MCUXCLELS_ECC_OUTPUTKEY_RANDOM;
     KeyGenOptions.bits.skip_pbk = MCUXCLELS_ECC_GEN_PUBLIC_KEY;
 
-    uint8_t *public_key2 = mbedtls_calloc(1, PUBLIC_KEY_SIZE);
+    public_key2 = mbedtls_calloc(1, PUBLIC_KEY_SIZE);
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(public_key2 != NULL, PSA_ERROR_INSUFFICIENT_MEMORY,
                                          "Insufficient memory for public key allocation");
-      
+
     psa_status =  mcuxClPsaDriver_Oracle_ElsUtils_EccKeyGen(KeyGenOptions, ecc_key1_index, keyProp, public_key2);
     // Public Key 2 not needed
     free(public_key2);
-    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in generating second key pair in ELS");    
-    
+    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in generating second key pair in ELS");
+
     keyProp.word.value       = 0;
     if (PSA_KEY_TYPE_IS_ECC(key_type))
     {
         keyProp.bits.ukgsrc      = MCUXCLELS_KEYPROPERTY_INPUT_FOR_ECC_TRUE;
-    } 
+    }
     else
     {
         /* We will use this key to derive symmetric keys via CKDF */
         keyProp.bits.uckdf      = MCUXCLELS_KEYPROPERTY_CKDF_TRUE;
     }
-    
+
     keyProp.bits.wrpok       = MCUXCLELS_KEYPROPERTY_WRAP_TRUE;
-#if defined(MBEDTLS_PSA_CRYPTO_SPM)    
+#if defined(MBEDTLS_PSA_CRYPTO_SPM)
     keyProp.bits.upprot_priv = MCUXCLELS_KEYPROPERTY_PRIVILEGED_TRUE;
     keyProp.bits.upprot_sec  = MCUXCLELS_KEYPROPERTY_SECURE_TRUE;
-#endif    
-  
+#endif
+
     *key_index_shared_secret = mcuxClPsaDriver_Oracle_ElsUtils_GetFreeKeySlot(2);
    // Execute Key exchange and put the secret in a key slot.If key type is ECC use the key index passed
     psa_status = mcuxClPsaDriver_Oracle_ElsUtils_EccKeyAgreement(ecc_key1_index, public_key1, *key_index_shared_secret, keyProp);
-    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Exchange in ELS"); 
+    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Exchange in ELS");
 
     // Delete the key generated for exchange
-    psa_status = mcuxClPsaDriver_Oracle_ElsUtils_KeyDelete(ecc_key1_index);    
-    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Deletion in ELS"); 
-    
+    psa_status = mcuxClPsaDriver_Oracle_ElsUtils_KeyDelete(ecc_key1_index);
+    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Deletion in ELS");
+
 exit:
     free(public_key1);
-    
+
     return psa_status;
 }
 
@@ -1008,26 +1018,26 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateKey(
     psa_key_type_t key_type = psa_get_key_type(attributes);
     size_t key_bits = psa_get_key_bits(attributes);
     psa_algorithm_t alg = psa_get_key_algorithm(attributes);
-    
+
     if (PSA_KEY_TYPE_IS_ECC(key_type)) {
-        if ((PSA_KEY_TYPE_ECC_GET_FAMILY(key_type) != PSA_ECC_FAMILY_SECP_R1) || 
+        if ((PSA_KEY_TYPE_ECC_GET_FAMILY(key_type) != PSA_ECC_FAMILY_SECP_R1) ||
             (PSA_ALG_SIGN_GET_HASH(alg) != PSA_ALG_SHA_256))
          {
               return PSA_ERROR_NOT_SUPPORTED;
          }
-         else 
+         else
          {
-              return mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(attributes, key_index);         
-         }       
+              return mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(attributes, key_index);
+         }
     }
-    else 
-    {      
+    else
+    {
         mcuxClEls_KeyProp_t  keyProp = { 0 };
         keyProp.word.value       = 0;
         psa_status_t psa_status = PSA_ERROR_NOT_SUPPORTED;
         mcuxClEls_KeyIndex_t tmp_idx = 0;
         const uint8_t dd_data[MCUXCLELS_CKDF_DERIVATIONDATA_SIZE] = { 'R','F','C','3','3','9','4','B','L','O','B', 0x0u };
-        
+
         switch (key_type) {
         case PSA_KEY_TYPE_AES:
           switch (alg) {
@@ -1054,35 +1064,35 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateKey(
         default:
             return PSA_ERROR_NOT_SUPPORTED;
         }
-        
+
         if (key_bits == 128) {
             keyProp.bits.ksize = MCUXCLELS_KEYPROPERTY_KEY_SIZE_128;
         } else if (key_bits == 256) {
-            keyProp.bits.ksize = MCUXCLELS_KEYPROPERTY_KEY_SIZE_256;            
+            keyProp.bits.ksize = MCUXCLELS_KEYPROPERTY_KEY_SIZE_256;
         } else {
             return PSA_ERROR_NOT_SUPPORTED;
         }
-        
+
         keyProp.bits.wrpok       = MCUXCLELS_KEYPROPERTY_WRAP_TRUE;
-#if defined(MBEDTLS_PSA_CRYPTO_SPM)    
+#if defined(MBEDTLS_PSA_CRYPTO_SPM)
         keyProp.bits.upprot_priv = MCUXCLELS_KEYPROPERTY_PRIVILEGED_TRUE;
         keyProp.bits.upprot_sec  = MCUXCLELS_KEYPROPERTY_SECURE_TRUE;
-#endif    
-       
+#endif
+
         psa_status = mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(attributes, &tmp_idx);
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in ELS ECDH function execution");
 
         *key_index = get_usable_key_slot(key_bits);
-        
+
         psa_status = mcuxClPsaDriver_Oracle_ElsUtils_Ckdf(tmp_idx, *key_index,
                                                           keyProp, dd_data);
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in ELS CKDF function execution");
-        
-        // needs to shift to in exit
-        psa_status = mcuxClPsaDriver_Oracle_ElsUtils_KeyDelete(tmp_idx);    
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Deletion in ELS"); 
 
-    exit:      
-        return psa_status;          
+        // needs to shift to in exit
+        psa_status = mcuxClPsaDriver_Oracle_ElsUtils_KeyDelete(tmp_idx);
+        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Deletion in ELS");
+
+    exit:
+        return psa_status;
     }
 }
