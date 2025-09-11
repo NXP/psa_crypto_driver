@@ -285,7 +285,7 @@ psa_status_t ele_s2xx_transparent_sign_hash(const psa_key_attributes_t *attribut
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     status = asymmetric_sign_setkey(attributes, &sssKey, key_buffer, key_buffer_size, psa_get_key_bits(attributes));
@@ -306,7 +306,7 @@ exit:
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -373,7 +373,7 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     status = asymmetric_sign_setkey(attributes, &sssKey, key_buffer, key_buffer_size, psa_get_key_bits(attributes));
@@ -393,7 +393,7 @@ exit:
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

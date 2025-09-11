@@ -29,9 +29,9 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     uint32_t resultState        = 0u;
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (false == (MCUXCLPSADRIVER_IS_LOCAL_STORAGE(location)))
@@ -113,9 +113,9 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     }
 
 exit:
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -177,9 +177,9 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (sss_sscp_key_object_init_internal(&sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
@@ -209,9 +209,9 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
 
     status = PSA_SUCCESS;
 exit:
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -440,9 +440,9 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Load our key pair */
@@ -484,9 +484,9 @@ exit:
     (void)ele_s2xx_delete_key(&sssKey_peer);
     (void)ele_s2xx_delete_key(&sssKey_shared);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

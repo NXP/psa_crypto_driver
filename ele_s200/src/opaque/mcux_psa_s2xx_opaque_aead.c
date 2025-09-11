@@ -199,9 +199,9 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
 
     *ciphertext_length = 0u;
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Handle key import */
@@ -226,9 +226,9 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
     *ciphertext_length = plaintext_length + tag_length;
 
 exit:
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -298,9 +298,9 @@ psa_status_t ele_s2xx_opaque_aead_decrypt(const psa_key_attributes_t *attributes
     /* Tag is at the end of ciphertext */
     tag = (uint8_t *)(ciphertext + cipher_length);
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Handle key import */
@@ -324,9 +324,9 @@ psa_status_t ele_s2xx_opaque_aead_decrypt(const psa_key_attributes_t *attributes
     *plaintext_length = cipher_length;
 
 exit:
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

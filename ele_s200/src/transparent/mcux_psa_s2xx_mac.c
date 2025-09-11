@@ -151,7 +151,7 @@ psa_status_t ele_s2xx_transparent_mac_compute(const psa_key_attributes_t *attrib
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Set Key for MAC */
@@ -172,7 +172,7 @@ exit:
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -208,7 +208,7 @@ static psa_status_t mac_common_setup(ele_s2xx_transparent_mac_operation_t *opera
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* This key object is to be freed during mac_*_finish() or mac_abort() */
@@ -280,7 +280,7 @@ exit:
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -324,7 +324,7 @@ psa_status_t ele_s2xx_transparent_mac_update(ele_s2xx_transparent_mac_operation_
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (sss_sscp_mac_context_init(&mac_ctx,
@@ -370,7 +370,7 @@ exit:
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -387,7 +387,7 @@ psa_status_t ele_s2xx_transparent_mac_sign_finish(ele_s2xx_transparent_mac_opera
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (sss_sscp_mac_context_init(&mac_ctx,
@@ -431,7 +431,7 @@ exit:
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (PSA_SUCCESS == status)
@@ -453,7 +453,7 @@ psa_status_t ele_s2xx_transparent_mac_verify_finish(ele_s2xx_transparent_mac_ope
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (sss_sscp_mac_context_init(&mac_ctx,
@@ -491,7 +491,7 @@ exit:
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Verify the MAC */
@@ -510,7 +510,7 @@ psa_status_t ele_s2xx_transparent_mac_abort(ele_s2xx_transparent_mac_operation_t
 {
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* We have no S200 error code granularity, so we go by best effort and
@@ -527,7 +527,7 @@ psa_status_t ele_s2xx_transparent_mac_abort(ele_s2xx_transparent_mac_operation_t
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return PSA_SUCCESS;

@@ -137,9 +137,9 @@ psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
 
     mac_size = PSA_MAC_LENGTH(psa_get_key_type(attributes), psa_get_key_bits(attributes), alg);
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
@@ -155,9 +155,9 @@ psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
     }
 
 exit:
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

@@ -191,7 +191,7 @@ status_t CRYPTO_InitHardware(void)
         ele_close_handles();
     }
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         PRINTF("Mutex unlock failed\n");
         return kStatus_Fail;
@@ -215,7 +215,7 @@ status_t CRYPTO_DeinitHardware(void)
         return 0;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return kStatus_Fail;
     }
@@ -226,7 +226,7 @@ status_t CRYPTO_DeinitHardware(void)
         g_isCryptoHWInitialized = false;
     }
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return kStatus_Fail;
     }

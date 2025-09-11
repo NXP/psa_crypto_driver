@@ -207,9 +207,9 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
 
     *ciphertext_length = 0u;
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if ((aes_aead_setkey(&sssKey, key_buffer, key_bits)) != kStatus_Success)
@@ -232,9 +232,9 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
 exit:
     (void)sss_sscp_key_object_free(&sssKey, kSSS_keyObjFree_KeysStoreDefragment);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -327,9 +327,9 @@ psa_status_t ele_s2xx_transparent_aead_decrypt(const psa_key_attributes_t *attri
     /* Tag is at the end of ciphertext */
     tag = (uint8_t *)(ciphertext + cipher_length);
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if ((aes_aead_setkey(&sssKey, key_buffer, key_bits)) != kStatus_Success)
@@ -353,9 +353,9 @@ psa_status_t ele_s2xx_transparent_aead_decrypt(const psa_key_attributes_t *attri
 exit:
     (void)sss_sscp_key_object_free(&sssKey, kSSS_keyObjFree_KeysStoreDefragment);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex))
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
