@@ -20,6 +20,7 @@
  *  - Authenticated Encryption w Assoc. Data: mcux_psa_s2xx_aead.h
  *  - Asymmetric signature schemes:           mcux_psa_s2xx_asymmetric_signature.h
  *  - Asymmetric encryption schemes:          mcux_psa_s2xx_asymmetric_encryption.h
+ *  - Key generation:                         mcux_psa_s2xx_key_generation.h
  *
  * \note This file must be included by psa_crypto_driver_wrappers.c. The
  * definition of the context types used in the implementation is provided
@@ -64,7 +65,7 @@
 #include "mcux_psa_s2xx_mac.h"
 // #include "mcux_psa_s2xx_asymmetric_encryption.h"
 #include "mcux_psa_s2xx_asymmetric_signature.h"
-// #include "mcux_psa_s2xx_key_generation.h"
+#include "mcux_psa_s2xx_key_generation.h"
 
 // #include "mcux_psa_s2xx_opaque_init.h"
 #include "mcux_psa_s2xx_opaque_key_generation.h"

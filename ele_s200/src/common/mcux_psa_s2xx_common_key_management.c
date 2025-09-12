@@ -565,6 +565,26 @@ exit:
     return status;
 }
 
+
+psa_status_t ele_s2xx_get_key(sss_sscp_object_t *sssKey,
+                              uint8_t *key_buffer,
+                              size_t key_buffer_size,
+                              size_t *key_buffer_length,
+                              sss_key_part_t key_part,
+                              size_t *key_bitlen)
+{
+    psa_status_t status = PSA_SUCCESS;
+
+    *key_buffer_length = key_buffer_size;
+    if ((sss_sscp_key_store_get_key(&g_ele_ctx.keyStore, sssKey, key_buffer,
+                                    key_buffer_length, key_bitlen, key_part)) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    return status;
+}
+
 psa_status_t ele_s2xx_delete_key(sss_sscp_object_t *sssKey)
 {
     psa_status_t status = PSA_SUCCESS;

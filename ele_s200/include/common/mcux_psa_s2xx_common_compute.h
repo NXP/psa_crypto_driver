@@ -62,7 +62,8 @@ psa_status_t ele_s2xx_common_key_agreement(sss_sscp_object_t *sssKey,
                                            sss_sscp_object_t *sssKey_shared,
                                            uint8_t *shared_secret,
                                            size_t shared_secret_size,
-                                           size_t *shared_secret_length);
+                                           size_t *shared_secret_length,
+                                           sss_algorithm_t ele_alg);
 
 #ifdef __cplusplus
 }

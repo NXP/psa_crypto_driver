@@ -47,6 +47,26 @@ psa_status_t ele_s2xx_set_key(sss_sscp_object_t *sssKey,
                               size_t allocation_size,
                               size_t key_bitlen);
 
+psa_status_t ele_s2xx_get_key(sss_sscp_object_t *sssKey,
+                              uint8_t *key_buffer,
+                              size_t key_buffer_size,
+                              size_t *key_buffer_length,
+                              sss_key_part_t key_part,
+                              size_t *key_bitlen);
+
+/** Erase and delete a key from the S200.
+ *
+ * The key is first erased and then the key object is deleted with keystore
+ * defragmentation enabled.
+ *
+ * @note The caller should know if the key to be deleted is present in
+ *       the keystore.
+ *
+ * @param sssKey pointer to a key object present in the S200.
+ *
+ * @retval PSA_SUCCESS.
+ * @retval PSA_ERROR_HARDWARE_FAILURE if key object free fails.
+ */
 psa_status_t ele_s2xx_delete_key(sss_sscp_object_t *sssKey);
 
 #ifdef __cplusplus

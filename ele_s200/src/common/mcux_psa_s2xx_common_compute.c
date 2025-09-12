@@ -214,13 +214,14 @@ psa_status_t ele_s2xx_common_key_agreement(sss_sscp_object_t *sssKey,
                                            sss_sscp_object_t *sssKey_shared,
                                            uint8_t *shared_secret,
                                            size_t shared_secret_size,
-                                           size_t *shared_secret_length)
+                                           size_t *shared_secret_length,
+                                           sss_algorithm_t ele_alg)
 {
     sss_sscp_derive_key_t ctx   = {0};
     size_t shared_secret_bitlen = 0u;
 
     if (sss_sscp_derive_key_context_init(&ctx,  &g_ele_ctx.sssSession, sssKey,
-                                         kAlgorithm_SSS_ECDH, kMode_SSS_ComputeSharedSecret) != kStatus_SSS_Success)
+                                         ele_alg, kMode_SSS_ComputeSharedSecret) != kStatus_SSS_Success)
     {
         (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;

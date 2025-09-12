@@ -473,7 +473,8 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
 
     /* Do the key agreement, get the shared secret and set the output size */
     status = ele_s2xx_common_key_agreement(&sssKey, &sssKey_peer, &sssKey_shared,
-                                           shared_secret, shared_secret_size, shared_secret_length);
+                                           shared_secret, shared_secret_size, shared_secret_length,
+                                           ele_alg);
     if (PSA_SUCCESS != status)
     {
         goto exit;
