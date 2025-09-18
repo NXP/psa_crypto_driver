@@ -395,7 +395,7 @@ static psa_status_t caam_common_internal_rsa_pkcs1_5_sign(mcux_psa_caam_key_type
 
 #if defined(USE_MALLOC)
     if (_input != NULL) {
-        free(_input);
+        mbedtls_free(_input);
     }
 #endif
 
@@ -574,7 +574,7 @@ static psa_status_t caam_common_internal_rsa_pss_sign(mcux_psa_caam_key_type_t c
 
 #if defined(USE_MALLOC)
     if (_input != NULL) {
-        free(_input);
+        mbedtls_free(_input);
     }
 #endif
 

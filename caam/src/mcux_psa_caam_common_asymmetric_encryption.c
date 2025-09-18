@@ -439,7 +439,7 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
 
 #if defined(USE_MALLOC)
     if (_output != NULL) {
-        free(_output);
+        mbedtls_free(_output);
     }
 #endif
 
