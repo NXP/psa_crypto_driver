@@ -21,7 +21,7 @@
 /* Number of valid tag lengths sizes both for CCM and GCM modes */
 #define VALID_TAG_LENGTH_SIZE 7u
 
-static psa_status_t check_generic_aead_alg(psa_algorithm_t alg, psa_key_type_t key_type, sss_algorithm_t *ele_alg)
+static psa_status_t translate_psa_aead_to_ele_aead(psa_algorithm_t alg, psa_key_type_t key_type, sss_algorithm_t *ele_alg)
 {
     psa_algorithm_t default_alg = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
     size_t tag_length           = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
@@ -70,7 +70,7 @@ static psa_status_t check_generic_aead_alg(psa_algorithm_t alg, psa_key_type_t k
 
     /* Cycle through all valid tag lengths for CCM or GCM */
     uint32_t i;
-    for (i = 0; i < VALID_TAG_LENGTH_SIZE; i++)
+    for (i = 0u; i < VALID_TAG_LENGTH_SIZE; i++)
     {
         if (tag_length == valid_tag_lengths[i])
         {
@@ -161,7 +161,7 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
     size_t tag_length        = 0u;
 
     /* Validate the algorithm first */
-    status = check_generic_aead_alg(alg, key_type, &ele_alg);
+    status = translate_psa_aead_to_ele_aead(alg, key_type, &ele_alg);
     if (PSA_SUCCESS != status)
     {
         return status;
@@ -252,7 +252,7 @@ psa_status_t ele_s2xx_opaque_aead_decrypt(const psa_key_attributes_t *attributes
     size_t cipher_length     = 0;
 
     /* Validate the algorithm first */
-    status = check_generic_aead_alg(alg, key_type, &ele_alg);
+    status = translate_psa_aead_to_ele_aead(alg, key_type, &ele_alg);
     if (PSA_SUCCESS != status)
     {
         return status;

@@ -286,8 +286,8 @@ size_t ele_s2xx_opaque_size_function(const psa_key_attributes_t *attributes,
     return key_buffer_size;
 }
 
-static psa_status_t ele_s2xx_psa_2_ele_key_agreement_alg(psa_algorithm_t alg,
-                                                         sss_algorithm_t *ele_alg)
+static psa_status_t translate_psa_key_agreement_to_ele_key_agreement(psa_algorithm_t alg,
+                                                                     sss_algorithm_t *ele_alg)
 {
     psa_status_t status = PSA_SUCCESS;
 
@@ -385,7 +385,7 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
     }
 
     /* Check if alg is supported by S200 */
-    status = ele_s2xx_psa_2_ele_key_agreement_alg(alg, &ele_alg);
+    status = translate_psa_key_agreement_to_ele_key_agreement(alg, &ele_alg);
     if (PSA_SUCCESS != status)
     {
         return status;
@@ -455,7 +455,7 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
     /* Load the peer key - peer key buffer and size shifted by 1 element,
      * since S200 expects no leading 0x04 Byte
      */
-    status = ele_s2xx_set_key(&sssKey_peer, 0, (peer_key + 1), (peer_key_length - 1u), kSSS_KeyPart_Public,
+    status = ele_s2xx_set_key(&sssKey_peer, 0u, (peer_key + 1), (peer_key_length - 1u), kSSS_KeyPart_Public,
                               kSSS_CipherType_EC_NIST_P, kSSS_KeyProp_CryptoAlgo_KDF,
                               PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(psa_get_key_bits(attributes)),
                               psa_get_key_bits(attributes));

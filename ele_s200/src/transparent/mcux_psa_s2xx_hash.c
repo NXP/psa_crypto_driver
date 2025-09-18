@@ -24,8 +24,9 @@
 #define SHA384_DIGEST_SIZE_IN_BYTES (384u / 8u)
 #define SHA512_DIGEST_SIZE_IN_BYTES (512u / 8u)
 
-static psa_status_t ele_psa_hash_alg_to_ele_hash_alg(psa_algorithm_t alg, sss_algorithm_t *mode)
+static psa_status_t translate_psa_hash_to_ele_hash(psa_algorithm_t alg, sss_algorithm_t *mode)
 {
+    psa_status_t status = PSA_SUCCESS;
     switch (alg)
     {
 #if defined(PSA_WANT_ALG_SHA_224)
@@ -76,18 +77,19 @@ static psa_status_t ele_psa_hash_alg_to_ele_hash_alg(psa_algorithm_t alg, sss_al
             break;
 #endif /* PSA_WANT_ALG_SHA_1 */
         default:
-            return PSA_ERROR_NOT_SUPPORTED;
+            status = PSA_ERROR_NOT_SUPPORTED;
+            break;
     }
-
-    return PSA_SUCCESS;
+    return status;
 }
 
 #if defined(ELE_FEATURE_DIGEST_CLONE) && (ELE_FEATURE_DIGEST_CLONE == 1)
 /**
- * @brief Inverse to ele_psa_hash_alg_to_ele_hash_alg()
+ * @brief Inverse to translate_psa_hash_to_ele_hash()
  */
-static psa_status_t ele_ele_hash_alg_to_psa_hash_alg(sss_algorithm_t mode, psa_algorithm_t *alg)
+static psa_status_t translate_ele_hash_to_psa_hash(sss_algorithm_t mode, psa_algorithm_t *alg)
 {
+    psa_status_t status = PSA_SUCCESS;
     switch (mode)
     {
 #if defined(PSA_WANT_ALG_SHA_224)
@@ -138,10 +140,10 @@ static psa_status_t ele_ele_hash_alg_to_psa_hash_alg(sss_algorithm_t mode, psa_a
             break;
 #endif /* PSA_WANT_ALG_SHA_1 */
         default:
-            return PSA_ERROR_NOT_SUPPORTED;
+            status = PSA_ERROR_NOT_SUPPORTED;
+            break;
     }
-
-    return PSA_SUCCESS;
+    return status;
 }
 #endif /* ELE_FEATURE_DIGEST_CLONE */
 
@@ -163,7 +165,7 @@ psa_status_t ele_s2xx_transparent_hash_setup(ele_s2xx_hash_operation_t *operatio
 
     (void)memset(operation, 0, sizeof(ele_s2xx_hash_operation_t));
 
-    if ((status = ele_psa_hash_alg_to_ele_hash_alg(alg, &operation->ctx.algorithm)) != PSA_SUCCESS)
+    if ((status = translate_psa_hash_to_ele_hash(alg, &operation->ctx.algorithm)) != PSA_SUCCESS)
     {
         return status;
     }
@@ -207,7 +209,7 @@ psa_status_t ele_s2xx_transparent_hash_clone(const ele_s2xx_hash_operation_t *so
     }
 
     /* Initialize target to same algorithm as source */
-    if ((status = ele_ele_hash_alg_to_psa_hash_alg(source_operation->ctx.algorithm, &alg)) != PSA_SUCCESS)
+    if ((status = translate_ele_hash_to_psa_hash(source_operation->ctx.algorithm, &alg)) != PSA_SUCCESS)
     {
         return status;
     }
@@ -360,7 +362,7 @@ psa_status_t ele_s2xx_transparent_hash_compute(psa_algorithm_t alg,
     sss_sscp_digest_t ctx;
     sss_algorithm_t mode = 0;
 
-    if ((status = ele_psa_hash_alg_to_ele_hash_alg(alg, &mode)) != PSA_SUCCESS)
+    if ((status = translate_psa_hash_to_ele_hash(alg, &mode)) != PSA_SUCCESS)
     {
         return status;
     }

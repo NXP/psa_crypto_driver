@@ -65,6 +65,12 @@ psa_status_t ele_s2xx_common_key_agreement(sss_sscp_object_t *sssKey,
                                            size_t *shared_secret_length,
                                            sss_algorithm_t ele_alg);
 
+/* UTILITIES */
+
+int ele_s2xx_util_ct_memcmp(const void *a,
+                            const void *b,
+                            size_t n);
+
 #ifdef __cplusplus
 }
 #endif

@@ -21,8 +21,8 @@
 /** Translate psa_key_type_t type to sss_cipher_type_t.
  *  Caller must make sure that psa_type is an ECC key type.
  */
-static psa_status_t psa_to_ele_ecc_family(psa_key_type_t psa_type,
-                                          sss_cipher_type_t *ele_type)
+static psa_status_t translate_psa_ecc_family_to_ele_ecc_family(psa_key_type_t psa_type,
+                                                               sss_cipher_type_t *ele_type)
 {
     psa_status_t status = PSA_SUCCESS;
     switch (PSA_KEY_TYPE_ECC_GET_FAMILY(psa_type))
@@ -60,8 +60,13 @@ psa_status_t ele_s2xx_transparent_generate_key(const psa_key_attributes_t *attri
     sss_cipher_type_t cipher_type = {0u};
     size_t allocation_size        = 0u;
 
+    /* NOTE: Transparent drivers are limited to generating asymmetric keys,
+     * as per PSA spec. This wrapper will never be called by PSA wrapper
+     * dispatch for symmetric keys.
+     */
+
     /* We can't allow public key generation */
-    if (PSA_KEY_TYPE_IS_PUBLIC_KEY(type))
+    if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(type))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -83,7 +88,7 @@ psa_status_t ele_s2xx_transparent_generate_key(const psa_key_attributes_t *attri
     }
 
     /* Set up handle based on key type */
-    status = psa_to_ele_ecc_family(type, &cipher_type);
+    status = translate_psa_ecc_family_to_ele_ecc_family(type, &cipher_type);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -92,7 +97,7 @@ psa_status_t ele_s2xx_transparent_generate_key(const psa_key_attributes_t *attri
     /* Key pair size + a bit more to be safe in case of some 521bit keys */
     allocation_size = (key_buffer_size * 3u) + 6u;
 
-    if ((sss_sscp_key_object_allocate_handle(&sssKey, 1u, /* key id */
+    if ((sss_sscp_key_object_allocate_handle(&sssKey, 0u, /* key id */
                                              kSSS_KeyPart_Pair, cipher_type, allocation_size,
                                              kSSS_KeyProp_CryptoAlgo_AsymSignVerify)) != kStatus_SSS_Success)
     {

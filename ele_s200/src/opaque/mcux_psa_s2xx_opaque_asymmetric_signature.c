@@ -22,9 +22,9 @@
 #define NISTP521_BITLEN (521u)
 #define ED25519_BITLEN  (255u)
 
-static psa_status_t ele_s2xx_psa_2_ele_asym_alg(const psa_key_attributes_t *attributes,
-                                                psa_algorithm_t alg,
-                                                sss_algorithm_t *ele_alg)
+static psa_status_t translate_psa_asym_to_ele_asym(const psa_key_attributes_t *attributes,
+                                                   psa_algorithm_t alg,
+                                                   sss_algorithm_t *ele_alg)
 {
     psa_status_t status           = PSA_SUCCESS;
     psa_algorithm_t sign_hash_alg = PSA_ALG_ANY_HASH;
@@ -167,7 +167,7 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
     size_t output_size       = 0;
 
     /* Convert PSA_ALG_* to ELE value and validate supported alg */
-    status = ele_s2xx_psa_2_ele_asym_alg(attributes, alg, &ele_alg);
+    status = translate_psa_asym_to_ele_asym(attributes, alg, &ele_alg);
     if (PSA_SUCCESS != status)
     {
         return status;
@@ -256,7 +256,7 @@ psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
     sss_algorithm_t ele_alg  = {0};
 
     /* Convert PSA_ALG_* to ELE value and validate supported alg */
-    status = ele_s2xx_psa_2_ele_asym_alg(attributes, alg, &ele_alg);
+    status = translate_psa_asym_to_ele_asym(attributes, alg, &ele_alg);
     if (PSA_SUCCESS != status)
     {
         return status;
@@ -341,7 +341,7 @@ psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes
     size_t hash_length                             = 0u;
 
     /* Convert PSA_ALG_* to ELE value and validate supported alg */
-    status = ele_s2xx_psa_2_ele_asym_alg(attributes, alg, &ele_alg);
+    status = translate_psa_asym_to_ele_asym(attributes, alg, &ele_alg);
     if (PSA_SUCCESS != status)
     {
         return status;
@@ -428,7 +428,7 @@ psa_status_t ele_s2xx_opaque_verify_message(const psa_key_attributes_t *attribut
     size_t hash_length                             = 0u;
 
     /* Convert PSA_ALG_* to ELE value and validate supported alg */
-    status = ele_s2xx_psa_2_ele_asym_alg(attributes, alg, &ele_alg);
+    status = translate_psa_asym_to_ele_asym(attributes, alg, &ele_alg);
     if (PSA_SUCCESS != status)
     {
         return status;

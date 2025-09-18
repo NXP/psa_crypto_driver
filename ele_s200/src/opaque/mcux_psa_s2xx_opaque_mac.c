@@ -20,22 +20,22 @@
 #include "mcux_psa_s2xx_common_compute.h"
 
 /* Convert PSA Algorithm to ELE Algorithm, CMAC or HMAC with SHA256 */
-static psa_status_t ele_psa_mac_alg_to_ele_mac_alg(psa_algorithm_t alg, sss_algorithm_t *ele_alg)
+static psa_status_t translate_psa_mac_to_ele_mac(psa_algorithm_t alg, sss_algorithm_t *ele_alg)
 {
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
 #if defined(PSA_WANT_ALG_CMAC)
     if (PSA_ALG_FULL_LENGTH_MAC(alg) == PSA_ALG_CMAC)
     {
         *ele_alg = kAlgorithm_SSS_CMAC_AES;
-        return PSA_SUCCESS;
+        status   = PSA_SUCCESS;
     }
     else
 #endif /* PSA_WANT_ALG_CMAC */
 #if defined(PSA_WANT_ALG_HMAC)
         if (true == PSA_ALG_IS_HMAC(alg))
     {
-        psa_status_t status = PSA_SUCCESS;
-
-        /* EL2GO FW adds support for more hashes compared to base S2XX */
+        status = PSA_SUCCESS;
         switch (PSA_ALG_HMAC_GET_HASH(alg))
         {
 #if defined(PSA_WANT_ALG_SHA_256)
@@ -69,14 +69,14 @@ static psa_status_t ele_psa_mac_alg_to_ele_mac_alg(psa_algorithm_t alg, sss_algo
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
-
-        return status;
     }
     else
 #endif /* PSA_WANT_ALG_HMAC */
     {
-        return PSA_ERROR_NOT_SUPPORTED;
+        status = PSA_ERROR_NOT_SUPPORTED;
     }
+
+    return status;
 }
 
 static psa_status_t key_management(const psa_key_attributes_t *attributes,
@@ -117,8 +117,8 @@ psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
     sss_algorithm_t ele_alg  = 0;
     sss_sscp_object_t sssKey = {0};
 
-    /* Get Algo fo ELE */
-    status = ele_psa_mac_alg_to_ele_mac_alg(alg, &ele_alg);
+    /* Get Algo for ELE */
+    status = translate_psa_mac_to_ele_mac(alg, &ele_alg);
     if (PSA_SUCCESS != status)
     {
         return status;

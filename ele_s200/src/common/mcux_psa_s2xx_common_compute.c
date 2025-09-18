@@ -4,6 +4,12 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+/**
+ *  Constant-time functions
+ *
+ *  Copyright The Mbed TLS Contributors
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
+ */
 
 /** \file mcux_psa_s2xx_common_compute.c
  *
@@ -28,7 +34,6 @@ psa_status_t ele_s2xx_common_aead(const uint8_t *nonce, size_t nonce_length,
     if ((sss_sscp_aead_context_init(&ctx, &g_ele_ctx.sssSession, sssKey, ele_alg, mode)) !=
         kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -38,12 +43,12 @@ psa_status_t ele_s2xx_common_aead(const uint8_t *nonce, size_t nonce_length,
         kStatus_SSS_Success)
     {
         (void)sss_sscp_aead_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         if (kMode_SSS_Decrypt == mode)
         {
             /* If AEAD decrypt failed in this case we cannot differentiate between root cause
              * It may be due to some sanity check, but most likely due to tag mismatch between actual and expected value
-             * So treat all fails in this case as signature mismatch */
+             * So treat all fails in this case as signature mismatch
+             */
             return PSA_ERROR_INVALID_SIGNATURE;
         }
         return PSA_ERROR_GENERIC_ERROR;
@@ -52,7 +57,6 @@ psa_status_t ele_s2xx_common_aead(const uint8_t *nonce, size_t nonce_length,
     /* Free contexts */
     if (sss_sscp_aead_context_free(&ctx) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -71,7 +75,6 @@ psa_status_t ele_s2xx_common_mac(const uint8_t *input, size_t input_length,
     if ((sss_sscp_mac_context_init(&ctx, &g_ele_ctx.sssSession, sssKey, ele_alg, kMode_SSS_Mac)) !=
         kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
     /* Call MAC one go*/
@@ -79,7 +82,6 @@ psa_status_t ele_s2xx_common_mac(const uint8_t *input, size_t input_length,
         kStatus_SSS_Success)
     {
         (void)sss_sscp_mac_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -88,7 +90,6 @@ psa_status_t ele_s2xx_common_mac(const uint8_t *input, size_t input_length,
     /* Free context */
     if (sss_sscp_mac_context_free(&ctx) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -110,7 +111,6 @@ psa_status_t ele_s2xx_common_cipher(sss_sscp_object_t *sssKey,
                                         sssKey, ele_algo,
                                         mode) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -120,14 +120,12 @@ psa_status_t ele_s2xx_common_cipher(sss_sscp_object_t *sssKey,
                                output, input_length) != kStatus_SSS_Success)
     {
         (void)sss_sscp_symmetric_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
     /* Clean up */
     if (sss_sscp_symmetric_context_free(&ctx) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -146,7 +144,6 @@ psa_status_t ele_s2xx_common_sign_digest(uint8_t *digest, size_t digest_len,
     if (sss_sscp_asymmetric_context_init(&ctx,  &g_ele_ctx.sssSession,
                                          sssKey, ele_alg, kMode_SSS_Sign) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -155,14 +152,12 @@ psa_status_t ele_s2xx_common_sign_digest(uint8_t *digest, size_t digest_len,
                                         signature, signature_len) != kStatus_SSS_Success)
     {
         (void)sss_sscp_asymmetric_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
     /* Clean up */
     if (sss_sscp_asymmetric_context_free(&ctx) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -179,7 +174,6 @@ psa_status_t ele_s2xx_common_verify_digest(uint8_t *digest, size_t digest_len,
     if (sss_sscp_asymmetric_context_init(&ctx,  &g_ele_ctx.sssSession,
                                          sssKey, ele_alg, kMode_SSS_Verify) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -188,19 +182,18 @@ psa_status_t ele_s2xx_common_verify_digest(uint8_t *digest, size_t digest_len,
                                           signature, signature_len) != kStatus_SSS_Success)
     {
         (void)sss_sscp_asymmetric_context_free(&ctx);
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
 
         /* We do not have return code granularity for differentiating
          * generic errors vs signature verification errors.
          * We will assume the more likely situation of a failure at this point,
-         * which is signature verification failure. */
+         * which is signature verification failure.
+         */
         return PSA_ERROR_INVALID_SIGNATURE;
     }
 
     /* Clean up */
     if (sss_sscp_asymmetric_context_free(&ctx) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
@@ -223,13 +216,11 @@ psa_status_t ele_s2xx_common_key_agreement(sss_sscp_object_t *sssKey,
     if (sss_sscp_derive_key_context_init(&ctx,  &g_ele_ctx.sssSession, sssKey,
                                          ele_alg, kMode_SSS_ComputeSharedSecret) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
     if (sss_sscp_asymmetric_dh_derive_key(&ctx, sssKey_peer, sssKey_shared) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         (void)sss_sscp_derive_key_context_free(&ctx);
         return PSA_ERROR_GENERIC_ERROR;
     }
@@ -240,16 +231,62 @@ psa_status_t ele_s2xx_common_key_agreement(sss_sscp_object_t *sssKey,
                                    shared_secret, shared_secret_length,
                                    &shared_secret_bitlen, kSSS_KeyPart_Default) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         (void)sss_sscp_derive_key_context_free(&ctx);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
     if (sss_sscp_derive_key_context_free(&ctx) != kStatus_SSS_Success)
     {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
         return PSA_ERROR_GENERIC_ERROR;
     }
 
     return PSA_SUCCESS;
+}
+
+/* UTILITIES */
+
+/**
+ * Taken from the mbedtls library/constant_time.c implementation file and
+ * modified to not depend on any MBEDTLS preprocessor macros.
+ */
+int ele_s2xx_util_ct_memcmp(const void *a,
+                            const void *b,
+                            size_t n)
+{
+    size_t i = 0;
+    /*
+     * `A` and `B` are cast to volatile to ensure that the compiler
+     * generates code that always fully reads both buffers.
+     * Otherwise it could generate a test to exit early if `diff` has all
+     * bits set early in the loop.
+     */
+    volatile const unsigned char *A = (volatile const unsigned char *) a;
+    volatile const unsigned char *B = (volatile const unsigned char *) b;
+    uint32_t diff = 0;
+
+    for (; i < n; i++) {
+        /* Read volatile data in order before computing diff.
+         * This avoids IAR compiler warning:
+         * 'the order of volatile accesses is undefined ..' */
+        unsigned char x = A[i], y = B[i];
+        diff |= x ^ y;
+    }
+
+#if (INT_MAX < INT32_MAX)
+    /* We don't support int smaller than 32-bits, but if someone tried to build
+     * with this configuration, there is a risk that, for differing data, the
+     * only bits set in diff are in the top 16-bits, and would be lost by a
+     * simple cast from uint32 to int.
+     * This would have significant security implications, so protect against it. */
+#error "ele_s2xx_util_ct_memcmp() requires minimum 32-bit ints"
+#else
+    /* The bit-twiddling ensures that when we cast uint32_t to int, we are casting
+     * a value that is in the range 0..INT_MAX - a value larger than this would
+     * result in implementation defined behaviour.
+     *
+     * This ensures that the value returned by the function is non-zero iff
+     * diff is non-zero.
+     */
+    return (int) ((diff & 0xffff) | (diff >> 16));
+#endif
 }

@@ -530,12 +530,9 @@ psa_status_t ele_s2xx_set_key(sss_sscp_object_t *sssKey,
                               size_t allocation_size,
                               size_t key_bitlen)
 {
-    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-
     if (sss_sscp_key_object_init(sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
     {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto exit;
+        return PSA_ERROR_HARDWARE_FAILURE;
     }
 
     if (sss_sscp_key_object_allocate_handle(sssKey, key_id,
@@ -543,26 +540,17 @@ psa_status_t ele_s2xx_set_key(sss_sscp_object_t *sssKey,
                                             allocation_size,
                                             key_properties) != kStatus_SSS_Success)
     {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto exit;
+        return PSA_ERROR_HARDWARE_FAILURE;
     }
 
     if (sss_sscp_key_store_set_key(&g_ele_ctx.keyStore, sssKey, key_buffer,
                                    key_buffer_size, key_bitlen,
                                    key_part) != kStatus_SSS_Success)
     {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto exit;
+        return PSA_ERROR_HARDWARE_FAILURE;
     }
 
-    status = PSA_SUCCESS;
-exit:
-    if (PSA_SUCCESS != status)
-    {
-        (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-    }
-
-    return status;
+    return PSA_SUCCESS;
 }
 
 

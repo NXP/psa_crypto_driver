@@ -57,12 +57,10 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
         goto end;
     }
 
-#if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_lock(&mbedtls_threading_hwcrypto_ele_mutex) != 0)
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
     }
-#endif
 
     sss_sscp_rng_t ctx;
     result = sss_sscp_rng_context_init(&g_ele_ctx.sssSession, &ctx, 0u);
@@ -90,12 +88,10 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
 
     status = ele_to_psa_status(result);
 
-#if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_unlock(&mbedtls_threading_hwcrypto_ele_mutex) != 0)
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
     }
-#endif
 
     if (status == PSA_SUCCESS)
     {
