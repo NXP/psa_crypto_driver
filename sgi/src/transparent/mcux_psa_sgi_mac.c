@@ -143,7 +143,7 @@ psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMac_compute) != mc_token) ||
         (MCUXCLMAC_STATUS_OK != mc_status)) {
-        return MCUXCLEXAMPLE_STATUS_ERROR;
+        return PSA_ERROR_CORRUPTION_DETECTED;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
@@ -219,7 +219,7 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) ||
         (MCUXCLKEY_STATUS_OK != ki_status)) {
-        return MCUXCLEXAMPLE_STATUS_ERROR;
+        return PSA_ERROR_CORRUPTION_DETECTED;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
@@ -233,7 +233,7 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMac_init) != mi_token) ||
         (MCUXCLMAC_STATUS_OK != mi_status)) {
-        return MCUXCLEXAMPLE_STATUS_ERROR;
+        return PSA_ERROR_CORRUPTION_DETECTED;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 

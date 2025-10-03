@@ -21,56 +21,58 @@
 #include <mcuxClAead.h>
 #include <mcuxClAeadModes.h>
 
-/* Number of valid tag lengths sizes both for CCM and GCM modes */
-#define VALID_TAG_LENGTH_SIZE 7u
+static inline psa_status_t check_tag_length(const psa_algorithm_t alg)
+{
+    uint32_t tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
+
+    /* Recover default algorithm (could be CCM with changed tag size) */
+    const psa_algorithm_t algDefault = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
+
+    psa_status_t status = PSA_SUCCESS;
+
+    switch (algDefault) {
+        case PSA_ALG_CCM:
+            /* Add checks for valid CCM tag length, otherwise return error*/
+            if ((tag_length < 4u) || (tag_length > 16u) || (tag_length % 2u != 0u)) {
+                status = PSA_ERROR_INVALID_ARGUMENT;
+            }
+            break;
+
+        case PSA_ALG_GCM:
+            /* Add checks for valid GCM tag length, otherwise return error*/
+            if ((4u != tag_length) && (8u != tag_length) &&
+                ((tag_length < 12u) || (tag_length > 16u))) {
+                status = PSA_ERROR_INVALID_ARGUMENT;
+            }
+            break;
+
+        default:
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            break;
+    }
+
+    return status;
+}
 
 static inline mcuxClAead_Mode_t  get_aead_sgi_mode(psa_algorithm_t alg)
 {
     psa_algorithm_t default_alg = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
-    size_t tag_length           = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
-    size_t valid_tag_lengths[VALID_TAG_LENGTH_SIZE];
 
     const mcuxClAead_ModeDescriptor_t *mode = NULL;
 
     switch (default_alg) {
 #if defined(PSA_WANT_ALG_CCM)
         case PSA_ALG_CCM:
-            valid_tag_lengths[0] = 4;
-            valid_tag_lengths[1] = 6;
-            valid_tag_lengths[2] = 8;
-            valid_tag_lengths[3] = 10;
-            valid_tag_lengths[4] = 12;
-            valid_tag_lengths[5] = 14;
-            valid_tag_lengths[6] = 16;
             mode             = mcuxClAead_Mode_CCM;
             break;
 #endif /* PSA_WANT_ALG_CCM */
 #if defined(PSA_WANT_ALG_GCM)
         case PSA_ALG_GCM:
-            valid_tag_lengths[0] = 4;
-            valid_tag_lengths[1] = 8;
-            valid_tag_lengths[2] = 12;
-            valid_tag_lengths[3] = 13;
-            valid_tag_lengths[4] = 14;
-            valid_tag_lengths[5] = 15;
-            valid_tag_lengths[6] = 16;
             mode             = mcuxClAead_Mode_GCM;
             break;
 #endif /* PSA_WANT_ALG_GCM */
         default:
             return NULL;
-    }
-
-    /* Cycle through all valid tag lengths for CCM or GCM */
-    uint32_t i;
-    for (i = 0; i < VALID_TAG_LENGTH_SIZE; i++) {
-        if (tag_length == valid_tag_lengths[i]) {
-            break;
-        }
-    }
-
-    if (i == VALID_TAG_LENGTH_SIZE) {
-        return NULL;
     }
 
     return (mcuxClAead_Mode_t) mode;
@@ -108,12 +110,16 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Only AES key type is supported, first check for that */
+    /* Only AES key type is supported, check for that */
     if (key_type != PSA_KEY_TYPE_AES) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    /* Validate the algorithm first */
+    /* Validate tag length */
+    if (check_tag_length(alg) != PSA_SUCCESS) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     /* Get the correct AEAD mode based on the given algorithm. */
     mcuxClAead_Mode_t mode = get_aead_sgi_mode(alg);
     if (NULL == mode) {
@@ -185,26 +191,6 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-    /**************************************************************************/
-    /*  Key Load                                                              */
-    /*  This preloads the key into an SGI key register.                       */
-    /*  The key will stay in the SGI until it is explicitly flushed.          */
-    /**************************************************************************/
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(kl_status, kl_token, mcuxClKey_loadCopro(
-                                         /* mcuxClSession_Handle_t session:      */ session,
-                                         /* mcuxClKey_Handle_t key:              */ key,
-                                         /* uint32_t options:                   */
-                                         MCUXCLKEY_LOADOPTION_SLOT_SGI_KEY_2)
-                                     );
-
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_loadCopro) != kl_token) ||
-        (MCUXCLKEY_STATUS_OK != kl_status)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
-
-
     uint32_t ciphertext_length_tmp = 0u;
 
     tag    = (uint8_t *) (ciphertext + plaintext_length);
@@ -248,7 +234,7 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_flush) != kf_token) ||
         (MCUXCLKEY_STATUS_OK != kf_status)) {
-        return MCUXCLEXAMPLE_STATUS_ERROR;
+        return PSA_ERROR_CORRUPTION_DETECTED;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
@@ -285,7 +271,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
     psa_key_type_t key_type  = psa_get_key_type(attributes);
     size_t key_bits          = psa_get_key_bits(attributes);
     size_t tag_length        = 0;
-    //uint8_t *tag             = NULL;
     size_t cipher_length     = 0;
 
     /* Algorithm needs to be a AEAD algo */
@@ -306,13 +291,18 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    /* Validate the algorithm first */
+    /* Validate tag length */
+    if (check_tag_length(alg) != PSA_SUCCESS) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     /* Get the correct AEAD mode based on the given algorithm. */
     mcuxClAead_Mode_t mode = get_aead_sgi_mode(alg);
     if (NULL == mode) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
+    /* Get the correct tag length based on the given algorithm, and validate the given ciphertext_length (that contains the tag_length) */
     tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
     if (ciphertext_length < tag_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -338,9 +328,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* ciphertext has cipher + tag */
-    cipher_length = ciphertext_length - tag_length;
-
     /* Output buffer has to be atleast Input buffer size  -> Check for encrypt */
 
     if (plaintext_size < cipher_length) {
@@ -351,7 +338,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
      * Operation. Hence output of a decrypt can be of size 0. Hence no
      * check involving plaintext buffer.
      */
-
 
     mcuxClSession_Descriptor_t sessionDesc;
     mcuxClSession_Handle_t session = &sessionDesc;
@@ -383,26 +369,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-    /**************************************************************************/
-    /*  Key Load                                                              */
-    /*  This preloads the key into an SGI key register.                       */
-    /*  The key will stay in the SGI until it is explicitly flushed.          */
-    /**************************************************************************/
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(kl_status, kl_token, mcuxClKey_loadCopro(
-                                         /* mcuxClSession_Handle_t session:      */ session,
-                                         /* mcuxClKey_Handle_t key:              */ key,
-                                         /* uint32_t options:                   */
-                                         MCUXCLKEY_LOADOPTION_SLOT_SGI_KEY_2)
-                                     );
-
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_loadCopro) != kl_token) ||
-        (MCUXCLKEY_STATUS_OK != kl_status)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
-
-
     /* RUN AEAD */
 
     uint32_t plaintext_length_tmp = 0u;
@@ -412,25 +378,24 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
                                          /* const mcuxClKey_Handle_t key:         */ key,
                                          /* const mcuxClAead_Mode_t * const mode: */ mode,
                                          /* mcuxCl_InputBuffer_t nonce,           */ nonce,
-                                         /* const uint32_t nonceSize,            */ nonce_length,
+                                         /* const uint32_t nonceSize,             */ nonce_length,
                                          /* mcuxCl_InputBuffer_t in               */ ciphertext,
-                                         /* uint32_t inSize,                     */ cipher_length,
+                                         /* uint32_t inSize,                      */
+                                         ciphertext_length - tag_length,
                                          /* mcuxCl_InputBuffer_t adata            */ additional_data,
-                                         /* const uint32_t adataSize,            */
+                                         /* const uint32_t adataSize,             */
                                          additional_data_length,
                                          /* mcuxCl_Buffer_t tag,                  */ (uint8_t *) &
                                          ciphertext[ciphertext_length - tag_length],
-                                         /* const uint32_t tagSize,              */ tag_length,
+                                         /* const uint32_t tagSize,               */ tag_length,
                                          /* mcuxCl_Buffer_t out,                  */ plaintext,
-                                         /* uint32_t * const outSize             */ &
-                                         plaintext_length_tmp)
-                                     );
+                                         /* uint32_t * const outSize              */ &
+                                         plaintext_length_tmp));
 
     *plaintext_length = (size_t) plaintext_length_tmp;
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_decrypt) != d_token) ||
-        (MCUXCLAEAD_STATUS_OK != d_status)) {
-        return MCUXCLEXAMPLE_STATUS_ERROR;
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_decrypt) != d_token)) {
+        return PSA_ERROR_GENERIC_ERROR;
     }
 
 
@@ -446,7 +411,7 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_flush) != kf_token) ||
         (MCUXCLKEY_STATUS_OK != kf_status)) {
-        return MCUXCLEXAMPLE_STATUS_ERROR;
+        return PSA_ERROR_CORRUPTION_DETECTED;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 

@@ -388,7 +388,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_decrypt) != d_token) ||
         (MCUXCLCIPHER_STATUS_OK != d_status)) {
-        return MCUXCLEXAMPLE_STATUS_ERROR;
+        return PSA_ERROR_CORRUPTION_DETECTED;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
