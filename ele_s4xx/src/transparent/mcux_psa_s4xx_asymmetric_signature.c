@@ -78,6 +78,9 @@ psa_status_t psa_algo_to_generic_rsa_sign_algo(psa_algorithm_t alg, generic_rsa_
     return status;
 }
 
+#if defined(MBEDTLS_RSA_C)
+#if defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
+
 static psa_status_t ele_s4xx_transparent_rsa_sign_common(
     const psa_key_attributes_t *attributes,
     const uint8_t *key_buffer,
@@ -340,7 +343,8 @@ cleanup:
 
     return status;
 }
-
+#endif /* defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT) */
+#endif /* MBEDTLS_RSA_C */
 
 psa_status_t ele_s4xx_transparent_sign_hash(const psa_key_attributes_t *attributes,
                                             const uint8_t *key, size_t key_length,
@@ -348,18 +352,20 @@ psa_status_t ele_s4xx_transparent_sign_hash(const psa_key_attributes_t *attribut
                                             size_t input_length, uint8_t *signature,
                                             size_t signature_size, size_t *signature_length)
 {
-    if (!PSA_KEY_TYPE_IS_ASYMMETRIC(psa_get_key_type(attributes))) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
 
+#if defined(MBEDTLS_RSA_C)
+#if defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
     if ((PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg) || PSA_ALG_IS_RSA_PSS(alg))) {
         return ele_s4xx_transparent_rsa_sign_common(
             attributes, key, key_length, alg, input, input_length, signature,
             signature_size, signature_length, false);
-    } else {
+    }
+    else
+#endif /* defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT) */
+#endif /* MBEDTLS_RSA_C */
+    {
         return PSA_ERROR_NOT_SUPPORTED;
     }
-
 }
 
 psa_status_t ele_s4xx_transparent_verify_hash(const psa_key_attributes_t *attributes,
@@ -376,15 +382,18 @@ psa_status_t ele_s4xx_transparent_verify_hash(const psa_key_attributes_t *attrib
     }
 #endif
 
-    if (!PSA_KEY_TYPE_IS_ASYMMETRIC(psa_get_key_type(attributes))) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
 
+#if defined(MBEDTLS_RSA_C)
+#if defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
     if ((PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg) || PSA_ALG_IS_RSA_PSS(alg))) {
         return ele_s4xx_transparent_rsa_verify_common(attributes, key, key_length, alg,
                                                       hash, hash_length, signature,
                                                       signature_length, false);
-    } else {
+    } 
+    else 
+#endif /* defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT) */
+#endif /* MBEDTLS_RSA_C */
+    {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -398,15 +407,18 @@ psa_status_t ele_s4xx_transparent_sign_message(const psa_key_attributes_t *attri
                                                size_t input_length, uint8_t *signature,
                                                size_t signature_size, size_t *signature_length)
 {
-    if (!PSA_KEY_TYPE_IS_ASYMMETRIC(psa_get_key_type(attributes))) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
 
+#if defined(MBEDTLS_RSA_C)
+#if defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
     if ((PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg) || PSA_ALG_IS_RSA_PSS(alg))) {
         return ele_s4xx_transparent_rsa_sign_common(
             attributes, key, key_length, alg, input, input_length, signature,
             signature_size, signature_length, true);
-    } else {
+    } 
+    else
+#endif /* defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT) */
+#endif /* MBEDTLS_RSA_C */
+    {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -419,15 +431,17 @@ psa_status_t ele_s4xx_transparent_verify_message(const psa_key_attributes_t *att
                                                  size_t signature_length)
 {
 
-    if (!PSA_KEY_TYPE_IS_ASYMMETRIC(psa_get_key_type(attributes))) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
+#if defined(MBEDTLS_RSA_C)
+#if defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
     if ((PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg) || PSA_ALG_IS_RSA_PSS(alg))) {
         return ele_s4xx_transparent_rsa_verify_common(attributes, key, key_length, alg,
                                                       input, input_length, signature,
                                                       signature_length, true);
-    } else {
+    }
+    else
+#endif /* defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT) */
+#endif /* MBEDTLS_RSA_C */
+    {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 

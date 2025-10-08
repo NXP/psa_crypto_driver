@@ -7,6 +7,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#if defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
+
 #include <stdio.h>
 #include <string.h>
 
@@ -210,3 +212,5 @@ int sd_ele_fs_initialize(void)
 
     return kStatus_Success;
 }
+
+#endif /* #if defined(PSA_ELE_S4XX_SD_NVM_MANAGER) */

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright 2023-2024 NXP
+# Copyright 2023-2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 #
 #-------------------------------------------------------------------------------
@@ -7,6 +7,120 @@
 if(NOT CONFIG_BUILD_WITH_TFM)
     find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 endif()
+
+if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
+	message ("psa-crypto-driver-ele_s4xx module is included.")
+
+	# Creating new library
+	add_library(McuxPsaCryptoDriverEleS4xx)
+
+	# This ensures that even zephyr part will see these defines (e.g. MbedTLS module)
+	zephyr_compile_definitions(
+		PSA_CRYPTO_DRIVER_ELE_S4XX
+		PSA_CRYPTO_DRIVER_THREAD_EN
+        MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
+	)
+
+
+	### ELE Crypto ###
+	target_include_directories(
+		McuxPsaCryptoDriverEleS4xx
+		PUBLIC
+		# ELE Crypto header files
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/
+	)
+
+	target_sources(
+		McuxPsaCryptoDriverEleS4xx
+		PRIVATE
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_crypto_internal.h
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_nvm_manager.c	
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_nvm_manager.h
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_crypto.h
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_crypto.c
+	)
+
+
+	### MbedTLS ###
+	target_include_directories(
+		McuxPsaCryptoDriverEleS4xx
+		PUBLIC
+		# PSA crypto headers
+		${ZEPHYR_BASE}/modules/mbedtls/configs
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/library
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/psa
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/mbedtls
+	)
+
+
+	### PSA Crypto Driver ###
+	
+	# PSA driver inlclude paths
+	target_include_directories(
+		McuxPsaCryptoDriverEleS4xx
+		PUBLIC
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/common
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/opaque
+		${PSA_CRYPTO_DRIVER_PATH}/osal/
+		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
+	)
+
+	# PSA driver implementation
+	target_sources(
+		McuxPsaCryptoDriverEleS4xx
+		PRIVATE
+		# Source
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/common/mcux_psa_s4xx_common_init.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/common/mcux_psa_s4xx_common_key_management.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/common/mcux_psa_s4xx_entropy.c
+        # ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/common/mcux_psa_s4xx_sdmmc_nvm_manager.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/common/mcux_psa_s4xx_zephyr_nvm_manager.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_signature.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_init.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_aead.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_key_generation.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_hash.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_cipher.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_encryption.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_aead.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_asymmetric_signature.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_cipher.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_init.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_key_generation.c
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_mac.c
+        
+        # Include
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/ele_s4xx_crypto_primitives.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/common/mcux_psa_s4xx_common_init.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/common/mcux_psa_s4xx_common_key_management.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/common/mcux_psa_s4xx_entropy.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/common/mcux_psa_s4xx_sdmmc_nvm_manager.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_init.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_key_generation.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_hash.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_aead.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_cipher.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_asymmetric_encryption.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_asymmetric_signature.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_aead.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_asymmetric_signature.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_cipher.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_init.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_key_generation.h
+        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_mac.h
+	)
+
+	# Adding OSAL for Zephyr Mutexes
+	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
+
+	# We must ensure we link this library into zephyr_interface, 
+	# otherwise we won't get compile options defined in Zephyr
+	target_link_libraries(McuxPsaCryptoDriverEleS4xx PUBLIC zephyr_interface)
+
+endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx #
 
 if(CONFIG_PSA_CRYPTO_DRIVER_DCP)
 
@@ -114,7 +228,10 @@ if(CONFIG_PSA_CRYPTO_DRIVER_DCP)
 		FILE "${CMAKE_CURRENT_BINARY_DIR}/McuxPsaCryptoDriverDcpTargets.cmake"
 		NAMESPACE McuxPsaCryptoDriverDcp::
 	)
-else()
+endif() # CONFIG_PSA_CRYPTO_DRIVER_DCP #
+
+if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
+    message ("psa-crypto-driver-els module is included.")
 
 	add_library(McuxPsaCryptoDriverElsPkc)
 

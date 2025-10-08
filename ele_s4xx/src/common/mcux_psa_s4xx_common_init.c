@@ -11,8 +11,15 @@
 #include "ele_fw.h"      /* ELE FW, can be placed in bootable container in real world app */
 #include "fsl_s3mu.h"    /* Messaging unit driver */
 
-#if defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
 #include "ele_nvm_manager.h"
+#endif
+
+#if defined(__ZEPHYR__) && defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
+#include "mcux_psa_s4xx_zephyr_nvm_manager.h"
+#endif
+
+#if defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
 #include "mcux_psa_s4xx_sdmmc_nvm_manager.h"
 #endif
 
@@ -27,6 +34,8 @@
  * Define global mutexes for HW accelerator
  */
 mcux_mutex_t ele_hwcrypto_mutex;
+
+#define PRINTF printf
 
 /******************************************************************************/
 /******************** CRYPTO_InitHardware *************************************/
@@ -83,7 +92,7 @@ static status_t ele_close_handles(void)
             g_ele_ctx.key_store_handle = 0u;
         }
 
-#if defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
         /****************** Close NVM storage session **************************/
         if (g_ele_ctx.storage_handle != 0u) {
             result = ELE_CloseNvmStorageService(S3MU, g_ele_ctx.storage_handle);
@@ -93,7 +102,7 @@ static status_t ele_close_handles(void)
             }
             g_ele_ctx.storage_handle = 0u;
         }
-#endif
+#endif /* defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER) */
 
         /****************** Close EdgeLock session ******************/
         if (g_ele_ctx.session_handle != 0u) {
@@ -122,8 +131,14 @@ status_t CRYPTO_InitHardware(void)
 {
     status_t result     = kStatus_Fail;
     uint32_t trng_state = 0u;
-#if defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
     ele_nvm_manager_t manager;
+#endif /* CONFIG_PSA_ELE_S4XX_NVM_MANAGER */
+
+#if defined(__ZEPHYR__) && (CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
+    manager.nvm_read = zephyr_settings_read;
+    manager.nvm_write = zephyr_settings_write;
+#elif defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
     manager.nvm_read = sd_file_read;
     manager.nvm_write = sd_file_write;
 #endif
@@ -172,9 +187,7 @@ status_t CRYPTO_InitHardware(void)
                 break;
             }
 
-#if defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
-
-            sd_ele_fs_initialize();
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
 
             /* Register for NVM Storage backend - to be done only once*/
             result = ELE_Register_NVM_Manager(&manager);
@@ -184,9 +197,14 @@ status_t CRYPTO_InitHardware(void)
             }
 #endif
 
-#if defined(MBEDTLS_PSA_ITS_FILE_FATFS)
+#if defined(MBEDTLS_PSA_ITS_FILE_FATFS) && defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
+            sd_ele_fs_initialize();
             sd_its_fs_initialize();
 #endif
+#if defined(__ZEPHYR__) && defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
+            ele_zephyr_settings_initialize();
+#endif
+
         }
 
         // Initalize rest of the handles as 0
@@ -203,7 +221,7 @@ status_t CRYPTO_InitHardware(void)
             break;
         }
 
-#if defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
 
         /****************** Open NVM Storage service **************************/
         result =
@@ -222,7 +240,7 @@ status_t CRYPTO_InitHardware(void)
             PRINTF("ELE_StorageMasterImport_From_NVM failed\n");
             break;
         }
-#endif
+#endif /* defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER) */
 
         /**************** Create/Open key Store ******************************/
         ele_keystore_t keystoreParam;

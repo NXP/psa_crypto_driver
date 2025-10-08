@@ -1,6 +1,6 @@
 # psa-crypto-driver configuration options
 
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -11,7 +11,7 @@
 config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
 	bool "Build psa_crypto_driver for els_pkc"
 	depends on MCUX_ELS_PKC
-	default y if BUILD_WITH_TFM
+	default n
 	help
 	    Include the psa_crypto_driver component from the NXP MCU SDK in the build.
 	    This provides an abstraction on top of the els_pkc component in order to be
@@ -38,9 +38,20 @@ config PSA_CRYPTO_DRIVER_DCP
 	help
 	    Enables DCP support in psa-crypto-driver component.
 
+config PSA_CRYPTO_DRIVER_ELE_S4xx
+	bool "Enables ELE S4xx support in psa-crypto-driver"
+	depends on MBEDTLS_PSA_CRYPTO_C && SOC_SERIES_IMXRT118X
+	select CONFIG_MBEDTLS_ASN1_WRITE_C
+	select MBEDTLS_BIGNUM_C
+	default n
+	help
+	    Enables ELE S4xx support in psa-crypto-driver component.
+
 config PSA_CRYPTO_DRIVER_THREAD_EN
 	bool "Enables PSA Crypto Thread"
 	depends on MBEDTLS_PSA_CRYPTO_C
 	default n
 	help
 	    Enables PSA_CRYPTO_THREAD
+
+

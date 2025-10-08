@@ -29,7 +29,7 @@ extern ele_s4xx_ctx_t g_ele_ctx;
  * if the NVM manager is not present. Since psa_crypto_wrapper will be auto-generated, we can't add
  * the check there. hence implementing it in opaque drivers for ELE.
  */
-#if !defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
+#if !defined(PSA_ELE_S4XX_SD_NVM_MANAGER) && !defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
 
 psa_status_t
 ele_s4xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes,

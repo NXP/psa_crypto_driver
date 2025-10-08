@@ -59,6 +59,9 @@ psa_status_t psa_algo_to_generic_rsa_encrypt_algo(psa_algorithm_t alg,
     return status;
 }
 
+#if defined(MBEDTLS_RSA_C)
+
+#if defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
 static psa_status_t ele_s4xx_transparent_internal_rsa_encrypt(
     const psa_key_attributes_t *attributes, const uint8_t *key_buffer,
     size_t key_buffer_size, psa_algorithm_t alg, const uint8_t *input,
@@ -280,6 +283,8 @@ cleanup:
 
     return status;
 }
+#endif /* defined(PSA_WANT_ALG_RSA_OAEP) || defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT) */
+#endif /* MBEDTLS_RSA_C */
 
 /** \defgroup psa_asym_encrypt PSA driver entry points for asymmetric cipher
  *
@@ -324,6 +329,9 @@ psa_status_t ele_s4xx_transparent_asymmetric_encrypt(const psa_key_attributes_t 
     {
         status = PSA_ERROR_INVALID_ARGUMENT;
     }
+
+    (void)type;
+    (void)key_bits;
 
     return status;
 }

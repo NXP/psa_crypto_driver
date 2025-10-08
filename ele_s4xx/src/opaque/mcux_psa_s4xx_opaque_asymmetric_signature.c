@@ -35,7 +35,7 @@
  * if the NVM manager is not present. Since psa_crypto_wrapper will be auto-generated, we can't add
  * the check there. hence implementing it in opaque drivers for ELE.
  */
-#if !defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
+#if !defined(PSA_ELE_S4XX_SD_NVM_MANAGER) && !defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
 
 psa_status_t ele_s4xx_opaque_sign_message(const psa_key_attributes_t *attributes,
                                           const uint8_t *key, size_t key_length,
@@ -163,8 +163,6 @@ static psa_status_t ele_s4xx_opaque_sign_common(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* TBD - should we add a check that this key id corresponds to a key pair ?? */
-
     signGenParam.key_id     = key_id;
     signGenParam.msg        = input;
     signGenParam.msg_size   = input_length;
@@ -191,6 +189,7 @@ static psa_status_t ele_s4xx_opaque_sign_common(
     }
 
     ele_status = ELE_Sign(S3MU, signHandleID, &signGenParam, &sig_size);
+
     status = ele_to_psa_status(ele_status);
     /* Avoid over-writing status */
     if (status != PSA_SUCCESS) {
