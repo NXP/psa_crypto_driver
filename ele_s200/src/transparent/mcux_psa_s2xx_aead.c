@@ -100,7 +100,7 @@ static psa_status_t translate_psa_aead_to_ele_aead(psa_algorithm_t alg, psa_key_
     return PSA_SUCCESS;
 }
 
-/** \defgroup psa_aead PSA driver entry points for AEAD
+/** \defgroup psa_aead PSA transparent key driver entry points for AEAD
  *
  *  Entry points for AEAD encryption and decryption as described by the PSA
  *  Cryptoprocessor Driver interface specification

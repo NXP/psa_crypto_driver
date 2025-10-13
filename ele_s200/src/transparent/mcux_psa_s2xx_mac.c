@@ -82,7 +82,7 @@ static psa_status_t translate_psa_mac_to_ele_mac(psa_algorithm_t alg, sss_algori
     return status;
 }
 
-/** \defgroup psa_mac PSA driver entry points for MAC
+/** \defgroup psa_mac PSA transparent key driver entry points for MAC
  *
  *  Entry points for MAC generation and verification as described by the PSA
  *  Cryptoprocessor Driver interface specification

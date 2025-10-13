@@ -25,7 +25,6 @@
 #define MAX_PAIR_KEY_SIZE_IN_BYTES (MAX_PUB_KEY_SIZE_IN_BYTES + 66u)
 
 #define NISTP521_BITLEN (521u)
-#define ED25519_BITLEN  (255u)
 
 static psa_status_t translate_psa_asym_to_ele_asym(const psa_key_attributes_t *attributes,
                                                    psa_algorithm_t alg,
@@ -194,6 +193,13 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
     return status;
 }
 
+/** \defgroup psa_asym_sign PSA transparent key driver entry points for asymmetric signatures
+ *
+ *  Entry points for AEAD encryption and decryption as described by the PSA
+ *  Cryptoprocessor Driver interface specification
+ *
+ *  @{
+ */
 psa_status_t ele_s2xx_transparent_sign_hash(const psa_key_attributes_t *attributes,
                                             const uint8_t *key_buffer,
                                             size_t key_buffer_size,

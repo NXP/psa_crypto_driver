@@ -25,12 +25,18 @@
 
 #include "mcux_psa_s2xx_common_init.h"
 
+/**
+ * Size of the S200 die-unique key blob overhead added to the actual key.
+ */
+#define S200_BLOB_OVERHEAD (24u)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
-                                 const uint8_t *blob, size_t blob_size,
+                                 const uint8_t *key_buffer,
+                                 size_t key_buffer_size,
                                  sss_sscp_object_t *sssKey);
 
 psa_status_t ele_s2xx_validate_blob_attributes(const psa_key_attributes_t *attributes,

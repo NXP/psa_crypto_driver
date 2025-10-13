@@ -38,14 +38,7 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     {
         if (true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location)))
         {
-            /* Validate blob attributes */
-            status = ele_s2xx_validate_blob_attributes(attributes, data, data_length);
-            if (PSA_SUCCESS != status)
-            {
-                goto exit;
-            }
-
-            /* Import */
+            /* Validate blob in software and import to let S200 validate too */
             status = ele_s2xx_import_key(attributes, data, data_length, &sssKey);
             if (PSA_SUCCESS != status)
             {
@@ -73,7 +66,7 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
                 goto exit;
             }
 
-            tunnelCtx.buffer = key_buffer;
+            tunnelCtx.buffer     = key_buffer;
             tunnelCtx.bufferSize = key_buffer_size;
 
             /* Pass the blob */
@@ -113,6 +106,12 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     }
 
 exit:
+    if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
+    {
+        /* We won't be keeping the EL2GO key in S200 keystore */
+        (void)ele_s2xx_delete_key(&sssKey);
+    }
+
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -182,15 +181,12 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    if (sss_sscp_key_object_init_internal(&sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
+    /* For an opaque blob, we can't directly export, so we import the key,
+     * let the S200 calculate/unwrap the public key and then we retrieve it.
+     */
+    status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, &sssKey);
+    if (PSA_SUCCESS != status)
     {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto exit;
-    }
-
-    if (sss_sscp_key_object_get_handle(&sssKey, MBEDTLS_SVC_KEY_ID_GET_KEY_ID(psa_get_key_id(attributes))) != kStatus_SSS_Success)
-    {
-        status = PSA_ERROR_INVALID_HANDLE;
         goto exit;
     }
 
@@ -209,6 +205,8 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
 
     status = PSA_SUCCESS;
 exit:
+    (void)ele_s2xx_delete_key(&sssKey);
+
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -221,38 +219,24 @@ psa_status_t ele_s2xx_opaque_destroy_key(const psa_key_attributes_t *attributes,
                                          uint8_t *key_buffer,
                                          size_t key_buffer_size)
 {
-    psa_status_t status      = PSA_ERROR_CORRUPTION_DETECTED;
-    sss_sscp_object_t sssKey = {0};
-
-    /* Retrieve the key handle */
-    if (sss_sscp_key_object_init_internal(&sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
-    {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto exit;
-    }
-
-    if (sss_sscp_key_object_get_handle(&sssKey, MBEDTLS_SVC_KEY_ID_GET_KEY_ID(psa_get_key_id(attributes))) != kStatus_SSS_Success)
-    {
-        status = PSA_ERROR_INVALID_HANDLE;
-        goto exit;
-    }
-
-    /* Delete the key and free the key object */
-    status = ele_s2xx_delete_key(&sssKey);
-
-exit:
-    return status;
+    /* At this time, we do not store any key in the S200 keystore beyond
+     * the lifetime of any given API operation. This function has no effect
+     * until such caching is implemented in some way.
+     */
+    return PSA_SUCCESS;
 }
 
-static psa_status_t ele_s2xx_get_buffer_size_from_key_data(const psa_key_attributes_t *attributes,
-                                                           const uint8_t *data,
-                                                           size_t data_length,
-                                                           size_t *key_buffer_length)
+static psa_status_t ele_s2xx_get_key_buffer_size_from_key_data(const psa_key_attributes_t *attributes,
+                                                               const uint8_t *data,
+                                                               size_t data_length,
+                                                               size_t *key_buffer_length)
 {
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
     psa_status_t status         = PSA_ERROR_CORRUPTION_DETECTED;
 
-    if (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location) || MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location))
+    if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location) ||
+        true == MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location) ||
+        true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location) )
     {
         *key_buffer_length = data_length;
         status             = PSA_SUCCESS;
@@ -267,22 +251,56 @@ static psa_status_t ele_s2xx_get_buffer_size_from_key_data(const psa_key_attribu
 }
 
 size_t ele_s2xx_opaque_size_function(const psa_key_attributes_t *attributes,
-                                     const uint8_t *data, size_t data_length)
+                                     const uint8_t *data,
+                                     size_t data_length)
 {
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(
                                       psa_get_key_lifetime(attributes));
     size_t key_buffer_size      = 0;
     if (false == (MCUXCLPSADRIVER_IS_LOCAL_STORAGE(location)))
     {
-        psa_status_t status = ele_s2xx_get_buffer_size_from_key_data(attributes,
-                                                                     data,
-                                                                     data_length,
-                                                                     &key_buffer_size);
+        psa_status_t status = ele_s2xx_get_key_buffer_size_from_key_data(attributes,
+                                                                         data,
+                                                                         data_length,
+                                                                         &key_buffer_size);
         if (PSA_SUCCESS != status)
         {
             key_buffer_size = 0;
         }
     }
+    return key_buffer_size;
+}
+
+size_t ele_s2xx_opaque_get_key_buffer_size(const psa_key_attributes_t *attributes)
+{
+    size_t bits                 = psa_get_key_bits(attributes);
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    psa_key_type_t type         = psa_get_key_type(attributes);
+    size_t key_buffer_size      = 0u;
+
+    if (PSA_KEY_LOCATION_S200_KEY_STORAGE_NON_EL2GO == location)
+    {
+        if (true == PSA_KEY_TYPE_IS_ECC(type))
+        {
+            /* If it's ECC, then it's a key pair, as PSA does not allow
+             * generating only public parts of keys AND for S200 die-unique keys
+             * we blob the full keypair (vs PSA's way of only storing the
+             * private keypart for ECC key pairs).
+             */
+            key_buffer_size = ele_s2xx_get_ecc_keypair_size(bits);
+        }
+        else
+        {
+            key_buffer_size = PSA_BITS_TO_BYTES(bits);
+        }
+
+        key_buffer_size += S200_BLOB_OVERHEAD;
+    }
+    else
+    {
+        key_buffer_size = 0u;
+    }
+
     return key_buffer_size;
 }
 
@@ -305,30 +323,6 @@ static psa_status_t translate_psa_key_agreement_to_ele_key_agreement(psa_algorit
     }
 
     return status;
-}
-
-static psa_status_t key_management(const psa_key_attributes_t *attributes,
-                                   const uint8_t *key_buffer,
-                                   size_t key_buffer_size,
-                                   sss_sscp_object_t *sssKey)
-{
-    psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
-
-    /* Validate if the key is a blob */
-    psa_status = ele_s2xx_validate_blob_attributes(attributes, key_buffer, key_buffer_size);
-    if (PSA_SUCCESS != psa_status)
-    {
-        return psa_status;
-    }
-
-    /* Import the key */
-    psa_status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, sssKey);
-    if (PSA_SUCCESS != psa_status)
-    {
-        return psa_status;
-    }
-
-    return PSA_SUCCESS;
 }
 
 static psa_status_t init_shared_secret_key_object(sss_sscp_object_t *sssKey_shared,
@@ -377,6 +371,7 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
     sss_sscp_object_t sssKey_peer   = {0};
     sss_sscp_object_t sssKey_shared = {0};
     sss_algorithm_t ele_alg         = {0};
+    size_t bits                     = psa_get_key_bits(attributes);
 
     /* Only ECC keys for key agreement are supported by S200 */
     if (false == PSA_KEY_TYPE_IS_ECC(psa_get_key_type(attributes)))
@@ -405,7 +400,7 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
      *                256     for ALG_S200_ECDH_CKDF
      */
     status = PSA_ERROR_NOT_SUPPORTED;
-    switch (psa_get_key_bits(attributes))
+    switch (bits)
     {
         case 256u:
             /* 256 supported by all curves and algorithms validated in previous steps */
@@ -446,7 +441,7 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
     }
 
     /* Load our key pair */
-    status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
+    status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, &sssKey);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -457,15 +452,15 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
      */
     status = ele_s2xx_set_key(&sssKey_peer, 0u, (peer_key + 1), (peer_key_length - 1u), kSSS_KeyPart_Public,
                               kSSS_CipherType_EC_NIST_P, kSSS_KeyProp_CryptoAlgo_KDF,
-                              PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(psa_get_key_bits(attributes)),
-                              psa_get_key_bits(attributes));
+                              PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(bits),
+                              bits);
     if (PSA_SUCCESS != status)
     {
         goto exit;
     }
 
     /* Initialize the shared secret key object */
-    status = init_shared_secret_key_object(&sssKey_shared, PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
+    status = init_shared_secret_key_object(&sssKey_shared, PSA_BITS_TO_BYTES(bits));
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -481,9 +476,146 @@ psa_status_t ele_s2xx_opaque_key_agreement(const psa_key_attributes_t *attribute
     }
 
 exit:
-    /* Delete peer and shared keys from the S200 keystore */
+    /* Delete keys from the S200 keystore */
     (void)ele_s2xx_delete_key(&sssKey_peer);
     (void)ele_s2xx_delete_key(&sssKey_shared);
+    (void)ele_s2xx_delete_key(&sssKey);
+
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
+    {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    return status;
+}
+
+
+psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes,
+                                          uint8_t *key_buffer,
+                                          size_t key_buffer_size,
+                                          size_t *key_buffer_length)
+{
+    psa_status_t status           = PSA_SUCCESS;
+    psa_key_type_t type           = psa_get_key_type(attributes);
+    psa_ecc_family_t ecc_family   = PSA_KEY_TYPE_ECC_GET_FAMILY(type);
+    size_t bits                   = psa_get_key_bits(attributes);
+    psa_key_lifetime_t lifetime   = psa_get_key_lifetime(attributes);
+    psa_key_location_t location   = PSA_KEY_LIFETIME_GET_LOCATION(lifetime);
+    sss_sscp_object_t sssKey      = {0u};
+    sss_key_part_t key_part       = {0u};
+    sss_cipher_type_t cipher_type = {0u};
+    size_t allocation_size        = 0u;
+
+    // TBD is this OK?
+    /* We'll be permissive and leave the key usage checks to PSA */
+    uint32_t keyprops = 0x1fu;
+
+    /* For opaque keygen we support non-EL2GO opaque keys */
+    if (false == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location))
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (true == PSA_KEY_TYPE_IS_ASYMMETRIC(type))
+    {
+        // ASYMMETRIC
+        if (false == PSA_KEY_TYPE_IS_ECC(type) && false == PSA_KEY_TYPE_IS_DH(type))
+        {
+            return PSA_ERROR_NOT_SUPPORTED;
+        }
+
+        /* Public part mustn't be generated. For keypair, we can store the whole
+         * keypair blob instead of just the private part (PSA quirk with ECC
+         * keys) and skip the export_public_key step. This enables PSA support
+         * for EdDSA with opaque keys on S200.
+         */
+        key_part = kSSS_KeyPart_Pair;
+
+        switch (ecc_family)
+        {
+            case PSA_ECC_FAMILY_SECP_R1:
+                cipher_type = kSSS_CipherType_EC_NIST_P;
+                break;
+            case PSA_ECC_FAMILY_MONTGOMERY:
+                cipher_type = kSSS_CipherType_EC_MONTGOMERY;
+                break;
+            case PSA_ECC_FAMILY_TWISTED_EDWARDS:
+                cipher_type = kSSS_CipherType_EC_TWISTED_ED;
+                break;
+#if defined(ELE200_EXTENDED_FEATURES)
+            case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
+                cipher_type = kSSS_CipherType_EC_BRAINPOOL_R1;
+                break;
+#endif /* ELE200_EXTENDED_FEATURES */
+            default:
+                cipher_type = kSSS_CipherType_NONE;
+                break;
+        }
+        if (kSSS_CipherType_NONE == cipher_type)
+        {
+            return  PSA_ERROR_NOT_SUPPORTED;
+        }
+
+        /* The S200 expects 256 bitlen for Ed25519, so we update the bits
+         * variable for the later call to sss_sscp_key_store_generate_key().
+         */
+        if ((PSA_ECC_FAMILY_TWISTED_EDWARDS == ecc_family ||
+             PSA_ECC_FAMILY_MONTGOMERY == ecc_family) &&
+            (true == IS_VALID_ED25519_BITLENGTH(bits)))
+        {
+            bits = 256u;
+        }
+
+        allocation_size = ele_s2xx_get_ecc_keypair_size(bits);
+    }
+    else
+    {
+        // UNSTRUCTURED / SYMMETRIC
+        if (PSA_KEY_TYPE_AES != type && PSA_KEY_TYPE_HMAC != type)
+        {
+            return PSA_ERROR_NOT_SUPPORTED;
+        }
+
+        key_part        = kSSS_KeyPart_Default;
+        cipher_type     = kSSS_CipherType_SYMMETRIC;
+        allocation_size = PSA_BITS_TO_BYTES(bits);
+    }
+
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
+    {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    if ((sss_sscp_key_object_init(&sssKey, &g_ele_ctx.keyStore)) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+
+    if ((sss_sscp_key_object_allocate_handle(&sssKey, 0u, /* key id */
+                                             key_part, cipher_type, allocation_size,
+                                             keyprops)) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+
+    if (sss_sscp_key_store_generate_key(&g_ele_ctx.keyStore, &sssKey, bits, NULL) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+
+    *key_buffer_length = key_buffer_size;
+    if ((sss_sscp_key_store_export_key(&g_ele_ctx.keyStore, &sssKey, key_buffer, key_buffer_length,
+                                       kSSS_blobType_ELKE_blob)) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+
+exit:
+    (void)ele_s2xx_delete_key(&sssKey);
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {

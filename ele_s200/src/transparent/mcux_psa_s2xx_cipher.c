@@ -69,7 +69,7 @@ static psa_status_t translate_psa_cipher_to_ele_cipher(const psa_key_attributes_
     return PSA_SUCCESS;
 }
 
-/** \defgroup psa_cipher PSA driver entry points for ciphers
+/** \defgroup psa_cipher PSA transparent key driver entry points for ciphers
  *
  *  Entry points for cipher operations as described by the PSA Cryptoprocessor
  *  Driver interface specification

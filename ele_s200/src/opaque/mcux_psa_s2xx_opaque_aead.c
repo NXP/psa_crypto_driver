@@ -86,30 +86,6 @@ static psa_status_t translate_psa_aead_to_ele_aead(psa_algorithm_t alg, psa_key_
     return PSA_SUCCESS;
 }
 
-static psa_status_t key_management(const psa_key_attributes_t *attributes,
-                                   const uint8_t *key_buffer,
-                                   size_t key_buffer_size,
-                                   sss_sscp_object_t *sssKey)
-{
-    psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
-
-    /* Validate if the key is a blob */
-    psa_status = ele_s2xx_validate_blob_attributes(attributes, key_buffer, key_buffer_size);
-    if (PSA_SUCCESS != psa_status)
-    {
-        return psa_status;
-    }
-
-    /* Import the key */
-    psa_status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, sssKey);
-    if (PSA_SUCCESS != psa_status)
-    {
-        return psa_status;
-    }
-
-    return PSA_SUCCESS;
-}
-
 static status_t ele_s2xx_aead_arg_validation(const psa_key_attributes_t *attributes,
                                              const uint8_t *key_buffer, size_t key_buffer_size,
                                              const uint8_t *nonce, size_t nonce_length,
@@ -144,6 +120,13 @@ static status_t ele_s2xx_aead_arg_validation(const psa_key_attributes_t *attribu
     return PSA_SUCCESS;
 }
 
+/** \defgroup psa_aead_opaque PSA opaque key driver entry points for AEAD
+ *
+ *  Entry points for AEAD encryption and decryption as described by the PSA
+ *  Cryptoprocessor Driver interface specification with the use of opaque keys
+ *
+ *  @{
+ */
 psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes,
                                           const uint8_t *key_buffer, size_t key_buffer_size,
                                           psa_algorithm_t alg,
@@ -204,8 +187,7 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    /* Handle key import */
-    status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
+    status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, &sssKey);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -226,6 +208,8 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
     *ciphertext_length = plaintext_length + tag_length;
 
 exit:
+    (void)ele_s2xx_delete_key(&sssKey);
+
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -303,8 +287,7 @@ psa_status_t ele_s2xx_opaque_aead_decrypt(const psa_key_attributes_t *attributes
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    /* Handle key import */
-    status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
+    status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, &sssKey);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -324,6 +307,8 @@ psa_status_t ele_s2xx_opaque_aead_decrypt(const psa_key_attributes_t *attributes
     *plaintext_length = cipher_length;
 
 exit:
+    (void)ele_s2xx_delete_key(&sssKey);
+
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -331,3 +316,5 @@ exit:
 
     return status;
 }
+
+/** @} */ // end of psa_aead_opaque

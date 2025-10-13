@@ -290,3 +290,39 @@ int ele_s2xx_util_ct_memcmp(const void *a,
     return (int) ((diff & 0xffff) | (diff >> 16));
 #endif
 }
+
+size_t ele_s2xx_get_ecc_keypair_size(size_t key_bits)
+{
+    const size_t key_length_private = (key_bits + 7u) >> 3u;
+    const size_t key_length_public  = ((key_bits + 7u) >> 3u) << 1u;
+    return key_length_private + key_length_public;
+}
+
+psa_status_t translate_psa_ecc_family_to_ele_cipher_type(const psa_key_attributes_t *attributes,
+                                                         sss_cipher_type_t *cipher_type)
+{
+    psa_status_t status         = PSA_SUCCESS;
+    psa_ecc_family_t ecc_family = PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(attributes));
+
+    switch (ecc_family)
+    {
+        case PSA_ECC_FAMILY_SECP_R1:
+            *cipher_type = kSSS_CipherType_EC_NIST_P;
+            break;
+        case PSA_ECC_FAMILY_TWISTED_EDWARDS:
+            *cipher_type = kSSS_CipherType_EC_TWISTED_ED;
+            break;
+        case PSA_ECC_FAMILY_MONTGOMERY:
+            *cipher_type = kSSS_CipherType_EC_MONTGOMERY;
+            break;
+#if defined(ELE200_EXTENDED_FEATURES)
+        case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
+            *cipher_type = kSSS_CipherType_EC_BRAINPOOL_R1;
+            break;
+#endif /* ELE200_EXTENDED_FEATURES */
+        default:
+            status = PSA_ERROR_NOT_SUPPORTED;
+            break;
+    }
+    return status;
+}

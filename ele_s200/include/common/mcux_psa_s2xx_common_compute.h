@@ -18,6 +18,13 @@
 #include "psa/crypto.h"
 #include "mcux_psa_s2xx_common_init.h"
 
+/** Ed25519 seems to have inconsistencies across implementations in which of
+ *  these bitlengths is correct. We will mimic PSA in that we accept 255 and 256
+ *  during validations, but we must pass 256 bit length to the S200,
+ *  as per RFC 8032.
+ */
+#define IS_VALID_ED25519_BITLENGTH(key_bits) ((255u == key_bits) || (256u == key_bits))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -70,6 +77,15 @@ psa_status_t ele_s2xx_common_key_agreement(sss_sscp_object_t *sssKey,
 int ele_s2xx_util_ct_memcmp(const void *a,
                             const void *b,
                             size_t n);
+
+/**
+ * Based on bit size of an ECC key, return the byte size of that key.
+ * Deals with the SECP 521 bitsize.
+ */
+size_t ele_s2xx_get_ecc_keypair_size(size_t key_bits);
+
+psa_status_t translate_psa_ecc_family_to_ele_cipher_type(const psa_key_attributes_t *attributes,
+                                                         sss_cipher_type_t *cipher_type);
 
 #ifdef __cplusplus
 }

@@ -79,39 +79,22 @@ static psa_status_t translate_psa_mac_to_ele_mac(psa_algorithm_t alg, sss_algori
     return status;
 }
 
-static psa_status_t key_management(const psa_key_attributes_t *attributes,
-                                   const uint8_t *key_buffer,
-                                   size_t key_buffer_size,
-                                   sss_sscp_object_t *sssKey)
-{
-    psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
-
-    /* Validate if the key is a blob */
-    psa_status = ele_s2xx_validate_blob_attributes(attributes, key_buffer, key_buffer_size);
-    if (PSA_SUCCESS != psa_status)
-    {
-        return psa_status;
-    }
-
-    /* Import the key */
-    psa_status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, sssKey);
-    if (PSA_SUCCESS != psa_status)
-    {
-        return psa_status;
-    }
-
-    return PSA_SUCCESS;
-}
-
+/** \defgroup psa_mac_opaque PSA opaque key driver entry points for MAC
+ *
+ *  Entry points for MAC generation and verification as described by the PSA
+ *  Cryptoprocessor Driver interface specification with the use of opaque keys
+ *
+ *  @{
+ */
 psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
-                                              const uint8_t *key_buffer,
-                                              size_t key_buffer_size,
-                                              psa_algorithm_t alg,
-                                              const uint8_t *input,
-                                              size_t input_length,
-                                              uint8_t *mac,
-                                              size_t mac_size,
-                                              size_t *mac_length)
+                                         const uint8_t *key_buffer,
+                                         size_t key_buffer_size,
+                                         psa_algorithm_t alg,
+                                         const uint8_t *input,
+                                         size_t input_length,
+                                         uint8_t *mac,
+                                         size_t mac_size,
+                                         size_t *mac_length)
 {
     psa_status_t status      = PSA_ERROR_CORRUPTION_DETECTED;
     sss_algorithm_t ele_alg  = 0;
@@ -142,7 +125,7 @@ psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    status = key_management(attributes, key_buffer, key_buffer_size, &sssKey);
+    status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, &sssKey);
     if (PSA_SUCCESS != status)
     {
         goto exit;
@@ -155,6 +138,8 @@ psa_status_t ele_s2xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
     }
 
 exit:
+    (void)ele_s2xx_delete_key(&sssKey);
+
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -162,3 +147,5 @@ exit:
 
     return status;
 }
+
+/** @} */ // end of psa_mac_opaque

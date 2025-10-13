@@ -12,6 +12,7 @@
  */
 
 #include "mcux_psa_s2xx_common_key_management.h"
+#include "mcux_psa_s2xx_key_locations.h"
 
 
 #if (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
@@ -395,9 +396,14 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
     /* Parse the actual algorithm that is to be used */
     switch (psa_get_key_algorithm(attributes))
     {
+        case PSA_ALG_ECB_NO_PADDING:
+        case PSA_ALG_CBC_NO_PADDING:
+        case PSA_ALG_CTR:
         case ALG_NXP_ALL_CIPHER:
             *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_AES;
             break;
+        case PSA_ALG_CCM:
+        case PSA_ALG_GCM:
         case ALG_NXP_ALL_AEAD:
             *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_AEAD;
             break;
@@ -427,6 +433,7 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
             *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_AsymSignVerify;
             *s2xx_cipher_type = kSSS_CipherType_EC_NIST_P;
             break;
+        case PSA_ALG_ED25519PH:
         case PSA_ALG_PURE_EDDSA:
             *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_AsymSignVerify;
             *s2xx_cipher_type = kSSS_CipherType_EC_TWISTED_ED;
@@ -444,31 +451,46 @@ exit:
 }
 
 
-psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
-                                 const uint8_t *blob, size_t blob_size,
-                                 sss_sscp_object_t *sssKey)
+static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attributes,
+                                             const uint8_t *blob, size_t blob_size,
+                                             sss_sscp_object_t *sssKey)
 {
     psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
     sss_sscp_key_property_t algorithm_key_property;
     sss_key_part_t key_part;
     sss_cipher_type_t cipher_type;
     size_t allocation_size = 0u;
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    sss_sscp_blob_type_t blob_type = kSSS_blobType_ELKE_blob;
 
-    /* Check if EL2go FW is loaded into S200; if not load it */
-    if (is_fw_loaded() != PSA_SUCCESS)
+    if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
     {
-#if (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
-        if (ELEMU_loadFw(ELEMUA, (uint32_t *)fw) != kStatus_Success)
+        /* Check if EL2go FW is loaded into S200; if not, load it */
+        if (is_fw_loaded() != PSA_SUCCESS)
         {
-            psa_status = PSA_ERROR_HARDWARE_FAILURE;
-        }
+#if (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
+            if (ELEMU_loadFw(ELEMUA, (uint32_t *)fw) != kStatus_Success)
+            {
+                psa_status = PSA_ERROR_HARDWARE_FAILURE;
+            }
 #else /* ELEMU_HAS_LOADABLE_FW */
-        psa_status = PSA_ERROR_NOT_SUPPORTED;
+            psa_status = PSA_ERROR_NOT_SUPPORTED;
 #endif /* ELEMU_HAS_LOADABLE_FW */
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, loadFW() failed");
+            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, loadFW() failed");
+        }
+        blob_type = kSSS_blobType_EL2GO_TLV_blob;
+    }
+    else if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location))
+    {
+        blob_type = kSSS_blobType_ELKE_blob;
+    }
+    else
+    {
+        psa_status = PSA_ERROR_INVALID_ARGUMENT;
+        PSA_DRIVER_SUCCESS_OR_EXIT();
     }
 
-    /* Import blob into S200, if operation end with succes blob is valid */
+    /* Import blob into S200, if operation ends with success, blob is valid */
 
     if (sss_sscp_key_object_init_internal(sssKey, &g_ele_ctx.keyStore) != kStatus_SSS_Success)
     {
@@ -504,10 +526,10 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
             PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Allocating handle failed");
         }
 
-        /* Load key from EL2GO Blob to also let the s2xx validate the blob */
+        /* Load key from blob */
         if (sss_sscp_key_store_import_key(&g_ele_ctx.keyStore, sssKey, blob,
-                                          blob_size, 0,
-                                          kSSS_blobType_EL2GO_TLV_blob) != kStatus_SSS_Success)
+                                          blob_size, 0u,
+                                          blob_type) != kStatus_SSS_Success)
         {
             (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
@@ -658,3 +680,31 @@ exit:
     return psa_status;
 }
 
+psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
+                                 const uint8_t *key_buffer,
+                                 size_t key_buffer_size,
+                                 sss_sscp_object_t *sssKey)
+{
+    psa_status_t psa_status     = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+
+    if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
+    {
+        /* Validate if the key is an EL2GO blob */
+        psa_status = ele_s2xx_validate_blob_attributes(attributes, key_buffer, key_buffer_size);
+        if (PSA_SUCCESS != psa_status)
+        {
+            return psa_status;
+        }
+    }
+
+    /* Import the key blob */
+    psa_status = ele_s2xx_import_key_blob(attributes, key_buffer,
+                                          key_buffer_size, sssKey);
+    if (PSA_SUCCESS != psa_status)
+    {
+        return psa_status;
+    }
+
+    return PSA_SUCCESS;
+}
