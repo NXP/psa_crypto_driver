@@ -158,7 +158,7 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     }
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     mcuxClSession_Descriptor_t sessionDesc;
@@ -248,7 +248,7 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
 
     MCUX_CSSL_FP_FUNCTION_CALL_END();
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return PSA_SUCCESS;
@@ -418,7 +418,7 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
 
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Destroy the session */

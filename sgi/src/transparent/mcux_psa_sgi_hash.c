@@ -84,7 +84,7 @@ psa_status_t sgi_hash_setup(mcux_sgi_hash_operation_t *operation, psa_algorithm_
     }
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Initialize session */
@@ -121,8 +121,9 @@ psa_status_t sgi_hash_setup(mcux_sgi_hash_operation_t *operation, psa_algorithm_
         return PSA_ERROR_CORRUPTION_DETECTED;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
+
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return PSA_SUCCESS;
@@ -137,7 +138,7 @@ psa_status_t sgi_hash_clone(const mcux_sgi_hash_operation_t *source_operation,
     }
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Copy content from mcuxClHash_Context_t */
@@ -176,7 +177,7 @@ psa_status_t sgi_hash_clone(const mcux_sgi_hash_operation_t *source_operation,
     /* Remaining Bytes in source and target behind pUnprocessed are not accessed by hash algorithms, so we do not copy them. */
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return PSA_SUCCESS;
@@ -204,7 +205,7 @@ psa_status_t sgi_hash_update(mcux_sgi_hash_operation_t *operation,
     }
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Initialize session */
@@ -240,7 +241,7 @@ psa_status_t sgi_hash_update(mcux_sgi_hash_operation_t *operation,
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return PSA_SUCCESS;
@@ -264,7 +265,7 @@ psa_status_t sgi_hash_finish(mcux_sgi_hash_operation_t *operation,
     }
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
 
@@ -308,7 +309,7 @@ psa_status_t sgi_hash_finish(mcux_sgi_hash_operation_t *operation,
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return PSA_SUCCESS;
@@ -366,7 +367,7 @@ psa_status_t sgi_hash_compute(psa_algorithm_t alg,
     }
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Create session */
@@ -410,7 +411,7 @@ psa_status_t sgi_hash_compute(psa_algorithm_t alg,
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return PSA_SUCCESS;

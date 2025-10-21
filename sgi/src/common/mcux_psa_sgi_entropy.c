@@ -47,11 +47,12 @@ psa_status_t sgi_get_entropy(uint32_t flags,
                              uint8_t *output,
                              size_t output_size)
 {
-    if (output == NULL) {
-        return PSA_ERROR_INVALID_ARGUMENT;
+    if ((output == NULL) && (output_size == 0u)) {
+        /* Special case when no amount of entropy is requested*/
+        return PSA_SUCCESS;
     }
 
-    if (estimate_bits == NULL) {
+    if (output == NULL) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -59,11 +60,14 @@ psa_status_t sgi_get_entropy(uint32_t flags,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-#if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_GENERIC_ERROR;
+    if (estimate_bits == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
-#endif
+
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
 #if defined(MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED)
 
     /* Get random data from trng driver*/
@@ -105,13 +109,13 @@ psa_status_t sgi_get_entropy(uint32_t flags,
 
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-//    /* Initialize the PRNG */                                                                                               \
-//    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(prngInit_result, prngInit_token, mcuxClRandom_ncInit(session));                          \
-//    if((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_ncInit) != prngInit_token) || (MCUXCLRANDOM_STATUS_OK != prngInit_result))   \
-//    {                                                                                                                       \
-//        return PSA_ERROR_GENERIC_ERROR;                                                                                   \
-//    }                                                                                                                       \
-//    MCUX_CSSL_FP_FUNCTION_CALL_END();
+    /* Initialize the PRNG */                                                                                               \
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(prngInit_result, prngInit_token, mcuxClRandom_ncInit(session));                          \
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_ncInit) != prngInit_token) ||
+        (MCUXCLRANDOM_STATUS_OK != prngInit_result)) {                                                                                                                       \
+        return PSA_ERROR_GENERIC_ERROR;                                                                                   \
+    }                                                                                                                       \
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     /**************************************************************************/
     /* Generate random values.                                                */
@@ -143,11 +147,11 @@ psa_status_t sgi_get_entropy(uint32_t flags,
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
 #endif
-#if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_GENERIC_ERROR;
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
-#endif
+
 
     *estimate_bits = output_size * 8;
 
@@ -169,4 +173,24 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
 
     return status;
 }
+
+#if defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+psa_status_t mbedtls_psa_external_get_random(mbedtls_psa_external_random_context_t *context,
+                                             uint8_t *output,
+                                             size_t output_size,
+                                             size_t *output_length)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    size_t estimate_bits = 0u;
+
+    (void) context;
+
+    status = sgi_get_entropy(0u, &estimate_bits, output, output_size);
+    if (PSA_SUCCESS == status) {
+        *output_length = output_size;
+    }
+
+    return status;
+}
+#endif /* MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG */
 /** @} */ // end of psa_entropy
