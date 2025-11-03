@@ -424,6 +424,13 @@ if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 			${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/trng/fsl_trng.c
 		)
 
+		target_sources(
+			McuxPsaCryptoDriverElsPkc
+			PRIVATE
+			# OSAL Mutex
+			${CMAKE_CURRENT_LIST_DIR}/osal/zephyr/osal_mutex.c
+		)
+
 		target_compile_options(
 			McuxPsaCryptoDriverElsPkc
 			PRIVATE
@@ -462,6 +469,7 @@ if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 		FILE "${CMAKE_CURRENT_BINARY_DIR}/McuxPsaCryptoDriverElsPkcTargets.cmake"
 		NAMESPACE McuxPsaCryptoDriverElsPkc::
 	)
+	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
 
 	#link McuxElsPkc lib as psa-crypto-driver functions eventually calls els_pkc functions.
 	target_link_libraries(McuxPsaCryptoDriverElsPkc
@@ -469,5 +477,4 @@ if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 		McuxElsPkc
 	)
 
-	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
 endif()

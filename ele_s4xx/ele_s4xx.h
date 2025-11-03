@@ -37,7 +37,7 @@
 #endif
 #endif /* PSA_CRYPTO_DRIVER_ELE_S4XX */
 
-#define PSA_CRYPTO_ELE_S4XX_LOCATION 0x800002
+#define PSA_CRYPTO_ELE_S4XX_LOCATION 0xC00002
 
 #include "mcux_psa_s4xx_entropy.h"
 
