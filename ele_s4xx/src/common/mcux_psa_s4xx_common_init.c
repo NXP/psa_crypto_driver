@@ -11,7 +11,7 @@
 #include "ele_fw.h"      /* ELE FW, can be placed in bootable container in real world app */
 #include "fsl_s3mu.h"    /* Messaging unit driver */
 
-#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER) || defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
 #include "ele_nvm_manager.h"
 #endif
 
@@ -125,9 +125,9 @@ status_t CRYPTO_InitHardware(void)
 {
     status_t result     = kStatus_Fail;
     uint32_t trng_state = 0u;
-#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER) || defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
     ele_nvm_manager_t manager;
-#endif /* CONFIG_PSA_ELE_S4XX_NVM_MANAGER */
+#endif /* CONFIG_PSA_ELE_S4XX_NVM_MANAGER || PSA_ELE_S4XX_SD_NVM_MANAGER */
 
 #if defined(__ZEPHYR__) && (CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
     manager.nvm_read = zephyr_settings_read;
@@ -178,7 +178,7 @@ status_t CRYPTO_InitHardware(void)
                 break;
             }
 
-#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER) || defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
 
             /* Register for NVM Storage backend - to be done only once*/
             result = ELE_Register_NVM_Manager(&manager);

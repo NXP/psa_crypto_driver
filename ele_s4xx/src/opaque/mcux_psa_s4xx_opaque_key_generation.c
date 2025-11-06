@@ -517,10 +517,6 @@ psa_status_t ele_s4xx_opaque_export_public_key(const psa_key_attributes_t *attri
                                                size_t key_buffer_size, uint8_t *data,
                                                size_t data_size, size_t *data_length)
 {
-#if !defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
-    return PSA_ERROR_NOT_SUPPORTED;
-#endif
-
     uint32_t key_id;
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
@@ -602,5 +598,5 @@ size_t ele_s4xx_opaque_size_function(psa_key_type_t key_type, size_t key_bits)
     return sizeof(uint32_t);
 }
 
-#endif
+#endif /* !PSA_ELE_S4XX_SD_NVM_MANAGER && !CONFIG_PSA_ELE_S4XX_NVM_MANAGER */
 /** @} */ // end of psa_key_generation
