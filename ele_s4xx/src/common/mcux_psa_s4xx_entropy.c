@@ -55,12 +55,10 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
         goto end;
     }
 
-#if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_lock(&ele_hwcrypto_mutex) != 0)
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
-#endif
 
     /* We need proper RNG init in case of MbedTLS3.x SW-only builds.
      * Otherwise this is done in CRYPTO_InitHardware().
@@ -84,12 +82,10 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
     result = ELE_RngGetRandom(S3MU, (uint32_t *)output, output_size, kNoReseed);
     status = ele_to_psa_status(result);
 
-#if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_unlock(&ele_hwcrypto_mutex) != 0)
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_GENERIC_ERROR;
     }
-#endif
 
     if (status == PSA_SUCCESS)
     {

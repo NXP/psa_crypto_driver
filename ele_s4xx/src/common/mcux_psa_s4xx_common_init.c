@@ -35,8 +35,6 @@
  */
 mcux_mutex_t ele_hwcrypto_mutex;
 
-#define PRINTF printf
-
 /******************************************************************************/
 /******************** CRYPTO_InitHardware *************************************/
 /******************************************************************************/
@@ -76,7 +74,6 @@ static status_t ele_close_handles(void)
         if (g_ele_ctx.key_management_handle != 0u) {
             result = ELE_CloseKeyService(S3MU, g_ele_ctx.key_management_handle);
             if (result != kStatus_Success) {
-                PRINTF("ELE_CloseKeyService failed\n");
                 break;
             }
             g_ele_ctx.key_management_handle = 0u;
@@ -86,7 +83,6 @@ static status_t ele_close_handles(void)
         if (g_ele_ctx.key_store_handle != 0u) {
             result = ELE_CloseKeystore(S3MU, g_ele_ctx.key_store_handle);
             if (result != kStatus_Success) {
-                PRINTF("ELE_CloseKeystore failed\n");
                 break;
             }
             g_ele_ctx.key_store_handle = 0u;
@@ -97,7 +93,6 @@ static status_t ele_close_handles(void)
         if (g_ele_ctx.storage_handle != 0u) {
             result = ELE_CloseNvmStorageService(S3MU, g_ele_ctx.storage_handle);
             if (result != kStatus_Success) {
-                PRINTF("ELE_CloseNvmStorageService failed\n");
                 break;
             }
             g_ele_ctx.storage_handle = 0u;
@@ -108,7 +103,6 @@ static status_t ele_close_handles(void)
         if (g_ele_ctx.session_handle != 0u) {
             result = ELE_CloseSession(S3MU, g_ele_ctx.session_handle);
             if (result != kStatus_Success) {
-                PRINTF("ELE_CloseSession failed\n");
                 break;
             }
             g_ele_ctx.session_handle = 0;
@@ -149,12 +143,10 @@ status_t CRYPTO_InitHardware(void)
 
     /* Mutex for access to ele_crypto HW */
     if (mcux_mutex_init(&ele_hwcrypto_mutex)) {
-        PRINTF("NO memory - init failed\n");
         return kStatus_Fail;
     }
 
     if ((result = mcux_mutex_lock(&ele_hwcrypto_mutex)) != 0) {
-        PRINTF("Mutex lock failed\n");
         return kStatus_Fail;
     }
 
@@ -163,7 +155,6 @@ status_t CRYPTO_InitHardware(void)
         if (g_ele_ctx.is_fw_loaded != true) {
             result = ELE_LoadFw(S3MU, ele_fw);
             if (result != kStatus_Success) {
-                PRINTF("Load FW failed\n");
                 break;
             } else {
                 g_ele_ctx.is_fw_loaded = true;
@@ -192,7 +183,6 @@ status_t CRYPTO_InitHardware(void)
             /* Register for NVM Storage backend - to be done only once*/
             result = ELE_Register_NVM_Manager(&manager);
             if (result != kStatus_Success) {
-                PRINTF("ELE_Register_NVM_Manager failed\n");
                 break;
             }
 #endif
@@ -217,7 +207,6 @@ status_t CRYPTO_InitHardware(void)
         /****************** Open EdgeLock session ******************/
         result = ELE_OpenSession(S3MU, &g_ele_ctx.session_handle);
         if (result != kStatus_Success) {
-            PRINTF("Open Session failed\n");
             break;
         }
 
@@ -227,7 +216,6 @@ status_t CRYPTO_InitHardware(void)
         result =
             ELE_OpenNvmStorageService(S3MU, g_ele_ctx.session_handle, &g_ele_ctx.storage_handle);
         if (result != kStatus_Success) {
-            PRINTF("ELE_OpenNvmStorageService failed\n");
             break;
         }
 
@@ -237,7 +225,6 @@ status_t CRYPTO_InitHardware(void)
             result = kStatus_Success;
         }
         if (result != kStatus_Success) {
-            PRINTF("ELE_StorageMasterImport_From_NVM failed\n");
             break;
         }
 #endif /* defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER) */
@@ -258,7 +245,6 @@ status_t CRYPTO_InitHardware(void)
             result = ELE_OpenKeystore(S3MU, g_ele_ctx.session_handle, &keystoreParam,
                                       &g_ele_ctx.key_store_handle, NULL, 0);
             if (result != kStatus_Success) {
-                PRINTF("ELE_OpenKeystore failed\n");
                 break;
             }
         }
@@ -268,7 +254,6 @@ status_t CRYPTO_InitHardware(void)
                                     g_ele_ctx.key_store_handle,
                                     &g_ele_ctx.key_management_handle);
         if (result != kStatus_Success) {
-            PRINTF("ELE_OpenKeyService failed\n");
             break;
         }
 
@@ -281,7 +266,6 @@ status_t CRYPTO_InitHardware(void)
     }
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        PRINTF("Mutex unlock failed\n");
         return kStatus_Fail;
     }
 

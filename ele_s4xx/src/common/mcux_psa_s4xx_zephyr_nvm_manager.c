@@ -28,8 +28,6 @@
 #define CONFIG_ELE_NVM_MNG_MAX_CHUNK_SIZE 1300u
 #endif
 
-#define PRINTF printf
-
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -62,7 +60,6 @@ static int get_chunk_file_path(
                sizeof(blob_id_lsb) * 2 + 1 +
                sizeof(blob_ext) * 2 + 1;
     if (path_buf_sz < path_len) {
-        PRINTF("Insufficient size of path buffer \r\n");
         return -1;
     }
 
