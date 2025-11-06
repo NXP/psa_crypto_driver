@@ -60,7 +60,7 @@ psa_status_t mcux_key_buf_to_raw_ecc(psa_key_type_t key_type,
                                       &ecc->MBEDTLS_PRIVATE(grp).G,
                                       mbedtls_psa_get_random,
                                       MBEDTLS_PSA_RANDOM_STATE);
-                if (ret < 0u) {
+                if (ret < 0) {
                     status = PSA_ERROR_BAD_STATE;
                 }
             }
@@ -73,7 +73,7 @@ psa_status_t mcux_key_buf_to_raw_ecc(psa_key_type_t key_type,
                                                      &olen,
                                                      (unsigned char *) ecc_key->public_key,
                                                      ecc_key->public_key_len);
-                if (ret < 0u) {
+                if (ret < 0) {
                     status = PSA_ERROR_BAD_STATE;
                 }
             }
@@ -86,7 +86,7 @@ psa_status_t mcux_key_buf_to_raw_ecc(psa_key_type_t key_type,
             ret = mbedtls_mpi_write_binary(&ecc->MBEDTLS_PRIVATE(d),
                                            (unsigned char *) ecc_key->private_key,
                                            ecc_key->private_key_len);
-            if (ret < 0u) {
+            if (ret < 0) {
                 status = PSA_ERROR_BAD_STATE;
             }
         }
@@ -122,7 +122,7 @@ psa_status_t mcux_raw_ecc_to_key_buf(psa_key_type_t key_type,
 
     ret = mbedtls_ecp_group_load(&ecc.MBEDTLS_PRIVATE(grp), ecp_grou_id);
 
-    if (ret == 0u) {
+    if (ret == 0) {
         mbedtls_ecp_point_init(&ecc.MBEDTLS_PRIVATE(Q));
 
         ret = mbedtls_ecp_point_read_binary(&ecc.MBEDTLS_PRIVATE(grp),
@@ -132,7 +132,7 @@ psa_status_t mcux_raw_ecc_to_key_buf(psa_key_type_t key_type,
     }
     /* ADD ECC curve */
 
-    if (ret == 0u) {
+    if (ret == 0) {
         if (only_public) {
             key_type = PSA_KEY_TYPE_CATEGORY_PUBLIC_KEY;
         } else {
@@ -145,7 +145,7 @@ psa_status_t mcux_raw_ecc_to_key_buf(psa_key_type_t key_type,
         }
     }
 
-    if (ret < 0u) {
+    if (ret < 0) {
         status = PSA_ERROR_BAD_STATE;
     }
 
@@ -233,7 +233,7 @@ psa_status_t mcux_free_raw_ecc(struct mcux_ecc_keypair *ecc_key)
     }
 #endif
 
-    memset(ecc_key, 0u, sizeof(*ecc_key));
+    memset(ecc_key, 0, sizeof(*ecc_key));
 
     return PSA_SUCCESS;
 }
@@ -267,7 +267,7 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
     if (status == PSA_SUCCESS) {
         if (is_public) {
             ret = mbedtls_mpi_write_binary(&rsa->MBEDTLS_PRIVATE(E), rsa_exp, 4);
-            if (ret < 0u) {
+            if (ret < 0) {
                 status = PSA_ERROR_BAD_STATE;
             }
         } else {
@@ -275,7 +275,7 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
             ret = mbedtls_mpi_write_binary(&rsa->MBEDTLS_PRIVATE(D),
                                            (unsigned char *) rsa_key->priv_exp,
                                            rsa_key->priv_exp_len);
-            if (ret < 0u) {
+            if (ret < 0) {
                 status = PSA_ERROR_BAD_STATE;
             }
         }
@@ -287,7 +287,7 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
                                        (unsigned char *) rsa_key->modulus,
                                        key_bytes);
 
-        if (ret < 0u) {
+        if (ret < 0) {
             status = PSA_ERROR_BAD_STATE;
         }
     }
@@ -324,11 +324,11 @@ psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
         mbedtls_mpi_read_binary(&rsa.MBEDTLS_PRIVATE(N),
                                 (const unsigned char *) rsa_key->modulus,
                                 rsa_key->modulus_len);
-    if (ret == 0u) {
+    if (ret == 0) {
         ret = mbedtls_mpi_lset(&rsa.MBEDTLS_PRIVATE(E), (mbedtls_mpi_sint) s_rsa_exponent);
     }
 
-    if (ret == 0u) {
+    if (ret == 0) {
         /* Set Ctx length */
         rsa.MBEDTLS_PRIVATE(len) = mbedtls_mpi_size(&rsa.MBEDTLS_PRIVATE(N));
 
@@ -342,7 +342,7 @@ psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
                                           (const unsigned char *) rsa_key->priv_exp,
                                           rsa_key->priv_exp_len);
 
-            if (ret == 0u) {
+            if (ret == 0) {
                 /* Compute P and Q in CTX. */
                 /* Needed as key buffer needs to be in PKCS1 format*/
                 ret = mbedtls_rsa_complete(&rsa);
@@ -350,7 +350,7 @@ psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
         }
     }
 
-    if (ret < 0u) {
+    if (ret < 0) {
         status = PSA_ERROR_BAD_STATE;
     }
 
@@ -502,7 +502,7 @@ psa_status_t mcux_rsa_generate_primes(size_t bit_size, struct mcux_rsa_primes *p
             }
 
             /* not required by any standards, but some users rely on the fact that P > Q */
-            if (H.MBEDTLS_PRIVATE(s) < 0u) {
+            if (H.MBEDTLS_PRIVATE(s) < 0) {
                 mbedtls_mpi_swap(&P, &Q);
             }
             break;

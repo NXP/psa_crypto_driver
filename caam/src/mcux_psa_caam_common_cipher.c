@@ -245,19 +245,19 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
                                           size_t output_size,
                                           size_t *output_length)
 {
-    psa_status_t status      = PSA_SUCCESS;
-    status_t caam_status     = kStatus_Fail;
-    psa_key_type_t key_type  = psa_get_key_type(attributes);
-    size_t key_bits          = psa_get_key_bits(attributes);
-    size_t key_bytes         = PSA_BITS_TO_BYTES(key_bits);
-    caam_handle_t caamHandle = { .jobRing = kCAAM_JobRing0 };
-    caam_key_type_t aes_key_type;
+    psa_status_t status          = PSA_SUCCESS;
+    status_t caam_status         = kStatus_Fail;
+    psa_key_type_t key_type      = psa_get_key_type(attributes);
+    size_t key_bits              = psa_get_key_bits(attributes);
+    size_t key_bytes             = PSA_BITS_TO_BYTES(key_bits);
+    caam_handle_t caamHandle     = { .jobRing = kCAAM_JobRing0 };
+    caam_key_type_t aes_key_type = kCAAM_Key_Type_None;
 #if defined(PSA_WANT_ALG_CTR)
     uint8_t iv_temp[PSA_CIPHER_IV_MAX_SIZE];
 #endif
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
-    uint8_t *_input = NULL;
-    size_t _input_length;
+    uint8_t *_input      = NULL;
+    size_t _input_length = 0u;
 #endif
 
     /* Key buffer or size can't be NULL */
@@ -668,15 +668,15 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
                                           size_t output_size,
                                           size_t *output_length)
 {
-    psa_status_t status         = PSA_SUCCESS;
-    status_t caam_status        = kStatus_Fail;
-    psa_key_type_t key_type     = psa_get_key_type(attributes);
-    size_t key_bits             = psa_get_key_bits(attributes);
-    size_t key_bytes            = PSA_BITS_TO_BYTES(key_bits);
-    caam_handle_t caamHandle    = { .jobRing = kCAAM_JobRing0 };
-    uint32_t iv_length          = 0;
-    uint32_t expected_op_length = 0;
-    caam_key_type_t aes_key_type;
+    psa_status_t status          = PSA_SUCCESS;
+    status_t caam_status         = kStatus_Fail;
+    psa_key_type_t key_type      = psa_get_key_type(attributes);
+    size_t key_bits              = psa_get_key_bits(attributes);
+    size_t key_bytes             = PSA_BITS_TO_BYTES(key_bits);
+    caam_handle_t caamHandle     = { .jobRing = kCAAM_JobRing0 };
+    uint32_t iv_length           = 0;
+    uint32_t expected_op_length  = 0;
+    caam_key_type_t aes_key_type = kCAAM_Key_Type_None;;
 #if defined(PSA_WANT_ALG_CTR)
     uint8_t iv_temp[PSA_CIPHER_IV_MAX_SIZE];
 #endif
