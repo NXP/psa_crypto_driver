@@ -226,7 +226,7 @@ psa_status_t ele_hseb_transparent_cipher_decrypt(const psa_key_attributes_t *att
 
     /* Do the decryption */
     hseb_status = AesCrypt(aes_key_handle, cipher_mode, HSE_CIPHER_DIR_DECRYPT,
-                           iv, input_length, input_no_iv, output);
+                           iv, input_no_iv_length, input_no_iv, output);
     if (HSE_SRV_RSP_OK != hseb_status) {
         status = ele_hseb_to_psa_status(hseb_status);
         goto exit;
@@ -491,7 +491,7 @@ psa_status_t ele_hseb_transparent_cipher_update(ele_hseb_transparent_cipher_oper
                                            output,
                                            operation->cipher_direction);
 
-            *output_length = *output_length + operation->chunk_length;
+            *output_length = *output_length + usable_input_length;
             input          = input + usable_input_length;
         }
 
