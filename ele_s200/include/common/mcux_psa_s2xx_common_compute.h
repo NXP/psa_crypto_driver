@@ -23,7 +23,7 @@
  *  during validations, but we must pass 256 bit length to the S200,
  *  as per RFC 8032.
  */
-#define IS_VALID_ED25519_BITLENGTH(key_bits) ((255u == key_bits) || (256u == key_bits))
+#define IS_VALID_ED25519_BITLENGTH(key_bits) ((255u == (key_bits)) || (256u == (key_bits)))
 
 #ifdef __cplusplus
 extern "C" {

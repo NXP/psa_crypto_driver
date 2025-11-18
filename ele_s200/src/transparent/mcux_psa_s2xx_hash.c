@@ -374,14 +374,9 @@ psa_status_t ele_s2xx_transparent_hash_compute(psa_algorithm_t alg,
 
     /* Fill the output buffer with something that isn't a valid hash
      * (barring an attack on the hash and deliberately-crafted input),
-     * in case the caller doesn't check the return status properly. */
-
-    /* If hash_size is 0 then hash may be NULL and then the
-     * call to memset would have undefined behavior. */
-    if (hash_size != 0u)
-    {
-        (void)memset(hash, '!', hash_size);
-    }
+     * in case the caller doesn't check the return status properly.
+     */
+    (void)memset(hash, (int)'!', hash_size);
 
     if (hash_size < actual_hash_length)
     {

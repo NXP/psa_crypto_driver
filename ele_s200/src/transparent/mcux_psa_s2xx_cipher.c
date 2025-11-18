@@ -25,48 +25,38 @@ static psa_status_t translate_psa_cipher_to_ele_cipher(const psa_key_attributes_
                                                  psa_algorithm_t alg,
                                                  sss_algorithm_t *ele_algo)
 {
-    psa_key_type_t key_type       = psa_get_key_type(attributes);
-    psa_status_t key_type_support = PSA_SUCCESS;
-    psa_status_t alg_support      = PSA_SUCCESS;
+    psa_status_t status     = PSA_ERROR_NOT_SUPPORTED;
+    psa_key_type_t key_type = psa_get_key_type(attributes);
 
-    switch (key_type)
-    {
 #if defined(PSA_WANT_KEY_TYPE_AES)
-        case PSA_KEY_TYPE_AES:
-            switch (alg)
-            {
+    if (PSA_KEY_TYPE_AES == key_type)
+    {
+        status = PSA_SUCCESS;
+        switch (alg)
+        {
 #if defined(PSA_WANT_ALG_CBC_NO_PADDING)
-                case PSA_ALG_CBC_NO_PADDING:
-                    *ele_algo = kAlgorithm_SSS_AES_CBC;
-                    break;
+            case PSA_ALG_CBC_NO_PADDING:
+                *ele_algo = kAlgorithm_SSS_AES_CBC;
+                break;
 #endif /* PSA_WANT_ALG_CBC_NO_PADDING */
 #if defined(PSA_WANT_ALG_ECB_NO_PADDING)
-                case PSA_ALG_ECB_NO_PADDING:
-                    *ele_algo = kAlgorithm_SSS_AES_ECB;
-                    break;
+            case PSA_ALG_ECB_NO_PADDING:
+                *ele_algo = kAlgorithm_SSS_AES_ECB;
+                break;
 #endif /* PSA_WANT_ALG_ECB_NO_PADDING */
 #if defined(PSA_WANT_ALG_CTR)
-                case PSA_ALG_CTR:
-                    *ele_algo = kAlgorithm_SSS_AES_CTR;
-                    break;
+            case PSA_ALG_CTR:
+                *ele_algo = kAlgorithm_SSS_AES_CTR;
+                break;
 #endif /* PSA_WANT_ALG_CTR */
-                default:
-                    alg_support = PSA_ERROR_NOT_SUPPORTED;
-                    break;
-            } /* switch(alg) */
-            break;
+            default:
+                status = PSA_ERROR_NOT_SUPPORTED;
+                break;
+        }
+    }
 #endif /* PSA_WANT_KEY_TYPE_AES */
-        default:
-            key_type_support = PSA_ERROR_NOT_SUPPORTED;
-            break;
-    }
 
-    if (PSA_ERROR_NOT_SUPPORTED == key_type_support ||
-        PSA_ERROR_NOT_SUPPORTED == alg_support)
-    {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-    return PSA_SUCCESS;
+    return status;
 }
 
 /** \defgroup psa_cipher PSA transparent key driver entry points for ciphers

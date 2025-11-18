@@ -93,11 +93,6 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
         {
             status = PSA_ERROR_INVALID_ARGUMENT;
         }
-
-        if (PSA_ERROR_NOT_SUPPORTED == status)
-        {
-            *key_buffer_length = data_length;
-        }
     }
     else
     {

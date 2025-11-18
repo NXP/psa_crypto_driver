@@ -239,7 +239,7 @@ static psa_status_t get_ele_fw_version(uint8_t *ele_fw_version)
     } while (false);
 
     /* FREE MGMT CONTEXT */
-    sss_mgmt_context_free(&mgmtContext);
+    (void)sss_mgmt_context_free(&mgmtContext);
 
     return psa_status;
 }
@@ -452,16 +452,17 @@ exit:
 
 
 static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attributes,
-                                             const uint8_t *blob, size_t blob_size,
+                                             const uint8_t *blob,
+                                             size_t blob_size,
                                              sss_sscp_object_t *sssKey)
 {
-    psa_status_t psa_status = PSA_ERROR_CORRUPTION_DETECTED;
-    sss_sscp_key_property_t algorithm_key_property;
-    sss_key_part_t key_part;
-    sss_cipher_type_t cipher_type;
-    size_t allocation_size = 0u;
-    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
-    sss_sscp_blob_type_t blob_type = kSSS_blobType_ELKE_blob;
+    psa_status_t psa_status                        = PSA_ERROR_CORRUPTION_DETECTED;
+    sss_sscp_key_property_t algorithm_key_property = {0u};
+    sss_key_part_t key_part                        = {0u};
+    sss_cipher_type_t cipher_type                  = {0u};
+    size_t allocation_size                         = 0u;
+    psa_key_location_t location                    = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    sss_sscp_blob_type_t blob_type                 = kSSS_blobType_ELKE_blob;
 
     if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
     {

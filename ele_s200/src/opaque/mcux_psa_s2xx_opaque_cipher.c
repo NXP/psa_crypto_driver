@@ -21,37 +21,37 @@
 
 static psa_status_t psa_to_s200_alg(psa_key_type_t key_type, psa_algorithm_t alg, sss_algorithm_t *ele_algo)
 {
-    switch (key_type)
-    {
+    psa_status_t status = PSA_ERROR_NOT_SUPPORTED;
+
 #if defined(PSA_WANT_KEY_TYPE_AES)
-        case PSA_KEY_TYPE_AES:
-            switch (alg)
-            {
+    if (PSA_KEY_TYPE_AES == key_type)
+    {
+        status = PSA_SUCCESS;
+        switch (alg)
+        {
 #if defined(PSA_WANT_ALG_CBC_NO_PADDING)
-                case PSA_ALG_CBC_NO_PADDING:
-                    *ele_algo = kAlgorithm_SSS_AES_CBC;
-                    break;
+            case PSA_ALG_CBC_NO_PADDING:
+                *ele_algo = kAlgorithm_SSS_AES_CBC;
+                break;
 #endif /* PSA_WANT_ALG_CBC_NO_PADDING */
 #if defined(PSA_WANT_ALG_ECB_NO_PADDING)
-                case PSA_ALG_ECB_NO_PADDING:
-                    *ele_algo = kAlgorithm_SSS_AES_ECB;
-                    break;
+            case PSA_ALG_ECB_NO_PADDING:
+                *ele_algo = kAlgorithm_SSS_AES_ECB;
+                break;
 #endif /* PSA_WANT_ALG_ECB_NO_PADDING */
 #if defined(PSA_WANT_ALG_CTR)
-                case PSA_ALG_CTR:
-                    *ele_algo = kAlgorithm_SSS_AES_CTR;
-                    break;
+            case PSA_ALG_CTR:
+                *ele_algo = kAlgorithm_SSS_AES_CTR;
+                break;
 #endif /* PSA_WANT_ALG_CTR */
-                default:
-                    return PSA_ERROR_NOT_SUPPORTED;
-            } /* operation->alg */
-            break;
-#endif        /* PSA_WANT_KEY_TYPE_AES */
-        default:
-            return PSA_ERROR_NOT_SUPPORTED;
+            default:
+                status = PSA_ERROR_NOT_SUPPORTED;
+                break;
+        }
     }
+#endif /* PSA_WANT_KEY_TYPE_AES */
 
-    return PSA_SUCCESS;
+    return status;
 }
 
 static psa_status_t ele_s2xx_cipher_arg_validation(

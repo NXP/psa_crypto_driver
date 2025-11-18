@@ -25,61 +25,54 @@
 
 static psa_status_t translate_psa_aead_to_ele_aead(psa_algorithm_t alg, psa_key_type_t key_type, sss_algorithm_t *ele_alg)
 {
-    psa_algorithm_t default_alg = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
-    size_t tag_length           = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
+    psa_status_t status                             = PSA_ERROR_NOT_SUPPORTED;
+    psa_algorithm_t default_alg                     = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
+    size_t tag_length                               = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
     size_t valid_tag_lengths[VALID_TAG_LENGTH_SIZE] = {0u};
-    psa_status_t key_type_support = PSA_SUCCESS;
-    psa_status_t alg_support      = PSA_SUCCESS;
 
-    /* Only AES key type is supported, first check for that */
-    switch (key_type)
-    {
 #if defined(PSA_WANT_KEY_TYPE_AES)
-        case PSA_KEY_TYPE_AES:
-            break;
-#endif /* PSA_WANT_KEY_TYPE_AES */
-        default:
-            key_type_support = PSA_ERROR_NOT_SUPPORTED;
-            break;
-    }
-    if (PSA_ERROR_NOT_SUPPORTED == key_type_support)
+    if (PSA_KEY_TYPE_AES == key_type)
     {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
-    switch (default_alg)
-    {
+        status = PSA_SUCCESS;
+        switch (default_alg)
+        {
 #if defined(PSA_WANT_ALG_CCM)
-        case PSA_ALG_CCM:
-            valid_tag_lengths[0] = 4;
-            valid_tag_lengths[1] = 6;
-            valid_tag_lengths[2] = 8;
-            valid_tag_lengths[3] = 10;
-            valid_tag_lengths[4] = 12;
-            valid_tag_lengths[5] = 14;
-            valid_tag_lengths[6] = 16;
-            *ele_alg             = kAlgorithm_SSS_AES_CCM;
-            break;
+            case PSA_ALG_CCM:
+                valid_tag_lengths[0] = 4;
+                valid_tag_lengths[1] = 6;
+                valid_tag_lengths[2] = 8;
+                valid_tag_lengths[3] = 10;
+                valid_tag_lengths[4] = 12;
+                valid_tag_lengths[5] = 14;
+                valid_tag_lengths[6] = 16;
+                *ele_alg             = kAlgorithm_SSS_AES_CCM;
+                break;
 #endif /* PSA_WANT_ALG_CCM */
 #if defined(PSA_WANT_ALG_GCM)
-        case PSA_ALG_GCM:
-            valid_tag_lengths[0] = 4;
-            valid_tag_lengths[1] = 8;
-            valid_tag_lengths[2] = 12;
-            valid_tag_lengths[3] = 13;
-            valid_tag_lengths[4] = 14;
-            valid_tag_lengths[5] = 15;
-            valid_tag_lengths[6] = 16;
-            *ele_alg             = kAlgorithm_SSS_AES_GCM;
-            break;
+            case PSA_ALG_GCM:
+                valid_tag_lengths[0] = 4;
+                valid_tag_lengths[1] = 8;
+                valid_tag_lengths[2] = 12;
+                valid_tag_lengths[3] = 13;
+                valid_tag_lengths[4] = 14;
+                valid_tag_lengths[5] = 15;
+                valid_tag_lengths[6] = 16;
+                *ele_alg             = kAlgorithm_SSS_AES_GCM;
+                break;
 #endif /* PSA_WANT_ALG_GCM */
-        default:
-            alg_support = PSA_ERROR_NOT_SUPPORTED;
-            break;
+            default:
+                status = PSA_ERROR_NOT_SUPPORTED;
+                break;
+        }
     }
-    if (PSA_ERROR_NOT_SUPPORTED == alg_support)
+#endif /* PSA_WANT_KEY_TYPE_AES */
+
+    /* If we fail here, it means the key type or algorithm is unsupported.
+     * Else we continue to also check tag lengths.
+     */
+    if (PSA_SUCCESS != status)
     {
-        return PSA_ERROR_NOT_SUPPORTED;
+        return status;
     }
 
     /* Cycle through all valid tag lengths for CCM or GCM */
@@ -94,10 +87,10 @@ static psa_status_t translate_psa_aead_to_ele_aead(psa_algorithm_t alg, psa_key_
 
     if (i == VALID_TAG_LENGTH_SIZE)
     {
-        return PSA_ERROR_INVALID_ARGUMENT;
+        status = PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
 
 /** \defgroup psa_aead PSA transparent key driver entry points for AEAD
