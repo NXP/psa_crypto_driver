@@ -210,7 +210,7 @@ status_t CRYPTO_InitHardware(void)
             break;
         }
 
-#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER)
+#if defined(CONFIG_PSA_ELE_S4XX_NVM_MANAGER) || defined(PSA_ELE_S4XX_SD_NVM_MANAGER)
 
         /****************** Open NVM Storage service **************************/
         result =

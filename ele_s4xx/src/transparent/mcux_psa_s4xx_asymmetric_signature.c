@@ -397,8 +397,6 @@ psa_status_t ele_s4xx_transparent_verify_hash(const psa_key_attributes_t *attrib
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    return PSA_ERROR_NOT_SUPPORTED;
-
 }
 
 psa_status_t ele_s4xx_transparent_sign_message(const psa_key_attributes_t *attributes,
