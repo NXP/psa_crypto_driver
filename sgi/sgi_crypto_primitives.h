@@ -33,15 +33,17 @@ typedef struct {
 
 typedef struct {
     uint32_t ctx[MCUXCLMAC_CONTEXT_SIZE_IN_WORDS];
+    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
 } sgi_mac_operation_t;
 
 typedef struct {
-    uint8_t ctx[MCUXCLAEAD_CONTEXT_SIZE];
+    uint32_t ctx[MCUXCLAEAD_CONTEXT_SIZE];
+    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
 
     psa_algorithm_t alg;
     psa_key_type_t key_type;
     uint8_t is_encrypt;
-    uint8_t tag_length;
+    uint32_t tag_length;
 
     uint32_t body_started;
     uint32_t ad_remaining;

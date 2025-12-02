@@ -21,12 +21,14 @@
 #include <mcuxClAead.h>
 #include <mcuxClAeadModes.h>
 
+#include <internal/mcuxClAeadModes_Sgi_Types.h>
+
 static inline psa_status_t check_tag_length(const psa_algorithm_t alg)
 {
     uint32_t tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
 
     /* Recover default algorithm (could be CCM with changed tag size) */
-    const psa_algorithm_t algDefault = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
+    psa_algorithm_t algDefault = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
 
     psa_status_t status = PSA_SUCCESS;
 
@@ -72,10 +74,36 @@ static inline mcuxClAead_Mode_t  get_aead_sgi_mode(psa_algorithm_t alg)
             break;
 #endif /* PSA_WANT_ALG_GCM */
         default:
-            return NULL;
+            mode = NULL;
+            break;
     }
 
     return (mcuxClAead_Mode_t) mode;
+}
+
+static inline mcuxClKey_Type_t   get_sgi_keytype(const psa_key_attributes_t *attributes)
+{
+    size_t key_bits       = psa_get_key_bits(attributes);
+    mcuxClKey_Type_t type = { NULL };
+
+    if (psa_get_key_type(attributes) == PSA_KEY_TYPE_AES &&
+        (psa_get_key_bits(attributes) == 128u ||
+         psa_get_key_bits(attributes) == 256u)) {
+        switch (key_bits) {
+#if defined(PSA_WANT_KEY_TYPE_AES)
+            case 128:
+                type = mcuxClKey_Type_Aes128;
+                break;
+            case 256:
+                type = mcuxClKey_Type_Aes256;
+                break;
+#endif /* PSA_WANT_KEY_TYPE_AES */
+            default:
+                type = NULL;
+                break;
+        }
+    }
+    return type;
 }
 
 /** \defgroup psa_aead PSA driver entry points for AEAD
@@ -108,11 +136,6 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     /* Algorithm needs to be a AEAD algo */
     if (!PSA_ALG_IS_AEAD(alg)) {
         return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Only AES key type is supported, check for that */
-    if (key_type != PSA_KEY_TYPE_AES) {
-        return PSA_ERROR_NOT_SUPPORTED;
     }
 
     /* Validate tag length */
@@ -173,15 +196,20 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
     mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
 
+    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
+
+    if (type == NULL) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status,
                                      ki_token,
                                      mcuxClKey_init(
                                          /* mcuxClSession_Handle_t session         */ session,
                                          /* mcuxClKey_Handle_t key                 */ key,
-                                         /* mcuxClKey_Type_t type                  */
-                                         mcuxClKey_Type_Aes128,
-                                         /* uint8_t * pKeyData                    */ (uint8_t *)
-                                         key_buffer,
+                                         /* mcuxClKey_Type_t type                  */ type,
+                                         /* uint8_t * pKeyData                    */ key_buffer,
                                          /* uint32_t keyDataLength                */ key_buffer_size)
                                      );
 
@@ -227,17 +255,6 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     /* Update ciphertext_length by tag size, as they are in the same buffer */
     *ciphertext_length += tag_length;
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(kf_status, kf_token, mcuxClKey_flush(
-                                         /* mcuxClSession_Handle_t session:      */ session,
-                                         /* mcuxClKey_Handle_t key:              */ key)
-                                     );
-
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_flush) != kf_token) ||
-        (MCUXCLKEY_STATUS_OK != kf_status)) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
-
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
@@ -276,11 +293,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
     /* Algorithm needs to be a AEAD algo */
     if (!PSA_ALG_IS_AEAD(alg)) {
         return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Only AES key type is supported, first check for that */
-    if (key_type != PSA_KEY_TYPE_AES) {
-        return PSA_ERROR_NOT_SUPPORTED;
     }
 
     /* Validate given sizes */
@@ -351,15 +363,19 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
     mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
 
+    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
+
+    if (type == NULL) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status,
                                      ki_token,
                                      mcuxClKey_init(
                                          /* mcuxClSession_Handle_t session         */ session,
                                          /* mcuxClKey_Handle_t key                 */ key,
-                                         /* mcuxClKey_Type_t type                  */
-                                         mcuxClKey_Type_Aes128,
-                                         /* uint8_t * pKeyData                    */ (uint8_t *)
-                                         key_buffer,
+                                         /* mcuxClKey_Type_t type                  */ type,
+                                         /* uint8_t * pKeyData                    */ key_buffer,
                                          /* uint32_t keyDataLength                */ key_buffer_size)
                                      );
 
@@ -398,25 +414,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_GENERIC_ERROR;
     }
 
-
-
-    /**************************************************************************/
-    /* Key Flush                                                              */
-    /**************************************************************************/
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(kf_status, kf_token, mcuxClKey_flush(
-                                         /* mcuxClSession_Handle_t session:      */ session,
-                                         /* mcuxClKey_Handle_t key:              */ key)
-                                     );
-
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_flush) != kf_token) ||
-        (MCUXCLKEY_STATUS_OK != kf_status)) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
-
-
-
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
@@ -440,6 +437,603 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
 
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+}
+
+static psa_status_t sgi_aead_multipart_common_setup(sgi_aead_operation_t *operation,
+                                                    const psa_key_attributes_t *attributes,
+                                                    const uint8_t *key_buffer,
+                                                    size_t key_buffer_size,
+                                                    psa_algorithm_t alg)
+{
+    /* Initialize the operation */
+    operation->alg = alg;
+    operation->key_type = psa_get_key_type(attributes);
+    operation->ad_remaining = 0u;
+    operation->body_remaining = 0u;
+
+    if (PSA_SUCCESS != check_tag_length(alg)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Get the correct tag length based on the given algorithm, and store it.
+       Later operation->alg is restored to base_algo value in psa_crypto.c, hence by the time,
+       we want to set in sgi_aead_set_nonce() it could be incorrect tag length as
+       operation->alg is already reset to psa_base_alg_value */
+    operation->tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(operation->alg);
+
+    /* Create the key */
+    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
+
+    if (type == NULL) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
+    /* Allocate and initialize session */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLAEAD_WA_SIZE_MAX,
+                                                  0u);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status,
+                                     ki_token,
+                                     mcuxClKey_init(
+                                         /* mcuxClSession_Handle_t session:        */ session,
+                                         /* mcuxClKey_Handle_t key:                */ (
+                                             mcuxClKey_Handle_t) &operation->keyDesc,
+                                         /* mcuxClKey_Type_t type:                 */ type,
+                                         /* uint8_t * pKeyData:                   */ key_buffer,
+                                         /* uint32_t keyDataLength:               */ key_buffer_size)
+                                     );
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) ||
+        (MCUXCLKEY_STATUS_OK != ki_status)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /**************************************************************************/
+    /* Session clean-up                                                       */
+    /**************************************************************************/
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Return with success */
+    return PSA_SUCCESS;
+}
+
+psa_status_t sgi_aead_encrypt_setup(sgi_aead_operation_t *operation,
+                                    const psa_key_attributes_t *attributes,
+                                    const uint8_t *key_buffer,
+                                    size_t key_buffer_size,
+                                    psa_algorithm_t alg)
+{
+    /* Validate given key */
+    if ((PSA_KEY_USAGE_ENCRYPT != (PSA_KEY_USAGE_ENCRYPT & psa_get_key_usage_flags(attributes)))
+        || !(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(psa_get_key_algorithm(attributes)) ==
+             PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg))) {
+        return PSA_ERROR_NOT_PERMITTED;
+    }
+
+    /* Initialize the operation */
+    operation->is_encrypt = 1u;
+    /* Rest of operation is initialized in sgi_aead_multipart_common_setup() */
+    return sgi_aead_multipart_common_setup(operation, attributes, key_buffer, key_buffer_size, alg);
+
+}
+
+psa_status_t sgi_aead_decrypt_setup(sgi_aead_operation_t *operation,
+                                    const psa_key_attributes_t *attributes,
+                                    const uint8_t *key_buffer,
+                                    size_t key_buffer_size,
+                                    psa_algorithm_t alg)
+{
+    /* Validate given key */
+    if ((PSA_KEY_USAGE_DECRYPT != (PSA_KEY_USAGE_DECRYPT & psa_get_key_usage_flags(attributes)))
+        || !(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(psa_get_key_algorithm(attributes)) ==
+             PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg))) {
+        return PSA_ERROR_NOT_PERMITTED;
+    }
+
+    /* Validate state
+     *   - operation must not be active */
+    if (0u != operation->body_started) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    operation->is_encrypt = 0u;
+    /* Rest of operation is initialized in sgi_aead_multipart_common_setup() */
+    return sgi_aead_multipart_common_setup(operation, attributes, key_buffer, key_buffer_size, alg);
+}
+
+psa_status_t sgi_aead_set_nonce(sgi_aead_operation_t *operation,
+                                const uint8_t *nonce,
+                                size_t nonce_length)
+{
+    psa_status_t status;
+
+    /* Add checks for valid tag length, otherwise return error*/
+    status = check_tag_length(operation->alg);
+    if (PSA_SUCCESS != status) {
+        return status;
+    }
+
+    /* Get the correct AEAD mode based on the given algorithm. */
+    mcuxClAead_Mode_t mode = get_aead_sgi_mode(operation->alg);
+    if (NULL == mode) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
+    /* Allocate and initialize session */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLAEAD_WA_SIZE_MAX,
+                                                  0u);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    /* Initialize AEAD multi-part */
+
+    mcuxClAead_Context_t * const ctx = (mcuxClAead_Context_t *) operation->ctx;
+
+    if (1u == operation->is_encrypt) {
+
+        MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ei_status, ei_token, mcuxClAead_init_encrypt(
+                                             /* mcuxClSession_Handle_t session         */ session,
+                                             /* mcuxClAead_Context_t * const pContext  */ ctx,
+                                             /* mcuxClKey_Handle_t key                 */ (
+                                                 mcuxClKey_Handle_t) &operation->keyDesc,
+                                             /* mcuxClAead_Mode_t mode                 */ mode,
+                                             /* mcuxCl_InputBuffer_t pNonce            */ nonce,
+                                             /* uint32_t nonceSize,                    */
+                                             nonce_length,
+                                             /* uint32_t inSize,                      */ operation->
+                                             body_remaining,
+                                             /* uint32_t adataSize,                   */ operation->
+                                             ad_remaining,
+                                             /* uint32_t tagSize,                     */ operation->
+                                             tag_length)
+                                         );
+
+        if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_init_encrypt) != ei_token) ||
+            (MCUXCLAEAD_STATUS_OK != ei_status)) {
+            return MCUXCLEXAMPLE_STATUS_ERROR;
+        }
+        MCUX_CSSL_FP_FUNCTION_CALL_END();
+    } else {
+        MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(di_status, di_token, mcuxClAead_init_decrypt(
+                                             /* mcuxClSession_Handle_t session         */ session,
+                                             /* mcuxClAead_Context_t * const pContext  */ ctx,
+                                             /* mcuxClKey_Handle_t key                 */ (
+                                                 mcuxClKey_Handle_t) &operation->keyDesc,
+                                             /* mcuxClAead_Mode_t mode                 */ mode,
+                                             /* mcuxCl_InputBuffer_t pNonce            */ nonce,
+                                             /* uint32_t nonceSize,                   */
+                                             nonce_length,
+                                             /* uint32_t inSize,                      */ operation->
+                                             body_remaining,
+                                             /* uint32_t adataSize,                   */ operation->
+                                             ad_remaining,
+                                             /* uint32_t tagSize,                     */ operation->
+                                             tag_length)
+                                         );
+
+        if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_init_decrypt) != di_token) ||
+            (MCUXCLAEAD_STATUS_OK != di_status)) {
+            return MCUXCLEXAMPLE_STATUS_ERROR;
+        }
+        MCUX_CSSL_FP_FUNCTION_CALL_END();
+    }
+
+    /**************************************************************************/
+    /* Session clean-up                                                       */
+    /**************************************************************************/
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Update the operation's status */
+    operation->nonce_set = 1u;
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Return with success */
+    return PSA_SUCCESS;
+}
+
+psa_status_t sgi_aead_set_lengths(sgi_aead_operation_t *operation,
+                                  size_t ad_length,
+                                  size_t plaintext_length)
+{
+    /* Validate state
+     *   - operation must be active
+     *   - no nonce must have been set yet */
+    if (1u == operation->nonce_set) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    /* Update the operation's status */
+    operation->ad_remaining = ad_length;
+    operation->body_remaining = plaintext_length;
+
+    return PSA_SUCCESS;
+}
+
+psa_status_t sgi_aead_update_ad(sgi_aead_operation_t *operation,
+                                const uint8_t *input,
+                                size_t input_length)
+{
+    /* Validate state
+     *   - operation must be active
+     *   - setup must be finished, i.e. nonce must have been set
+     *   - aead_update/finish functions must not have been called yet */
+    if ((1u != operation->nonce_set)
+        || (0u != operation->body_started)) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
+    /* Allocate and initialize session */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLAEAD_WA_SIZE_MAX,
+                                                  0u);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(epa1_status, epa1_token, mcuxClAead_process_adata(
+                                         /* mcuxClSession_Handle_t session         */ session,
+                                         /* mcuxClAead_Context_t * const pContext  */ (
+                                             mcuxClAead_Context_t *) &operation->ctx,
+                                         /* mcuxCl_InputBuffer_t pAdata            */ input,
+                                         /* uint32_t adataSize                    */ input_length)
+                                     );
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_process_adata) != epa1_token) ||
+        (MCUXCLAEAD_STATUS_OK != epa1_status)) {
+        return MCUXCLEXAMPLE_STATUS_ERROR;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /**************************************************************************/
+    /* Session clean-up                                                       */
+    /**************************************************************************/
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Return with success */
+    return PSA_SUCCESS;
+}
+
+psa_status_t sgi_aead_update(sgi_aead_operation_t *operation,
+                             const uint8_t *input,
+                             size_t input_length,
+                             uint8_t *output,
+                             size_t output_size,
+                             size_t *output_length)
+{
+    /* Validate state
+     *   - operation must be active
+     *   - setup must be finished, i.e. nonce must have been set */
+    if (1u != operation->nonce_set) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    /* Validate given length: can be skipped as this is performed by psa_aead_update(...) */
+
+    /* Validate the given buffer size */
+    if (output_size < input_length) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
+    /* Allocate and initialize session */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLAEAD_WA_SIZE_MAX,
+                                                  0u);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    /* Call Process AEAD */
+    uint32_t output_length_tmp = 0u;
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ep1_status, ep1_token, mcuxClAead_process(
+                                         /* mcuxClSession_Handle_t session         */ session,
+                                         /* mcuxClAead_Context_t * const pContext  */ (
+                                             mcuxClAead_Context_t *) &operation->ctx,
+                                         /* mcuxCl_InputBuffer_t pIn               */ input,
+                                         /* uint32_t inSize                       */ input_length,
+                                         /* mcuxCl_Buffer_t pOut                   */ output,
+                                         /* uint32_t * const pOutSize             */ &
+                                         output_length_tmp)
+                                     );
+
+    *output_length = (size_t) output_length_tmp;
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_process) != ep1_token) ||
+        (MCUXCLAEAD_STATUS_OK != ep1_status)) {
+        return MCUXCLEXAMPLE_STATUS_ERROR;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /**************************************************************************/
+    /* Session clean-up                                                       */
+    /**************************************************************************/
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Update the operation's status */
+    operation->body_started = 1u;
+    /* Update of operation->body_remaining is performed by psa_aead_update(...) in psa_crypto.c */
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Return with success */
+    return PSA_SUCCESS;
+
+}
+
+psa_status_t sgi_aead_finish(sgi_aead_operation_t *operation,
+                             uint8_t *ciphertext,
+                             size_t ciphertext_size,
+                             size_t *ciphertext_length,
+                             uint8_t *tag,
+                             size_t tag_size,
+                             size_t *tag_length)
+{
+    /* Validate state
+     *   - must be active encryption operation
+     *   - setup must be finished, i.e. nonce must have been set */
+    if ((1u != operation->is_encrypt)
+        || (1u != operation->nonce_set)) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    /* Validate the given buffer sizes */
+    uint32_t needed_tag_size    = operation->tag_length;
+    if (tag_size < needed_tag_size) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
+    /* Allocate and initialize session */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLAEAD_WA_SIZE_MAX,
+                                                  0u);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    /* Call Finish AEAD */
+
+    uint32_t ciphertext_length_tmp = 0u;
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ef_status, ef_token, mcuxClAead_finish(
+                                         /* mcuxClSession_Handle_t session         */ session,
+                                         /* mcuxClAead_Context_t * const pContext  */ (
+                                             mcuxClAead_Context_t *) &operation->ctx,
+                                         /* mcuxCl_Buffer_t pOut                   */ ciphertext,
+                                         /* uint32_t * const pOutSize             */ &
+                                         ciphertext_length_tmp,
+                                         /* mcuxCl_Buffer_t pTag                   */ tag)
+                                     );
+
+    *ciphertext_length = (size_t) ciphertext_length_tmp;
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_finish) != ef_token) ||
+        (MCUXCLAEAD_STATUS_OK != ef_status)) {
+        return MCUXCLEXAMPLE_STATUS_ERROR;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /**************************************************************************/
+    /* Session clean-up                                                       */
+    /**************************************************************************/
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Set the tag_length */
+    *tag_length = needed_tag_size;
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Return with success */
+    return PSA_SUCCESS;
+
+}
+
+psa_status_t sgi_aead_verify(sgi_aead_operation_t *operation,
+                             uint8_t *plaintext,
+                             size_t plaintext_size,
+                             size_t *plaintext_length,
+                             const uint8_t *tag,
+                             size_t tag_length)
+{
+    /* Validate state
+     *   - must be active decryption operation
+     *   - setup must be finished, i.e. nonce must have been set */
+    if ((0u != operation->is_encrypt)
+        || (1u != operation->nonce_set)) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    /* Validate the given buffer sizes */
+    /* Used stored tag length from pContext instead of determining it at run time,
+       as operation->alg has been overwritten to base_algo value*/
+    if (tag_length < operation->tag_length) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    /* Validate the given buffer sizes */
+    if (plaintext_size == 0u) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
+    /* Allocate and initialize session */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLAEAD_WA_SIZE_MAX,
+                                                  0u);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    /* Call Verify AEAD */
+    uint32_t output_length_tmp = 0u;
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(dv_status, dv_token, mcuxClAead_verify(
+                                         /* mcuxClSession_Handle_t session         */ session,
+                                         /* mcuxClAead_Context_t * const pContext  */ (
+                                             mcuxClAead_Context_t *) &operation->ctx,
+                                         /* mcuxCl_InputBuffer_t pTag              */ tag,
+                                         /* mcuxCl_Buffer_t pOut                   */ plaintext,
+                                         /* uint32_t * const pOutSize             */ &
+                                         output_length_tmp)
+                                     );
+
+    *plaintext_length = (size_t) output_length_tmp;
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_verify) != dv_token) ||
+        (MCUXCLAEAD_STATUS_OK != dv_status)) {
+        return PSA_ERROR_INVALID_SIGNATURE;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /**************************************************************************/
+    /* Session clean-up                                                       */
+    /**************************************************************************/
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Return with success */
+    return PSA_SUCCESS;
+
+}
+
+psa_status_t sgi_aead_abort(sgi_aead_operation_t *operation)
+{
+
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+    /* Clear the operation data */
+    MCUX_CSSL_FP_FUNCTION_CALL_VOID_BEGIN(tokenClear, mcuxClMemory_clear(
+                                              (uint8_t *) operation,
+                                              sizeof(sgi_aead_operation_t),
+                                              sizeof(sgi_aead_operation_t)));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMemory_clear) != tokenClear) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+
+    MCUX_CSSL_FP_FUNCTION_CALL_VOID_END();
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    return PSA_SUCCESS;
 }
 
 /** @} */ // end of psa_aead

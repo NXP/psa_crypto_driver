@@ -23,6 +23,9 @@
 #include <mcuxClMac.h> // Interface to the entire mcuxClMac component
 #include <mcuxClMacModes.h> // Interface to the entire mcuxClMacModes component
 
+#include <mcuxClMemory.h>
+#include <mcuxCsslMemory.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -85,8 +88,6 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
  *          failure
  */
 
-/* These are not implemented for now */
-#if 0
 psa_status_t sgi_mac_verify_setup(sgi_mac_operation_t *operation,
                                   const psa_key_attributes_t *attributes,
                                   const uint8_t *key_buffer,
@@ -141,8 +142,6 @@ psa_status_t sgi_mac_verify_finish(sgi_mac_operation_t *operation,
  *          failure
  */
 psa_status_t sgi_mac_abort(sgi_mac_operation_t *operation);
-
-#endif // Not Supported
 
 #ifdef __cplusplus
 }

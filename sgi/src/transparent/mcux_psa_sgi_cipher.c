@@ -58,6 +58,31 @@ static inline void psa_cipher_to_sgi_alg(const psa_algorithm_t alg,
 
 }
 
+static inline mcuxClKey_Type_t   get_sgi_keytype(const psa_key_attributes_t *attributes)
+{
+    size_t key_bits          = psa_get_key_bits(attributes);
+    mcuxClKey_Type_t type = { NULL };
+
+    if (psa_get_key_type(attributes) == PSA_KEY_TYPE_AES &&
+        (psa_get_key_bits(attributes) == 128u ||
+         psa_get_key_bits(attributes) == 256u)) {
+        switch (key_bits) {
+#if defined(PSA_WANT_KEY_TYPE_AES)
+            case 128:
+                type = mcuxClKey_Type_Aes128;
+                break;
+            case 256:
+                type = mcuxClKey_Type_Aes256;
+                break;
+#endif /* PSA_WANT_KEY_TYPE_AES */
+            default:
+                type = NULL;
+                break;
+        }
+    }
+    return type;
+}
+
 psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attributes,
                                             const uint8_t *key_buffer,
                                             size_t key_buffer_size,
@@ -90,7 +115,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
+    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0u)) {
         /* PSA specification is not very clear on 0 input for ECB.
          * However software implementation and the tests return SUCCESS
          * for 0 input. So adding this check here.
@@ -134,20 +159,10 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    mcuxClKey_Type_t type = { 0 };
+    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
 
-    switch (key_bits) {
-#if defined(PSA_WANT_KEY_TYPE_AES)
-        case 128:
-            type = mcuxClKey_Type_Aes128;
-            break;
-        case 256:
-            type = mcuxClKey_Type_Aes256;
-            break;
-#endif /* PSA_WANT_KEY_TYPE_AES */
-        default:
-            return PSA_ERROR_NOT_SUPPORTED;
-            break;
+    if (type == NULL) {
+        return PSA_ERROR_NOT_SUPPORTED;
     }
 
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
@@ -171,8 +186,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
                                          /* mcuxClSession_Handle_t session:        */ session,
                                          /* mcuxClKey_Handle_t key:                */ key,
                                          /* mcuxClKey_Type_t type:                 */ type,
-                                         /* uint8_t * pKeyData:                   */ (uint8_t *)
-                                         key_buffer,
+                                         /* uint8_t * pKeyData:                   */ key_buffer,
                                          /* uint32_t keyDataLength:               */ key_buffer_size));
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) ||
@@ -256,7 +270,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
+    if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0u)) {
         /* PSA specification is not very clear on 0 input for ECB.
          * However software implementation and the tests return SUCCESS
          * for 0 input. So adding this check here.
@@ -305,20 +319,10 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    mcuxClKey_Type_t type = { 0 };
+    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
 
-    switch (key_bits) {
-#if defined(PSA_WANT_KEY_TYPE_AES)
-        case 128:
-            type = mcuxClKey_Type_Aes128;
-            break;
-        case 256:
-            type = mcuxClKey_Type_Aes256;
-            break;
-#endif /* PSA_WANT_KEY_TYPE_AES */
-        default:
-            return PSA_ERROR_NOT_SUPPORTED;
-            break;
+    if (type == NULL) {
+        return PSA_ERROR_NOT_SUPPORTED;
     }
 
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
@@ -343,8 +347,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
                                          /* mcuxClSession_Handle_t session:        */ session,
                                          /* mcuxClKey_Handle_t key:                */ key,
                                          /* mcuxClKey_Type_t type:                 */ type,
-                                         /* uint8_t * pKeyData:                   */ (uint8_t *)
-                                         key_buffer,
+                                         /* uint8_t * pKeyData:                   */ key_buffer,
                                          /* uint32_t keyDataLength:               */ key_buffer_size));
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) ||
@@ -417,7 +420,6 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
 {
 
     psa_key_type_t key_type = psa_get_key_type(attributes);
-    size_t key_bits         = psa_get_key_bits(attributes);
 
 
     /* Here we only set up the internal cipher driver context.
@@ -456,20 +458,10 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    mcuxClKey_Type_t type = { 0 };
+    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
 
-    switch (key_bits) {
-#if defined(PSA_WANT_KEY_TYPE_AES)
-        case 128:
-            type = mcuxClKey_Type_Aes128;
-            break;
-        case 256:
-            type = mcuxClKey_Type_Aes256;
-            break;
-#endif /* PSA_WANT_KEY_TYPE_AES */
-        default:
-            return PSA_ERROR_NOT_SUPPORTED;
-            break;
+    if (type == NULL) {
+        return PSA_ERROR_NOT_SUPPORTED;
     }
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status,
@@ -479,8 +471,7 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
                                          /* mcuxClKey_Handle_t key:                */ (
                                              mcuxClKey_Handle_t) &operation->keyDesc,
                                          /* mcuxClKey_Type_t type:                 */ type,
-                                         /* uint8_t * pKeyData:                   */ (uint8_t *)
-                                         key_buffer,
+                                         /* uint8_t * pKeyData:                   */ key_buffer,
                                          /* uint32_t keyDataLength:               */ key_buffer_size)
                                      );
 
@@ -563,15 +554,13 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
 
     mcuxClCipher_Context_t * const ctx = (mcuxClCipher_Context_t *) operation->ctx;
 
-    mcuxClKey_Handle_t const key = (mcuxClKey_Handle_t) &operation->keyDesc;
-
-
     if (PSA_CRYPTO_DRIVER_ENCRYPT == operation->cipher_direction) {
 
         MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ei_status, ei_token, mcuxClCipher_init_encrypt(
                                              /* mcuxClSession_Handle_t session:         */ session,
                                              /* mcuxClCipher_Context_t * const pContext:*/ ctx,
-                                             /* const mcuxClKey_Handle_t key:           */ key,
+                                             /* const mcuxClKey_Handle_t key:           */ (
+                                                 mcuxClKey_Handle_t) &operation->keyDesc,
                                              /* mcuxClCipher_Mode_t mode:               */ operation
                                              ->mode,
                                              /* mcuxCl_InputBuffer_t pIv:               */ iv,
@@ -589,7 +578,8 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
         MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(di_status, di_token, mcuxClCipher_init_decrypt(
                                              /* mcuxClSession_Handle_t session:         */ session,
                                              /* mcuxClCipher_Context_t * const pContext:*/ ctx,
-                                             /* const mcuxClKey_Handle_t key:           */ key,
+                                             /* const mcuxClKey_Handle_t key:           */ (
+                                                 mcuxClKey_Handle_t) &operation->keyDesc,
                                              /* mcuxClCipher_Mode_t mode:               */ operation
                                              ->mode,
                                              /* mcuxCl_InputBuffer_t pIv:               */ iv,
@@ -662,10 +652,7 @@ psa_status_t sgi_transparent_cipher_update(sgi_cipher_operation_t *operation,
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ep1_status, ep1_token, mcuxClCipher_process(
                                          /* mcuxClSession_Handle_t session:         */ session,
-                                         MCUX_CSSL_ANALYSIS_START_SUPPRESS_ALREADY_INITIALIZED(
-                                             "Initialized by mcuxClCipher_init_encrypt")
                                          /* mcuxClCipher_Context_t * const pContext:*/ ctx,
-                                         MCUX_CSSL_ANALYSIS_STOP_SUPPRESS_ALREADY_INITIALIZED()
                                          /* mcuxCl_InputBuffer_t pIn:               */ input,
                                          /* uint32_t inLength:                     */ input_length,
                                          /* mcuxCl_Buffer_t pOut:                   */ output,
@@ -714,7 +701,7 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
        inLength needs to be a multiple of the granularity, if this is not the case, return an error. */
     mcuxClCipher_Context_t * const ctx = (mcuxClCipher_Context_t *) operation->ctx;
 
-    mcuxClCipherModes_Context_Aes_Sgi_t * const pCtx = (mcuxClCipherModes_Context_Aes_Sgi_t *) ctx;;
+    mcuxClCipherModes_Context_Aes_Sgi_t * const pCtx = (mcuxClCipherModes_Context_Aes_Sgi_t *) ctx;
     mcuxClCipherModes_Algorithm_Aes_Sgi_t pAlgo =
         (mcuxClCipherModes_Algorithm_Aes_Sgi_t) (pCtx->common.pMode->pAlgorithm);
 
@@ -742,10 +729,7 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(df_status, df_token, mcuxClCipher_finish(
                                          /* mcuxClSession_Handle_t session:         */ session,
-                                         MCUX_CSSL_ANALYSIS_START_SUPPRESS_ALREADY_INITIALIZED(
-                                             "Initialized by mcuxClCipher_init_en/decrypt")
                                          /* mcuxClCipher_Context_t * const pContext:*/ ctx,
-                                         MCUX_CSSL_ANALYSIS_STOP_SUPPRESS_ALREADY_INITIALIZED()
                                          /* mcuxCl_Buffer_t pOut:                   */ output,
                                          /* uint32_t * const outLength:            */ &
                                          output_length_tmp)

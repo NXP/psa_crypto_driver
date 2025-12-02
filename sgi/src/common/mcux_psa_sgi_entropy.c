@@ -153,7 +153,7 @@ psa_status_t sgi_get_entropy(uint32_t flags,
     }
 
 
-    *estimate_bits = output_size * 8;
+    *estimate_bits = output_size * 8u;
 
     return PSA_SUCCESS;
 }

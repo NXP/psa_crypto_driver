@@ -19,6 +19,9 @@
 #include "psa/crypto.h"
 #include "mcux_psa_sgi_common_init.h"
 
+#include <mcuxClMemory.h>
+#include <mcuxCsslMemory.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -91,8 +94,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
                               size_t plaintext_size,
                               size_t *plaintext_length);
 
-/* These are not implemented for now */
-#if 0
 
 /*!
  * \brief Set the key for a multipart authenticated encryption operation.
@@ -179,7 +180,7 @@ psa_status_t sgi_aead_set_lengths(
  *
  * \param[in] operation    Active AEAD operation.
  * \param[in] input        Buffer containing the additional data.
- * \param[in] input_size   Size of the input buffer in bytes.
+ * \param[in] input_length Size of the input buffer in bytes.
  *
  * \retval #PSA_SUCCESS
  * \retval #PSA_ERROR_INVALID_ARGUMENT
@@ -190,7 +191,7 @@ psa_status_t sgi_aead_set_lengths(
 psa_status_t sgi_aead_update_ad(
     sgi_aead_operation_t *operation,
     const uint8_t *input,
-    size_t input_size);
+    size_t input_length);
 
 /*!
  * \brief Encrypt or decrypt a message fragment in an active AEAD operation.
@@ -249,7 +250,7 @@ psa_status_t sgi_aead_finish(
  * \param[in] plaintext_size    Size of the plaintext buffer in bytes.
  * \param[out] plaintext_length The number of bytes that make up the plaintext
  * \param[in] tag               Buffer containing the tag
- * \param[in] tag_size          Size of the tag buffer in bytes
+ * \param[in] tag_length        Size of the tag buffer in bytes
  *
  * \retval #PSA_SUCCESS
  * \retval #PSA_ERROR_INVALID_ARGUMENT
@@ -262,7 +263,7 @@ psa_status_t sgi_aead_verify(
     size_t plaintext_size,
     size_t *plaintext_length,
     const uint8_t *tag,
-    size_t tag_size);
+    size_t tag_length);
 /*!
  * \brief Abort an AEAD operation
  *
@@ -272,8 +273,6 @@ psa_status_t sgi_aead_verify(
  * \retval #PSA_ERROR_NOT_SUPPORTED
  */
 psa_status_t sgi_aead_abort(sgi_aead_operation_t *operation);
-
-#endif // Not Supported
 
 #ifdef __cplusplus
 }

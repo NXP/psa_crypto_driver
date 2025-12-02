@@ -37,7 +37,7 @@ static inline psa_sgi_hash_ctx_t *psa_sgi_get_ctx(mcux_sgi_hash_operation_t *ope
     return (psa_sgi_hash_ctx_t *) operation->ctx;
 }
 
-const mcuxClHash_AlgorithmDescriptor_t *psa_hash_alg_to_sgi_hash_alg(psa_algorithm_t alg)
+static const mcuxClHash_AlgorithmDescriptor_t *psa_hash_alg_to_sgi_hash_alg(psa_algorithm_t alg)
 {
     switch (alg) {
 #if defined(PSA_WANT_ALG_SHA_224)
@@ -142,13 +142,11 @@ psa_status_t sgi_hash_clone(const mcux_sgi_hash_operation_t *source_operation,
     }
 
     /* Copy content from mcuxClHash_Context_t */
-    MCUX_CSSL_ANALYSIS_START_SUPPRESS_DISCARD_CONST_QUALIFIER("copy only reads from source")
     MCUX_CSSL_FP_FUNCTION_CALL_VOID_BEGIN(tokenCopy1, mcuxClMemory_copy(
                                               (uint8_t *) target_operation->ctx,
                                               (uint8_t *) source_operation->ctx,
                                               sizeof(mcuxClHash_ContextDescriptor_t),
                                               sizeof(mcuxClHash_ContextDescriptor_t)));
-    MCUX_CSSL_ANALYSIS_STOP_SUPPRESS_DISCARD_CONST_QUALIFIER()
     if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMemory_copy) != tokenCopy1) {
         return PSA_ERROR_CORRUPTION_DETECTED;
     }
@@ -267,10 +265,6 @@ psa_status_t sgi_hash_finish(mcux_sgi_hash_operation_t *operation,
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
-
-
-    /* Set hash_length and check consistency with Algo->hashSize */
-    *hash_length = hash_size;
 
     /* Update the actual hashsize from algorithum*/
     *hash_length = p_hash_data->ctx.algo->hashSize;
