@@ -269,7 +269,7 @@ int ele_s2xx_util_ct_memcmp(const void *a,
          * This avoids IAR compiler warning:
          * 'the order of volatile accesses is undefined ..' */
         unsigned char x = A[i], y = B[i];
-        diff |= x ^ y;
+        diff |= (uint32_t) (x ^ y);
     }
 
 #if (INT_MAX < INT32_MAX)

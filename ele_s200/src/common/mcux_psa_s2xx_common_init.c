@@ -25,7 +25,7 @@ mcux_mutex_t ele_hwcrypto_mutex;
 
 ele_s2xx_ctx_t g_ele_ctx = {0u}; /* Global context */
 
-bool g_isCryptoHWInitialized = false;
+static bool g_isCryptoHWInitialized = false;
 
 psa_status_t ele_to_psa_status(status_t ele_status)
 {
