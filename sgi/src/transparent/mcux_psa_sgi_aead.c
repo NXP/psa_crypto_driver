@@ -127,7 +127,6 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
                               size_t ciphertext_size,
                               size_t *ciphertext_length)
 {
-    psa_key_type_t key_type  = psa_get_key_type(attributes);
     size_t key_bits          = psa_get_key_bits(attributes);
     size_t tag_length        = 0;
 
@@ -285,7 +284,6 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
                               size_t plaintext_size,
                               size_t *plaintext_length)
 {
-    psa_key_type_t key_type  = psa_get_key_type(attributes);
     size_t key_bits          = psa_get_key_bits(attributes);
     size_t tag_length        = 0;
     size_t cipher_length     = 0;
