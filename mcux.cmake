@@ -49,15 +49,14 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-         CC "-DPSA_CRYPTO_DRIVER_THREAD_EN"
+        "-DPSA_CRYPTO_DRIVER_THREAD_EN"
     )
 endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option)
     # adding specific compile option to use HW TRNG
     mcux_add_macro(
-         CC "-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED\
-            "
+        "-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED"
     )
 endif()
 
@@ -186,8 +185,7 @@ endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc)
     mcux_add_macro(
-         CC "-DPSA_CRYPTO_DRIVER_ELS_PKC\
-            "
+        "-DPSA_CRYPTO_DRIVER_ELS_PKC"
     )
     mcux_add_source(
         SOURCES els_pkc/els_pkc_driver.h
@@ -222,7 +220,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.dcp)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-        CC  "-DPSA_CRYPTO_DRIVER_DCP"
+        "-DPSA_CRYPTO_DRIVER_DCP"
     )
 endif()
 
@@ -284,8 +282,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-        CC "-DPSA_ELE_S4XX_SD_NVM_MANAGER=1\
-           "
+        "-DPSA_ELE_S4XX_SD_NVM_MANAGER=1"
     )
 endif()
 
@@ -318,13 +315,13 @@ endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa)
     mcux_add_macro(
-        CC  "-DPSA_CRYPTO_DRIVER_ELE_S4XX"
+        "-DPSA_CRYPTO_DRIVER_ELE_S4XX"
     )
 endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage)
     mcux_add_macro(
-        CC  "-DPSA_CRYPTO_DRIVER_ELE_S4XX"
+        "-DPSA_CRYPTO_DRIVER_ELE_S4XX"
     )
 endif()
 
@@ -402,7 +399,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-        CC  "-DPSA_CRYPTO_DRIVER_ELE_S2XX"
+        "-DPSA_CRYPTO_DRIVER_ELE_S2XX"
     )
 endif()
 
@@ -432,7 +429,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.casper)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-        "PSA_CRYPTO_DRIVER_CASPER"
+        "-DPSA_CRYPTO_DRIVER_CASPER"
     )
 endif()
 
@@ -458,7 +455,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-        "PSA_CRYPTO_DRIVER_HASHCRYPT"
+        "-DPSA_CRYPTO_DRIVER_HASHCRYPT"
     )
 endif()
 
@@ -501,7 +498,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.caam)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-        CC  "-DPSA_CRYPTO_DRIVER_CAAM"
+        "-DPSA_CRYPTO_DRIVER_CAAM"
     )
 
 endif()
@@ -528,7 +525,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ela_csec)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-        CC  "-DPSA_CRYPTO_DRIVER_ELA_CSEC"
+        "-DPSA_CRYPTO_DRIVER_ELA_CSEC"
     )
 
 endif()
@@ -568,7 +565,7 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb)
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
-        CC  "-DPSA_CRYPTO_DRIVER_ELE_HSEB"
+        "-DPSA_CRYPTO_DRIVER_ELE_HSEB"
     )
 endif()
 
@@ -609,6 +606,6 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi)
                   ${SdkRootDirPath}/components/psa_crypto_driver/)
   mcux_add_include(INCLUDES sgi BASE_PATH
                    ${SdkRootDirPath}/components/psa_crypto_driver/)
-  mcux_add_macro(CC "-DPSA_CRYPTO_DRIVER_SGI")
-  mcux_add_macro(CC "-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED")
+  mcux_add_macro("-DPSA_CRYPTO_DRIVER_SGI")
+  mcux_add_macro("-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED")
 endif()
