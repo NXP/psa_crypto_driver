@@ -54,7 +54,8 @@ typedef struct {
 typedef struct {
     uint32_t ctx[MCUXCLCIPHER_AES_CONTEXT_SIZE_IN_WORDS];
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    const mcuxClCipher_ModeDescriptor_t *mode;
+    psa_algorithm_t alg;
+    psa_key_type_t key_type;
     psa_encrypt_or_decrypt_t cipher_direction;
 } sgi_cipher_operation_t;
 #endif /* SGI_CRYPTO_PRIMITIVES_H */

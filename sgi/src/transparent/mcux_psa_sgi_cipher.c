@@ -434,13 +434,9 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Variable for the AES mode. */
-    psa_cipher_to_sgi_alg(alg, &operation->mode);
-    if (NULL == operation->mode) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
     operation->cipher_direction = cipher_direction;
+    operation->alg = alg;
+    operation->key_type = key_type;
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -530,7 +526,7 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
 {
 
     /* If alg takes IV, then it must by equal to MCUXCLAES_BLOCK_SIZE */
-    if (mcuxClCipher_Mode_AES_ECB_NoPadding != operation->mode &&
+    if (PSA_ALG_ECB_NO_PADDING != operation->alg &&
         MCUXCLAES_BLOCK_SIZE != iv_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -554,6 +550,13 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
 
     mcuxClCipher_Context_t * const ctx = (mcuxClCipher_Context_t *) operation->ctx;
 
+    /* Variable for the AES mode. */
+    const mcuxClCipher_ModeDescriptor_t *mode = NULL;
+    psa_cipher_to_sgi_alg(operation->alg, &mode);
+    if (NULL == mode) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     if (PSA_CRYPTO_DRIVER_ENCRYPT == operation->cipher_direction) {
 
         MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ei_status, ei_token, mcuxClCipher_init_encrypt(
@@ -561,8 +564,7 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
                                              /* mcuxClCipher_Context_t * const pContext:*/ ctx,
                                              /* const mcuxClKey_Handle_t key:           */ (
                                                  mcuxClKey_Handle_t) &operation->keyDesc,
-                                             /* mcuxClCipher_Mode_t mode:               */ operation
-                                             ->mode,
+                                             /* mcuxClCipher_Mode_t mode:               */ mode,
                                              /* mcuxCl_InputBuffer_t pIv:               */ iv,
                                              /* uint32_t ivLength:                     */ iv_length)
                                          );
@@ -580,8 +582,7 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
                                              /* mcuxClCipher_Context_t * const pContext:*/ ctx,
                                              /* const mcuxClKey_Handle_t key:           */ (
                                                  mcuxClKey_Handle_t) &operation->keyDesc,
-                                             /* mcuxClCipher_Mode_t mode:               */ operation
-                                             ->mode,
+                                             /* mcuxClCipher_Mode_t mode:               */ mode,
                                              /* mcuxCl_InputBuffer_t pIv:               */ iv,
                                              /* uint32_t ivLength:                     */ iv_length)
                                          );
@@ -710,7 +711,8 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (0u != (pCtx->common.totalInputLength > output_size)) {
+    /* Check if output buffer is sufficient */
+    if (PSA_CIPHER_FINISH_OUTPUT_SIZE((operation->key_type), (operation->alg)) > output_size) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
     /* Initialize session */
