@@ -18,6 +18,7 @@
 #include "mcux_psa_s2xx_asymmetric_signature.h"
 #include "mcux_psa_s2xx_common_compute.h"
 #include "mcux_psa_s2xx_common_key_management.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /* Public key is double length of private key + 1byte for leading byte (0x04) which is indicating uncompressed format.
  * Support for 521 means we might need two additional bytes per ECC coordinate, hence 132 Bytes in total. */
@@ -83,8 +84,15 @@ static psa_status_t validate_key_bitlen_for_hash_sign(const psa_key_attributes_t
                                                       size_t hash_length)
 {
     size_t hash_alg_bitlen   = PSA_BYTES_TO_BITS(PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg)));
-    size_t hash_input_bitlen = PSA_BYTES_TO_BITS(hash_length);
+    size_t hash_input_bitlen = 0u;
     size_t key_bitlen        = psa_get_key_bits(attributes);
+
+    /* Wrapcheck for `PSA_BYTES_TO_BITS(hash_length)` */
+    if (true == mcux_psa_mul_size_t_wrapcheck(hash_length, 8u))
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    hash_input_bitlen = PSA_BYTES_TO_BITS(hash_length);
 
     /* NIST-P 521 can used for signing 512-bit hashes,
      * so we just update the bitlen for the comparison
@@ -116,9 +124,17 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
     psa_key_type_t key_type       = psa_get_key_type(attributes);
     sss_key_part_t key_part       = kSSS_KeyPart_NONE;
     sss_cipher_type_t cipher_type = (sss_cipher_type_t) 0;
-    size_t allocation_size        = PSA_BITS_TO_BYTES(key_bits);
+    size_t allocation_size        = 0u;
     uint8_t *key_data             = NULL;
     size_t key_data_size          = 0u;
+
+    /* Wrapcheck for PSA_BITS_TO_BYTES(key_bits) */
+    if (true == mcux_psa_add_size_t_wrapcheck(key_bits, 7u))
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    allocation_size = PSA_BITS_TO_BYTES(key_bits);
 
     /* For exporting the public part of the key */
     uint8_t public_key_data[MAX_PAIR_KEY_SIZE_IN_BYTES] = {0u};
@@ -195,7 +211,7 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
 
 /** \defgroup psa_asym_sign PSA transparent key driver entry points for asymmetric signatures
  *
- *  Entry points for AEAD encryption and decryption as described by the PSA
+ *  Entry points for asymmetric signatures as described by the PSA
  *  Cryptoprocessor Driver interface specification
  *
  *  @{

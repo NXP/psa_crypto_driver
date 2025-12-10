@@ -80,8 +80,10 @@ psa_status_t ele_s2xx_opaque_export_key(const psa_key_attributes_t *attributes,
  */
 psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attributes,
                                                const uint8_t *key_buffer,
-                                               size_t key_buffer_size, uint8_t *data,
-                                               size_t data_size, size_t *data_length);
+                                               size_t key_buffer_size,
+                                               uint8_t *data,
+                                               size_t data_size,
+                                               size_t *data_length);
 
 /*!
  * \brief Destroy a random key

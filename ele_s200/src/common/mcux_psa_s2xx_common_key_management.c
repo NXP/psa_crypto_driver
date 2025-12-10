@@ -11,8 +11,10 @@
  *
  */
 
+#include "mcux_psa_s2xx_common_compute.h"
 #include "mcux_psa_s2xx_common_key_management.h"
 #include "mcux_psa_s2xx_key_locations.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 
 #if (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
@@ -356,26 +358,35 @@ exit:
 }
 
 /* Translate the vendor-defined ALG_NXP_* values to s2xx kSSS_KeyProp_CryptoAlgo_* values */
-static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes,
-                                          sss_sscp_key_property_t *s2xx_algo_prop,
-                                          sss_key_part_t *s2xx_key_part,
-                                          sss_cipher_type_t *s2xx_cipher_type,
-                                          size_t *allocation_size)
+static psa_status_t ele_s2xx_get_algo_keyprop(const psa_key_attributes_t *attributes,
+                                              sss_sscp_key_property_t *s2xx_algo_prop,
+                                              sss_key_part_t *s2xx_key_part,
+                                              sss_cipher_type_t *s2xx_cipher_type,
+                                              size_t *allocation_size)
 {
-    psa_status_t status = PSA_SUCCESS;
+    psa_status_t status     = PSA_SUCCESS;
+    psa_key_type_t key_type = psa_get_key_type(attributes);
+    size_t key_bits         = psa_get_key_bits(attributes);
+
+    /* Wrapcheck for PSA_BITS_TO_BYTES(key_bits) */
+    if (true == mcux_psa_add_size_t_wrapcheck(key_bits, 7u))
+    {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
 
     /* Deal with the key part */
-    if (true == PSA_KEY_TYPE_IS_ASYMMETRIC(psa_get_key_type(attributes)))
+    if (true == PSA_KEY_TYPE_IS_ASYMMETRIC(key_type))
     {
-        if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(psa_get_key_type(attributes)))
+        if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(key_type))
         {
             *s2xx_key_part   = kSSS_KeyPart_Public;
-            *allocation_size = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(psa_get_key_bits(attributes));
+            *allocation_size = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(key_bits);
         }
-        else if (true == PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes)))
+        else if (true == PSA_KEY_TYPE_IS_KEY_PAIR(key_type))
         {
             *s2xx_key_part   = kSSS_KeyPart_Pair;
-            *allocation_size = (PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(psa_get_key_bits(attributes)) + PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
+            *allocation_size = (PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(key_bits) + PSA_BITS_TO_BYTES(key_bits));
         }
         else
         {
@@ -388,7 +399,7 @@ static psa_status_t get_s2xx_algo_keyprop(const psa_key_attributes_t *attributes
         /* Symmetric is simple */
         *s2xx_key_part    = kSSS_KeyPart_Default;
         *s2xx_cipher_type = kSSS_CipherType_SYMMETRIC;
-        *allocation_size  = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
+        *allocation_size  = PSA_BITS_TO_BYTES(key_bits);
     }
 
     status = PSA_SUCCESS;
@@ -499,7 +510,7 @@ static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attribu
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Keyobject init failed");
     }
 
-    psa_status = get_s2xx_algo_keyprop(attributes, &algorithm_key_property, &key_part, &cipher_type, &allocation_size);
+    psa_status = ele_s2xx_get_algo_keyprop(attributes, &algorithm_key_property, &key_part, &cipher_type, &allocation_size);
     if (PSA_SUCCESS != psa_status)
     {
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Valid keyproperty not found");

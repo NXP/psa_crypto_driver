@@ -16,6 +16,7 @@
 #include "mcux_psa_s2xx_aead.h"
 #include "mcux_psa_s2xx_common_compute.h"
 #include "mcux_psa_s2xx_common_key_management.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
@@ -161,6 +162,12 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
 
     /* Nonce can't be NULL */
     if (NULL == nonce || 0u == nonce_length)
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Wrapcheck for `plaintext_length + tag_length` */
+    if (true == mcux_psa_add_size_t_wrapcheck(plaintext_length, tag_length))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }

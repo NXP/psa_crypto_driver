@@ -17,6 +17,7 @@
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_s2xx_common_key_management.h"
 #include "mcux_psa_s2xx_common_compute.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /* Number of valid tag lengths sizes both for CCM and GCM modes */
 #define VALID_TAG_LENGTH_SIZE 7u
@@ -172,6 +173,12 @@ psa_status_t ele_s2xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes
     tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
 
     /* No check for input and additional data as 0 value for these is allowed */
+
+    /* Wrapcheck for `plaintext_length + tag_length` */
+    if (true == mcux_psa_add_size_t_wrapcheck(plaintext_length, tag_length))
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     /* Output buffer has to be atleast Input buffer size  -> Check for encrypt */
     if (ciphertext_size < (plaintext_length + tag_length))

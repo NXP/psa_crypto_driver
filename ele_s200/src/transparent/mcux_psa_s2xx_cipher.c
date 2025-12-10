@@ -17,6 +17,7 @@
 #include "mcux_psa_s2xx_cipher.h"
 #include "mcux_psa_s2xx_common_compute.h"
 #include "mcux_psa_s2xx_common_key_management.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
@@ -87,6 +88,12 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
 
     /* Key buffer or size can't be NULL */
     if (NULL == key_buffer || 0u == key_buffer_size)
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Wrapcheck for `PSA_BYTES_TO_BITS(key_buffer_size)` */
+    if (true == mcux_psa_mul_size_t_wrapcheck(key_buffer_size, 8u))
     {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -211,6 +218,12 @@ psa_status_t ele_s2xx_transparent_cipher_decrypt(const psa_key_attributes_t *att
 
     uint32_t iv_length          = 0u;
     uint32_t expected_op_length = 0u;
+
+    /* Wrapcheck for `PSA_BYTES_TO_BITS(key_buffer_size)` */
+    if (true == mcux_psa_mul_size_t_wrapcheck(key_buffer_size, 8u))
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     if (PSA_BYTES_TO_BITS(key_buffer_size) != key_bits)
     {

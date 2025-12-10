@@ -18,6 +18,7 @@
 #include "mcux_psa_s2xx_common_key_management.h"
 #include "mcux_psa_s2xx_hash.h"
 #include "mcux_psa_s2xx_common_compute.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 #define NISTP521_BITLEN (521u)
 
@@ -77,8 +78,15 @@ static psa_status_t validate_key_bitlen_for_hash_sign(const psa_key_attributes_t
                                                       size_t hash_length)
 {
     size_t hash_alg_bitlen   = PSA_BYTES_TO_BITS(PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg)));
-    size_t hash_input_bitlen = PSA_BYTES_TO_BITS(hash_length);
+    size_t hash_input_bitlen = 0u;
     size_t key_bitlen        = psa_get_key_bits(attributes);
+
+    /* Wrapcheck for `PSA_BYTES_TO_BITS(hash_length)` */
+    if (true == mcux_psa_mul_size_t_wrapcheck(hash_length, 8u))
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    hash_input_bitlen = PSA_BYTES_TO_BITS(hash_length);
 
     if (true == PSA_ALG_IS_ECDSA(alg))
     {
@@ -143,7 +151,7 @@ static psa_status_t validate_key_bitlen_for_message_sign(const psa_key_attribute
 
 /** \defgroup psa_asym_sign_opaque PSA opaque key driver entry points for asymmetric signatures
  *
- *  Entry points for AEAD encryption and decryption as described by the PSA
+ *  Entry points for asymmetric signatures as described by the PSA
  *  Cryptoprocessor Driver interface specification with the use of opaque keys
  *
  *  @{

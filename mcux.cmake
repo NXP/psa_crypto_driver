@@ -609,3 +609,16 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi)
   mcux_add_macro("-DPSA_CRYPTO_DRIVER_SGI")
   mcux_add_macro("-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED")
 endif()
+
+########################
+#      Utilities       #
+########################
+
+if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline)
+  mcux_add_source(
+    SOURCES utils/mcux_psa_util_wrapcheck_static_inline.h
+    BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/)
+  mcux_add_include(
+    INCLUDES utils/
+    BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/)
+endif()

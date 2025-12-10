@@ -18,6 +18,7 @@
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_s2xx_common_key_management.h"
 #include "mcux_psa_s2xx_common_compute.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     const uint8_t *data, size_t data_length, uint8_t *key_buffer,
@@ -125,42 +126,54 @@ psa_status_t ele_s2xx_opaque_export_key(const psa_key_attributes_t *attributes,
     psa_status_t status         = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
-    if (MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location))
+    do
     {
-        /* At this point the data has already been retrieved from
-         * persistent storage and no ELE calls are needed.
-         */
-        (void)memcpy(data, key_buffer, key_buffer_size);
-        *data_length = key_buffer_size;
-        status = PSA_SUCCESS;
-    }
-    else if (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
-    {
-        if (((psa_key_usage_t)0u == psa_get_key_usage_flags(attributes)) &&
-            (PSA_ALG_NONE == psa_get_key_algorithm(attributes)) &&
-            (PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1) == psa_get_key_type(attributes)))
+        if (MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location))
         {
-            /* Reuse public key export */
-            status = ele_s2xx_opaque_export_public_key(attributes, key_buffer, key_buffer_size, data, data_size, data_length);
+            if (data_size < key_buffer_size)
+            {
+                status = PSA_ERROR_BUFFER_TOO_SMALL;
+                break;
+            }
+
+            /* At this point the data has already been retrieved from
+            * persistent storage and no ELE calls are needed.
+            */
+            (void)memcpy(data, key_buffer, key_buffer_size);
+            *data_length = key_buffer_size;
+            status       = PSA_SUCCESS;
+        }
+        else if (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
+        {
+            if (((psa_key_usage_t)0u == psa_get_key_usage_flags(attributes)) &&
+                (PSA_ALG_NONE == psa_get_key_algorithm(attributes)) &&
+                (PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1) == psa_get_key_type(attributes)))
+            {
+                /* Reuse public key export */
+                status = ele_s2xx_opaque_export_public_key(attributes, key_buffer, key_buffer_size, data, data_size, data_length);
+            }
+            else
+            {
+                /* Nothing else supported */
+                status = PSA_ERROR_NOT_SUPPORTED;
+            }
         }
         else
         {
-            /* Nothing else supported */
             status = PSA_ERROR_NOT_SUPPORTED;
         }
-    }
-    else
-    {
-        status = PSA_ERROR_NOT_SUPPORTED;
-    }
+
+    } while (false);
 
     return status;
 }
 
 psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attributes,
                                                const uint8_t *key_buffer,
-                                               size_t key_buffer_size, uint8_t *data,
-                                               size_t data_size, size_t *data_length)
+                                               size_t key_buffer_size,
+                                               uint8_t *data,
+                                               size_t data_size,
+                                               size_t *data_length)
 {
     psa_status_t status      = PSA_ERROR_CORRUPTION_DETECTED;
     sss_sscp_object_t sssKey = {0};
@@ -273,28 +286,48 @@ size_t ele_s2xx_opaque_get_key_buffer_size(const psa_key_attributes_t *attribute
     psa_key_type_t type         = psa_get_key_type(attributes);
     size_t key_buffer_size      = 0u;
 
-    if (PSA_KEY_LOCATION_S200_KEY_STORAGE_NON_EL2GO == location)
+    do
     {
-        if (true == PSA_KEY_TYPE_IS_ECC(type))
+        if (PSA_KEY_LOCATION_S200_KEY_STORAGE_NON_EL2GO == location)
         {
-            /* If it's ECC, then it's a key pair, as PSA does not allow
-             * generating only public parts of keys AND for S200 die-unique keys
-             * we blob the full keypair (vs PSA's way of only storing the
-             * private keypart for ECC key pairs).
+            /* Wrapcheck for `ele_s2xx_get_ecc_keypair_size(bits)`,
+             * or `PSA_BITS_TO_BYTES(bits)`.
              */
-            key_buffer_size = ele_s2xx_get_ecc_keypair_size(bits);
+            if (true == mcux_psa_add_size_t_wrapcheck(bits, 7u))
+            {
+                key_buffer_size = 0u;
+                break;
+            }
+
+            if (true == PSA_KEY_TYPE_IS_ECC(type))
+            {
+                /* If it's ECC, then it's a key pair, as PSA does not allow
+                 * generating only public parts of keys AND for S200 die-unique keys
+                 * we blob the full keypair (vs PSA's way of only storing the
+                 * private keypart for ECC key pairs).
+                 */
+                key_buffer_size = ele_s2xx_get_ecc_keypair_size(bits);
+            }
+            else
+            {
+                key_buffer_size = PSA_BITS_TO_BYTES(bits);
+            }
+
+            /* Wrapcheck for `key_buffer_size += S200_BLOB_OVERHEAD` */
+            if (true == mcux_psa_add_size_t_wrapcheck(key_buffer_size, S200_BLOB_OVERHEAD))
+            {
+                key_buffer_size = 0u;
+            }
+            else
+            {
+                key_buffer_size += S200_BLOB_OVERHEAD;
+            }
         }
         else
         {
-            key_buffer_size = PSA_BITS_TO_BYTES(bits);
+            key_buffer_size = 0u;
         }
-
-        key_buffer_size += S200_BLOB_OVERHEAD;
-    }
-    else
-    {
-        key_buffer_size = 0u;
-    }
+    } while (false);
 
     return key_buffer_size;
 }
@@ -500,6 +533,14 @@ psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes
     sss_key_part_t key_part       = {0u};
     sss_cipher_type_t cipher_type = {0u};
     size_t allocation_size        = 0u;
+
+    /* Wrapcheck for `PSA_BITS_TO_BYTES(bits)`,
+     * and `ele_s2xx_get_ecc_keypair_size(bits)`.
+     */
+    if (true == mcux_psa_add_size_t_wrapcheck(bits, 7u))
+    {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     // TBD is this OK?
     /* We'll be permissive and leave the key usage checks to PSA */
