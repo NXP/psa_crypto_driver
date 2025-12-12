@@ -38,12 +38,10 @@ status_t CRYPTO_InitHardware(void)
 
     /* Mutex for access to sgi crypto HW */
     if (mcux_mutex_init(&sgi_hwcrypto_mutex) != 0) {
-        PRINTF("NO memory - init failed\n");
         return kStatus_Fail;
     }
 
     if ((result = mcux_mutex_lock(&sgi_hwcrypto_mutex)) != 0) {
-        PRINTF("Mutex lock failed\n");
         return kStatus_Fail;
     }
 
@@ -56,7 +54,6 @@ status_t CRYPTO_InitHardware(void)
 
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        PRINTF("Mutex unlock failed\n");
         return kStatus_Fail;
     }
 
