@@ -245,6 +245,64 @@ psa_status_t ele_s2xx_common_key_agreement(sss_sscp_object_t *sssKey,
 
 /* UTILITIES */
 
+
+static psa_status_t get_ele_fw_version(uint8_t *ele_fw_version)
+{
+    sss_mgmt_t mgmtContext  = {0u};
+    psa_status_t psa_status = PSA_ERROR_INVALID_ARGUMENT;
+
+    size_t datalen = 8u;
+
+    /* PropertyId of Edgelock Firmware version */
+    uint32_t propertyId = 0x51u;
+
+    do
+    {
+        if (sss_mgmt_context_init(&mgmtContext, &g_ele_ctx.sssSession) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        /* READ FUSE */
+        if (sss_mgmt_get_property(&mgmtContext, propertyId, ele_fw_version, &datalen) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        /* If all steps before passes without break, then consider it as success*/
+        psa_status = PSA_SUCCESS;
+
+    } while (false);
+
+    /* FREE MGMT CONTEXT */
+    (void)sss_mgmt_context_free(&mgmtContext);
+
+    return psa_status;
+}
+
+psa_status_t is_fw_loaded(void)
+{
+    uint32_t ele_version[2] = { 0u };
+
+    /* ELE will respond with the FW version equal to this iff no FW is loaded */
+    static const uint32_t no_fw_loaded[2] = { 0xffffffffu, 0xffffffffu };
+
+    if (get_ele_fw_version((uint8_t *)ele_version) != PSA_SUCCESS )
+    {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+    if (memcmp(no_fw_loaded, ele_version, sizeof(no_fw_loaded)) == 0)
+    {
+        /* No FW loaded. We only support S200 baseline ROM functionality */
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+    /* Some FW is loaded */
+    return PSA_SUCCESS;
+}
+
+
 /**
  * Taken from the mbedtls library/constant_time.c implementation file and
  * modified to not depend on any MBEDTLS preprocessor macros.

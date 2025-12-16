@@ -60,6 +60,13 @@ psa_status_t ele_s2xx_get_key(sss_sscp_object_t *sssKey,
                               sss_key_part_t key_part,
                               size_t *key_bitlen);
 
+psa_status_t ele_s2xx_get_ecc_public_key_from_private(sss_sscp_object_t *sssKey,
+                                                      uint8_t *data,
+                                                      size_t data_size,
+                                                      size_t *data_length,
+                                                      size_t *key_bitlen);
+
+
 /** Erase and delete a key from the S200.
  *
  * The key is first erased and then the key object is deleted with keystore

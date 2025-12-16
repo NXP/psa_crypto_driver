@@ -212,62 +212,6 @@ static int get_tag(const unsigned char **p, const unsigned char *end, size_t *le
     return (get_len(p, end, len));
 }
 
-static psa_status_t get_ele_fw_version(uint8_t *ele_fw_version)
-{
-    sss_mgmt_t mgmtContext  = {0u};
-    psa_status_t psa_status = PSA_ERROR_INVALID_ARGUMENT;
-
-    size_t datalen = 8u;
-
-    /* PropertyId of Edgelock Firmware version */
-    uint32_t propertyId = 0x51u;
-
-    do
-    {
-        if (sss_mgmt_context_init(&mgmtContext, &g_ele_ctx.sssSession) != kStatus_SSS_Success)
-        {
-            break;
-        }
-
-        /* READ FUSE */
-        if (sss_mgmt_get_property(&mgmtContext, propertyId, ele_fw_version, &datalen) != kStatus_SSS_Success)
-        {
-            break;
-        }
-
-        /* If all steps before passes without break, then consider it as success*/
-        psa_status = PSA_SUCCESS;
-
-    } while (false);
-
-    /* FREE MGMT CONTEXT */
-    (void)sss_mgmt_context_free(&mgmtContext);
-
-    return psa_status;
-}
-
-static psa_status_t is_fw_loaded(void)
-{
-    uint32_t ele_version[2] = { 0u };
-
-    /* ELE will respond with the FW version equal to this iff no FW is loaded */
-    static const uint32_t no_fw_loaded[2] = { 0xffffffffu, 0xffffffffu };
-
-    if (get_ele_fw_version((uint8_t *)ele_version) != PSA_SUCCESS )
-    {
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    if (memcmp(no_fw_loaded, ele_version, sizeof(no_fw_loaded)) == 0)
-    {
-        /* No FW loaded. We only support S200 baseline ROM functionality */
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Some FW is loaded */
-    return PSA_SUCCESS;
-}
-
 static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_size, psa_cmd_t *psa_cmd)
 {
     psa_status_t psa_status = PSA_ERROR_INVALID_ARGUMENT;
@@ -587,7 +531,6 @@ psa_status_t ele_s2xx_set_key(sss_sscp_object_t *sssKey,
     return PSA_SUCCESS;
 }
 
-
 psa_status_t ele_s2xx_get_key(sss_sscp_object_t *sssKey,
                               uint8_t *key_buffer,
                               size_t key_buffer_size,
@@ -600,6 +543,24 @@ psa_status_t ele_s2xx_get_key(sss_sscp_object_t *sssKey,
     *key_buffer_length = key_buffer_size;
     if ((sss_sscp_key_store_get_key(&g_ele_ctx.keyStore, sssKey, key_buffer,
                                     key_buffer_length, key_bitlen, key_part)) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    return status;
+}
+
+psa_status_t ele_s2xx_get_ecc_public_key_from_private(sss_sscp_object_t *sssKey,
+                                                      uint8_t *data,
+                                                      size_t data_size,
+                                                      size_t *data_length,
+                                                      size_t *key_bitlen)
+{
+    psa_status_t status = PSA_SUCCESS;
+
+    *data_length = data_size;
+    if (sss_sscp_key_store_get_key(&g_ele_ctx.keyStore, sssKey, data, data_length,
+                                   key_bitlen, kSSS_KeyPart_Public) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_HARDWARE_FAILURE;
     }

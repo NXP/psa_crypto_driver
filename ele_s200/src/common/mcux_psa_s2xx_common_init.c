@@ -106,9 +106,9 @@ status_t CRYPTO_InitHardware(void)
     status_t result     = kStatus_Fail;
     sss_sscp_rng_t rctx = {0u};
 
-    if (g_isCryptoHWInitialized == true)
+    if (true == g_isCryptoHWInitialized)
     {
-        return 0;
+        return kStatus_Success;
     }
 
     /* Mutex for access to ele_crypto HW */
