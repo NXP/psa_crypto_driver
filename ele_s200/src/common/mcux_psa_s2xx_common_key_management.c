@@ -609,16 +609,35 @@ psa_status_t ele_s2xx_get_key(sss_sscp_object_t *sssKey,
 
 psa_status_t ele_s2xx_delete_key(sss_sscp_object_t *sssKey)
 {
-    psa_status_t status = PSA_SUCCESS;
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
-    /* At first, try to erase the key */
-    (void)sss_sscp_key_store_erase_key(&g_ele_ctx.keyStore, sssKey);
-
-    /* Regardless of the erase operation success, free the key object */
-    if (sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment) != kStatus_SSS_Success)
+    do
     {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-    }
+        if (NULL == sssKey)
+        {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            break;
+        }
+
+        /* Check if the key object has been initialized; return early if not */
+        if (NULL == sssKey->keyStore)
+        {
+            status = PSA_ERROR_DOES_NOT_EXIST;
+            break;
+        }
+
+        /* At first, try to erase the key */
+        (void)sss_sscp_key_store_erase_key(&g_ele_ctx.keyStore, sssKey);
+
+        /* Regardless of the erase operation success, free the key object */
+        if (sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment) != kStatus_SSS_Success)
+        {
+            status = PSA_ERROR_HARDWARE_FAILURE;
+            break;
+        }
+
+        status = PSA_SUCCESS;
+    } while (false);
 
     return status;
 }
