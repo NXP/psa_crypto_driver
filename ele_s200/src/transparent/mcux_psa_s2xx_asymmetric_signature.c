@@ -20,6 +20,17 @@
 #include "mcux_psa_s2xx_common_key_management.h"
 #include "mcux_psa_util_wrapcheck_static_inline.h"
 
+/* For exporting public keys, we will directly use the internal export wrapper,
+ * so that we don't call the public psa_export_public_key() API.
+ */
+extern psa_status_t psa_export_public_key_internal(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer,
+    size_t key_buffer_size,
+    uint8_t *data,
+    size_t data_size,
+    size_t *data_length);
+
 /* Public key is double length of private key + 1byte for leading byte (0x04) which is indicating uncompressed format.
  * Support for 521 means we might need two additional bytes per ECC coordinate, hence 132 Bytes in total. */
 #define MAX_PUB_KEY_SIZE_IN_BYTES  (132u + 1u)
@@ -128,6 +139,9 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
     uint8_t *key_data             = NULL;
     size_t key_data_size          = 0u;
 
+    /* Unused */
+    (void)key_buffer_size;
+
     /* Wrapcheck for PSA_BITS_TO_BYTES(key_bits) */
     if (true == mcux_psa_add_size_t_wrapcheck(key_bits, 7u))
     {
@@ -135,10 +149,6 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
     }
 
     allocation_size = PSA_BITS_TO_BYTES(key_bits);
-
-    /* For exporting the public part of the key */
-    uint8_t public_key_data[MAX_PAIR_KEY_SIZE_IN_BYTES] = {0u};
-    size_t public_key_data_length                       = 0u;
 
     /* Check if we support ECC family */
     status = PSA_SUCCESS;
@@ -163,30 +173,14 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
 
     if (true == PSA_KEY_TYPE_IS_KEY_PAIR(key_type))
     {
-        /* In PSA, an ECC key pair is represented by the secret value,
-         * so we need to also export the public part for S2XX and position them
-         * correctly in memory [pub_x, pub_y, private].
+
+        /* PSA ECC keypair is only the private part. So we import only the
+         * private part to the S200 and we'll worry about the public part later,
+         * if at all needed (e.g. signature verification with a keypair).
          */
-        key_part        = kSSS_KeyPart_Pair;
-        allocation_size = allocation_size * 3u;
-
-        status = psa_export_public_key(psa_get_key_id(attributes), public_key_data, MAX_PAIR_KEY_SIZE_IN_BYTES, &public_key_data_length);
-
-        if (PSA_SUCCESS != status)
-        {
-            return status;
-        }
-
-        if (0u == public_key_data_length)
-        {
-            return PSA_ERROR_GENERIC_ERROR;
-        }
-
-        key_data      = public_key_data + 1;
-        key_data_size = public_key_data_length - 1u;
-
-        (void)memcpy(key_data + key_data_size, key_buffer, PSA_BITS_TO_BYTES(key_bits));
-        key_data_size = key_data_size + PSA_BITS_TO_BYTES(key_bits);
+        key_part      = kSSS_KeyPart_Private;
+        key_data      = (uint8_t *)key_buffer;
+        key_data_size = PSA_BITS_TO_BYTES(key_bits);
     }
     else
     {
@@ -310,9 +304,17 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
                                               const uint8_t *signature,
                                               size_t signature_length)
 {
-    psa_status_t status      = PSA_ERROR_CORRUPTION_DETECTED;
-    sss_sscp_object_t sssKey = {0};
-    sss_algorithm_t ele_alg  = {0};
+    psa_status_t status                      = PSA_ERROR_CORRUPTION_DETECTED;
+    sss_sscp_object_t sssKey                 = {0};
+    sss_sscp_object_t sssKey_public_exported = {0};
+    sss_algorithm_t ele_alg                  = {0};
+    size_t bits                              = psa_get_key_bits(attributes);
+    psa_ecc_family_t family                  = PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(attributes));
+
+    /* For exporting the public part of the key in case of ECC keypair */
+    uint8_t public_key_data[MAX_PAIR_KEY_SIZE_IN_BYTES] = {0u};
+    size_t public_key_data_size                         = sizeof(public_key_data);
+    size_t public_key_data_length                       = 0u;
 
     /* Convert PSA_ALG_* to ELE value and validate supported alg */
     status = translate_psa_asym_to_ele_asym(attributes, alg, &ele_alg);
@@ -354,20 +356,80 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    status = asymmetric_sign_setkey(attributes, &sssKey, key_buffer, key_buffer_size, psa_get_key_bits(attributes));
+    status = asymmetric_sign_setkey(attributes, &sssKey, key_buffer,
+                                    key_buffer_size, psa_get_key_bits(attributes));
     if (PSA_SUCCESS != status)
     {
         goto exit;
     }
 
-    status = ele_s2xx_common_verify_digest((uint8_t *)hash, hash_length, (uint8_t *)signature, signature_length, &sssKey, ele_alg);
-    if (PSA_SUCCESS != status)
+    if (true == PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes)))
     {
-        goto exit;
+        /* The previous setkey call imported only private part. We are doing
+         * verification, so we need the public part. We export it and set it
+         * separately.
+         */
+
+        if (is_fw_loaded() == PSA_SUCCESS)
+        {
+            /* FW is loaded, so we have the accelerated pubkey export API */
+            status = ele_s2xx_get_ecc_public_key_from_private(&sssKey,
+                                                              (public_key_data + 1),
+                                                              (public_key_data_size - 1u),
+                                                              &public_key_data_length,
+                                                              &bits);
+            if (PSA_SUCCESS != status)
+            {
+                goto exit;
+            }
+            public_key_data[0]     = 0x04u;
+            public_key_data_length += 1u;
+        }
+        else
+        {
+            /* FW is not loaded, so we defer back to the SW implementation */
+            status = psa_export_public_key_internal(attributes,
+                                                    key_buffer,
+                                                    key_buffer_size,
+                                                    public_key_data,
+                                                    public_key_data_size,
+                                                    &public_key_data_length);
+            if (PSA_SUCCESS != status)
+            {
+                goto exit;
+            }
+        }
+
+        /* Set up the public-only key attributes and import into S200 */
+        psa_key_attributes_t attributes_public = *attributes;
+        psa_set_key_type(&attributes_public, PSA_KEY_TYPE_ECC_PUBLIC_KEY(family));
+
+        status = asymmetric_sign_setkey(&attributes_public,
+                                        &sssKey_public_exported,
+                                        public_key_data,
+                                        public_key_data_size,
+                                        psa_get_key_bits(&attributes_public));
+        if (PSA_SUCCESS != status)
+        {
+            goto exit;
+        }
+
+        /* Finally, verify with the exported public key */
+        status = ele_s2xx_common_verify_digest((uint8_t *)hash, hash_length,
+                                               (uint8_t *)signature, signature_length,
+                                               &sssKey_public_exported, ele_alg);
+    }
+    else
+    {
+        /* We already have the public key, we can use it directly */
+        status = ele_s2xx_common_verify_digest((uint8_t *)hash, hash_length,
+                                               (uint8_t *)signature, signature_length,
+                                               &sssKey, ele_alg);
     }
 
 exit:
     (void)ele_s2xx_delete_key(&sssKey);
+    (void)ele_s2xx_delete_key(&sssKey_public_exported);
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
