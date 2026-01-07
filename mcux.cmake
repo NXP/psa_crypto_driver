@@ -3,6 +3,10 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+########################
+#         OSAL         #
+########################
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.osal)
     mcux_add_source(
         SOURCES osal/osal_mutex.h
@@ -57,63 +61,22 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal)
     )
 endif()
 
+########################
+#      Threading       #
+########################
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt)
     mcux_add_macro(
         "-DPSA_CRYPTO_DRIVER_THREAD_EN"
     )
 endif()
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option)
-    # adding specific compile option to use HW TRNG
-    mcux_add_macro(
-        "-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED"
-    )
-endif()
+#########################
+# PSA Crypto HW Drivers #
+#########################
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.rw61x)
-    mcux_add_source(
-        SOURCES els_pkc/oracle/platforms/rw61x/mcuxClPsaDriver_Oracle_KeyRecipes.h
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-    mcux_add_include(
-        INCLUDES els_pkc/oracle/platforms/rw61x
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-endif()
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn)
-    mcux_add_source(
-        SOURCES els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes.h
-                els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes_Utils.c
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-    mcux_add_include(
-        INCLUDES els_pkc/oracle/platforms/mcxn
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-endif()
-
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mimxrt)
-    mcux_add_source(
-        SOURCES els_pkc/oracle/platforms/mimxrt/mcuxClPsaDriver_Oracle_KeyRecipes.h
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-    mcux_add_include(
-        INCLUDES els_pkc/oracle/platforms/mimxrt
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-endif()
-
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.lpc)
-    mcux_add_source(
-        SOURCES els_pkc/oracle/platforms/lpc/mcuxClPsaDriver_Oracle_KeyRecipes.h
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-    mcux_add_include(
-        INCLUDES els_pkc/oracle/platforms/lpc
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-endif()
+####### ELS_PKC ########
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle)
     mcux_add_source(
@@ -207,6 +170,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc)
     )
 endif()
 
+####### DCP ########
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.dcp)
     mcux_add_source(
         SOURCES dcp/dcp.h
@@ -233,6 +198,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.dcp)
         "-DPSA_CRYPTO_DRIVER_DCP"
     )
 endif()
+
+####### ELE S400 ########
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng)
     mcux_add_source(
@@ -354,6 +321,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common)
     )
 endif()
 
+####### ELE S200 ########
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent)
     mcux_add_source(
         SOURCES ele_s200/include/transparent/mcux_psa_s2xx_aead.h
@@ -413,6 +382,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s200)
     )
 endif()
 
+####### CASPER ########
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.casper)
     mcux_add_source(
         SOURCES casper/casper.h
@@ -443,6 +414,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.casper)
     )
 endif()
 
+####### HASHCRYPT ########
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt)
     mcux_add_source(
         SOURCES hashcrypt/hashcrypt.h
@@ -468,6 +441,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt)
         "-DPSA_CRYPTO_DRIVER_HASHCRYPT"
     )
 endif()
+
+####### CAAM ########
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.caam)
     mcux_add_source(
@@ -513,6 +488,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.caam)
 
 endif()
 
+####### ELA CSEC ########
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ela_csec)
     mcux_add_source(
         SOURCES ela_csec/ela_csec.h
@@ -539,6 +516,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ela_csec)
     )
 
 endif()
+
+####### ELE HSEB ########
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb)
     mcux_add_source(
@@ -578,6 +557,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb)
         "-DPSA_CRYPTO_DRIVER_ELE_HSEB"
     )
 endif()
+
+####### SGI ########
 
 if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.common)
   mcux_add_source(
@@ -621,6 +602,66 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi)
 endif()
 
 ########################
+#         TRNG         #
+########################
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option)
+    # adding specific compile option to use HW TRNG
+    mcux_add_macro(
+        "-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED"
+    )
+endif()
+
+########################
+#  EL2Go key recipes   #
+########################
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.rw61x)
+    mcux_add_source(
+        SOURCES els_pkc/oracle/platforms/rw61x/mcuxClPsaDriver_Oracle_KeyRecipes.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES els_pkc/oracle/platforms/rw61x
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn)
+    mcux_add_source(
+        SOURCES els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes.h
+                els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes_Utils.c
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES els_pkc/oracle/platforms/mcxn
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mimxrt)
+    mcux_add_source(
+        SOURCES els_pkc/oracle/platforms/mimxrt/mcuxClPsaDriver_Oracle_KeyRecipes.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES els_pkc/oracle/platforms/mimxrt
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.lpc)
+    mcux_add_source(
+        SOURCES els_pkc/oracle/platforms/lpc/mcuxClPsaDriver_Oracle_KeyRecipes.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES els_pkc/oracle/platforms/lpc
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
+########################
 #      Utilities       #
 ########################
 
@@ -631,4 +672,406 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inlin
   mcux_add_include(
     INCLUDES utils/
     BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/)
+endif()
+
+########################
+#      MbedTLS         #
+########################
+
+if(CONFIG_MCUX_COMPONENT_middleware.mbedtls)
+    mcux_add_iar_configuration(
+        CC  "--diag_suppress=Pa167,Pe177,Pe191,Pe546"
+        CX  "--diag_suppress=Pa167,Pe177,Pe191,Pe546"
+    )
+    mcux_add_armgcc_configuration(
+        CC  "-fomit-frame-pointer -Wno-unused-function"
+    )
+    mcux_add_source(
+        SOURCES # Sources
+                library/debug.c
+                library/debug_internal.h
+                library/mbedtls_check_config.h
+                library/mbedtls_config.c
+                library/mps_common.h
+                library/mps_error.h
+                library/mps_reader.c
+                library/mps_reader.h
+                library/mps_trace.c
+                library/mps_trace.h
+                library/net_sockets.c
+                library/pkcs7.c
+                library/ssl_cache.c
+                library/ssl_ciphersuites.c
+                library/ssl_ciphersuites_internal.h
+                library/ssl_client.c
+                library/ssl_client.h
+                library/ssl_cookie.c
+                library/ssl_debug_helpers.h
+                library/ssl_misc.h
+                library/ssl_msg.c
+                library/ssl_ticket.c
+                library/ssl_tls.c
+                library/ssl_tls12_client.c
+                library/ssl_tls12_server.c
+                library/ssl_tls13_client.c
+                library/ssl_tls13_generic.c
+                library/ssl_tls13_invasive.h
+                library/ssl_tls13_keys.c
+                library/ssl_tls13_keys.h
+                library/ssl_tls13_server.c
+                library/timing.c
+                library/version.c
+                library/x509.c
+                library/x509_create.c
+                library/x509_crl.c
+                library/x509_crt.c
+                library/x509_csr.c
+                library/x509_internal.h
+                library/x509_oid.c
+                library/x509_oid.h
+                library/x509write.c
+                library/x509write_crt.c
+                library/x509write_csr.c
+                # Include
+                include/mbedtls/build_info.h
+                include/mbedtls/debug.h
+                include/mbedtls/error.h
+                include/mbedtls/mbedtls_config.h
+                include/mbedtls/net_sockets.h
+                include/mbedtls/oid.h
+                include/mbedtls/pkcs7.h
+                include/mbedtls/ssl.h
+                include/mbedtls/ssl_cache.h
+                include/mbedtls/ssl_ciphersuites.h
+                include/mbedtls/ssl_cookie.h
+                include/mbedtls/ssl_ticket.h
+                include/mbedtls/timing.h
+                include/mbedtls/version.h
+                include/mbedtls/x509.h
+                include/mbedtls/x509_crl.h
+                include/mbedtls/x509_crt.h
+                include/mbedtls/x509_csr.h
+                include/mbedtls/private/config_adjust_x509.h
+                include/mbedtls/private/config_adjust_ssl.h
+        BASE_PATH ${SdkRootDirPath}/middleware/mbedtls/
+    )
+    mcux_add_include(
+        INCLUDES include
+                 include/mbedtls
+                 include/mbedtls/private
+                 library
+        BASE_PATH ${SdkRootDirPath}/middleware/mbedtls/
+    )
+
+    # Generated files
+    mcux_add_source(
+        SOURCES # Sources
+                mbedtls_config_check_user.h
+                mbedtls_config_check_final.h
+                mbedtls_config_check_before.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/generated_files_mbedtls
+    )
+
+    mcux_add_include(
+        INCLUDES generated_files_mbedtls
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver
+    )
+
+endif()
+
+########################
+#    TF-PSA-Crypto     #
+########################
+
+# TF-PSA-Crypto Core #
+if(CONFIG_MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto)
+    mcux_add_source(
+        SOURCES # Sources
+                core/alignment.h
+                core/psa_crypto.c
+                core/psa_crypto_client.c
+                core/psa_crypto_core.h
+                core/psa_crypto_core_common.h
+                # core/psa_crypto_driver_wrappers_no_static.h
+                core/psa_crypto_invasive.h
+                core/psa_crypto_its.h
+                core/psa_crypto_random_impl.h
+                core/psa_crypto_slot_management.c
+                core/psa_crypto_slot_management.h
+                core/psa_crypto_storage.c
+                core/psa_crypto_storage.h
+                core/psa_its_file.c
+                core/tf_psa_crypto_check_config.h
+                core/tf_psa_crypto_common.h
+                core/tf_psa_crypto_config.c
+                core/tf_psa_crypto_version.c
+                # Include mbedtls
+                include/mbedtls/asn1.h
+                include/mbedtls/asn1write.h
+                include/mbedtls/base64.h
+                include/mbedtls/compat-3-crypto.h
+                include/mbedtls/constant_time.h
+                include/mbedtls/lms.h
+                include/mbedtls/md.h
+                include/mbedtls/memory_buffer_alloc.h
+                include/mbedtls/nist_kw.h
+                include/mbedtls/pem.h
+                include/mbedtls/pk.h
+                include/mbedtls/platform.h
+                include/mbedtls/platform_time.h
+                include/mbedtls/platform_util.h
+                include/mbedtls/psa_util.h
+                include/mbedtls/threading.h
+                include/mbedtls/private/pk_private.h
+                # Include psa
+                include/psa/crypto.h
+                include/psa/crypto_adjust_auto_enabled.h
+                include/psa/crypto_adjust_config_dependencies.h
+                include/psa/crypto_adjust_config_derived.h
+                include/psa/crypto_adjust_config_key_pair_types.h
+                include/psa/crypto_adjust_config_synonyms.h
+                include/psa/crypto_builtin_composites.h
+                include/psa/crypto_builtin_key_derivation.h
+                include/psa/crypto_builtin_primitives.h
+                include/psa/crypto_compat.h
+                include/psa/crypto_config.h
+                include/psa/crypto_driver_common.h
+                include/psa/crypto_driver_contexts_composites.h
+                include/psa/crypto_driver_contexts_key_derivation.h
+                include/psa/crypto_driver_contexts_primitives.h
+                include/psa/crypto_driver_random.h
+                include/psa/crypto_extra.h
+                include/psa/crypto_platform.h
+                include/psa/crypto_sizes.h
+                include/psa/crypto_struct.h
+                include/psa/crypto_types.h
+                include/psa/crypto_values.h
+                # Include tf-psa-crypto
+                include/tf-psa-crypto/build_info.h
+                include/tf-psa-crypto/version.h
+        BASE_PATH ${SdkRootDirPath}/middleware/mbedtls/tf-psa-crypto
+    )
+    mcux_add_include(
+        INCLUDES core 
+                 include
+                 include/mbedtls
+                 include/mbedtls/private
+                 include/psa
+                 include/tf-psa-crypto
+        BASE_PATH ${SdkRootDirPath}/middleware/mbedtls/tf-psa-crypto
+    )
+
+    # Generated files
+    mcux_add_source(
+        SOURCES # Sources
+                tf_psa_crypto_config_check_user.h
+                tf_psa_crypto_config_check_final.h
+                tf_psa_crypto_config_check_before.h
+                psa_crypto_driver_wrappers_no_static.c
+                psa_crypto_driver_wrappers.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/generated_files_tf_psa_crypto
+    )
+
+    mcux_add_include(
+        INCLUDES generated_files_tf_psa_crypto
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver
+    )
+
+    # MCUX defines for key location propagation
+    mcux_add_source(
+        SOURCES # Sources
+                mcux_psa_defines.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver
+    )
+    mcux_add_include(
+        INCLUDES .
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver
+    )
+
+
+endif()
+
+# TF-PSA-Crypto Builtin driver #
+if(CONFIG_MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto.builtin_driver)
+    mcux_add_source(
+        SOURCES # Sources
+                src/aes.c
+                src/aesce.c
+                src/aesce.h
+                src/aesni.c
+                src/aesni.h
+                src/aria.c
+                src/asn1parse.c
+                src/asn1write.c
+                src/base64.c
+                src/base64_internal.h
+                src/bignum.c
+                src/bignum_core.c
+                src/bignum_core.h
+                src/bignum_core_invasive.h
+                src/bignum_internal.h
+                src/bignum_mod.c
+                src/bignum_mod.h
+                src/bignum_mod_raw.c
+                src/bignum_mod_raw.h
+                src/bignum_mod_raw_invasive.h
+                src/block_cipher.c
+                src/block_cipher_internal.h
+                src/bn_mul.h
+                src/camellia.c
+                src/ccm.c
+                src/chacha20.c
+                src/chachapoly.c
+                src/check_crypto_config.h
+                src/cipher.c
+                src/cipher_invasive.h
+                src/cipher_wrap.c
+                src/cipher_wrap.h
+                src/cmac.c
+                src/constant_time.c
+                src/constant_time_impl.h
+                src/constant_time_internal.h
+                src/crypto_oid.h
+                src/ctr.h
+                src/ctr_drbg.c
+                src/ecdh.c
+                src/ecdsa.c
+                src/ecjpake.c
+                src/ecp.c
+                src/ecp_curves.c
+                src/ecp_curves_new.c
+                src/ecp_invasive.h
+                src/entropy.c
+                src/entropy_poll.c
+                src/entropy_poll.h
+                src/gcm.c
+                src/hmac_drbg.c
+                src/lmots.c
+                src/lmots.h
+                src/lms.c
+                src/md.c
+                src/md5.c
+                src/md_psa.h
+                src/md_wrap.h
+                src/memory_buffer_alloc.c
+                src/nist_kw.c
+                src/oid.c
+                src/pem.c
+                src/pk.c
+                src/pk_ecc.c
+                src/pk_internal.h
+                src/pk_rsa.c
+                src/pk_wrap.c
+                src/pk_wrap.h
+                src/pkcs5.c
+                src/pkparse.c
+                src/pkwrite.c
+                src/pkwrite.h
+                src/platform.c
+                src/platform_util.c
+                src/poly1305.c
+                src/psa_crypto_aead.c
+                src/psa_crypto_aead.h
+                src/psa_crypto_cipher.c
+                src/psa_crypto_cipher.h
+                src/psa_crypto_ecp.c
+                src/psa_crypto_ecp.h
+                src/psa_crypto_ffdh.c
+                src/psa_crypto_ffdh.h
+                src/psa_crypto_hash.c
+                src/psa_crypto_hash.h
+                src/psa_crypto_mac.c
+                src/psa_crypto_mac.h
+                src/psa_crypto_pake.c
+                src/psa_crypto_pake.h
+                src/psa_crypto_rsa.c
+                src/psa_crypto_rsa.h
+                src/psa_util.c
+                src/psa_util_internal.h
+                src/ripemd160.c
+                src/rsa.c
+                src/rsa_alt_helpers.c
+                src/rsa_alt_helpers.h
+                src/rsa_internal.h
+                src/sha1.c
+                src/sha256.c
+                src/sha3.c
+                src/sha512.c
+                src/threading.c
+                src/threading_internal.h
+                # Include
+                include/mbedtls/config_adjust_legacy_crypto.h
+                include/mbedtls/private_access.h
+                include/mbedtls/private/aes.h
+                include/mbedtls/private/aria.h
+                include/mbedtls/private/bignum.h
+                include/mbedtls/private/block_cipher.h
+                include/mbedtls/private/camellia.h
+                include/mbedtls/private/ccm.h
+                include/mbedtls/private/chacha20.h
+                include/mbedtls/private/chachapoly.h
+                include/mbedtls/private/cipher.h
+                include/mbedtls/private/cmac.h
+                include/mbedtls/private/config_adjust_legacy_from_psa.h
+                include/mbedtls/private/config_adjust_test_accelerators.h
+                include/mbedtls/private/config_psa.h
+                include/mbedtls/private/ctr_drbg.h
+                include/mbedtls/private/ecdh.h
+                include/mbedtls/private/ecdsa.h
+                include/mbedtls/private/ecjpake.h
+                include/mbedtls/private/ecp.h
+                include/mbedtls/private/entropy.h
+                include/mbedtls/private/error_common.h
+                include/mbedtls/private/gcm.h
+                include/mbedtls/private/hmac_drbg.h
+                include/mbedtls/private/md5.h
+                include/mbedtls/private/pkcs5.h
+                include/mbedtls/private/poly1305.h
+                include/mbedtls/private/ripemd160.h
+                include/mbedtls/private/rsa.h
+                include/mbedtls/private/sha1.h
+                include/mbedtls/private/sha256.h
+                include/mbedtls/private/sha3.h
+                include/mbedtls/private/sha512.h
+        BASE_PATH ${SdkRootDirPath}/middleware/mbedtls/tf-psa-crypto/drivers/builtin
+    )
+    mcux_add_include(
+        INCLUDES src
+                 include
+                 include/mbedtls
+                 include/mbedtls/private
+        BASE_PATH ${SdkRootDirPath}/middleware/mbedtls/tf-psa-crypto/drivers/builtin
+    )
+endif()
+
+# MbedTLS default config file #
+if(CONFIG_MCUX_COMPONENT_middleware.mbedtls.default_config)
+    mcux_add_macro(
+        "-DMBEDTLS_CONFIG_FILE=\\\"mcux_mbedtls_config.h\\\""
+    )
+
+    mcux_add_source(
+        SOURCES configs/mcux_mbedtls_config.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES configs
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
+# TF-PSA-Crypto default config file #
+if(CONFIG_MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto.default_config)
+    mcux_add_macro(
+        "-DTF_PSA_CRYPTO_CONFIG_FILE=\\\"mcux_crypto_config.h\\\""
+    )
+
+    mcux_add_source(
+        SOURCES configs/mcux_crypto_config.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES configs
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
 endif()

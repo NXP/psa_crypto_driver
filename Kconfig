@@ -464,4 +464,29 @@ menu "PSA Crypto Driver"
     config MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
         bool
 
+    ##################################################################
+    #                           MbedTLS                              #
+    ##################################################################
+
+    config MCUX_COMPONENT_middleware.mbedtls
+        bool "MbedTLS middleware"
+
+    config MCUX_COMPONENT_middleware.mbedtls.default_config
+        default true if MCUX_COMPONENT_middleware.mbedtls
+        bool "Default MCUX MbedTLS configuration header"
+
+    ##################################################################
+    #                           TF-PSA-Crypto                        #
+    ##################################################################
+
+    config MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto
+        bool "TF-PSA-Crypto component used in MbedTLS"
+
+    config MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto.builtin_driver
+        bool "TF-PSA-Crypto driver builtin SW implementation"
+
+    config MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto.default_config
+        default true if MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto
+        bool "Default MCUX TF-PSA-Crypto configuration header"
+
 endmenu
