@@ -1,19 +1,56 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-menu "psaCryptoDriver"
-    config MCUX_COMPONENT_component.psa_crypto_driver.osal
-        bool "OSAL"
+menu "PSA Crypto Driver"
 
-    config MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-        bool "OSAL FreeRTOS"
-        select MCUX_COMPONENT_component.psa_crypto_driver.osal
+    config MCUX_COMPONENT_component.psa_crypto_driver
+        bool
+        default n
+        help
+            Toplevel PSA Crypto Driver component symbol.
+            Auto-selected by platform-specific configurations.
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.osal
+        bool
+        default y if MCUX_COMPONENT_component.psa_crypto_driver
+
+    if MCUX_COMPONENT_component.psa_crypto_driver.osal
+        choice MCUX_COMPONENT_component.psa_crypto_driver.osal.selection
+            prompt "OSAL Selection"
+            default MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.frtos if MCUX_COMPONENT_middleware.freertos-kernel
+            default MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.baremetal
+
+            config MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.baremetal
+                bool "Baremetal"
+                help
+                    Empty baremetal OSAL implementation for PSA Crypto Driver.
+                    Must be implemented by the user.
+
+            config MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.frtos
+                bool "FreeRTOS"
+                depends on MCUX_COMPONENT_middleware.freertos-kernel
+                help
+                    FreeRTOS OSAL for PSA Crypto Driver.
+        endchoice
+    endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-        bool "OSAL Baremetal"
-        select MCUX_COMPONENT_component.psa_crypto_driver.osal
+        depends on MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.baremetal
+        bool
+        default y
+        help
+            Kept as a separate config to allow for backward compatibility, but now should only be selected
+            via the MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.baremetal choice.
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+        depends on MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.frtos
+        bool
+        default y
+        help
+            Kept as a separate config to allow for backward compatibility, but now should only be selected
+            via the MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.frtos choice.
 
     config MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt
         bool "Mbed TLS Thread Alt"
@@ -72,6 +109,7 @@ menu "psaCryptoDriver"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc
         bool "ELS PKC"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
         select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.common
         select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.transparent
@@ -94,18 +132,6 @@ menu "psaCryptoDriver"
 
           endchoice
           choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
-          choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedtls3x
 
@@ -113,32 +139,21 @@ menu "psaCryptoDriver"
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.dcp
         bool "DCP"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.dcp
         select MCUX_COMPONENT_driver.trng
         select MCUX_COMPONENT_component.osa
         if MCUX_COMPONENT_component.psa_crypto_driver.dcp
-          choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
           choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.mbedtls3x
@@ -146,11 +161,11 @@ menu "psaCryptoDriver"
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.mbedtls3x
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
@@ -159,21 +174,10 @@ menu "psaCryptoDriver"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
         bool "ELE S4xx RNG"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.s3mu
         select MCUX_COMPONENT_component.ele_crypto
         if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
-          choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
           choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedtls3x
@@ -181,21 +185,23 @@ menu "psaCryptoDriver"
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedtls3x
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent
         bool "ELE S4xx Transparent"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.s3mu
         select MCUX_COMPONENT_component.ele_crypto
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr
         bool "ELE S4xx SD NVM Manager"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.usdhc
         select MCUX_COMPONENT_component.rgpio_adapter
         select MCUX_COMPONENT_middleware.sdmmc.host.usdhc
@@ -206,11 +212,13 @@ menu "psaCryptoDriver"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_opaque
         bool "ELE S4xx PSA Opaque"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.s3mu
         select MCUX_COMPONENT_component.ele_crypto
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa
         bool "ELE S4xx"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.s3mu
         select MCUX_COMPONENT_component.ele_crypto
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
@@ -218,34 +226,23 @@ menu "psaCryptoDriver"
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent
         if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa
           choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
-          choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedtls3x
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedtls3x
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage
         bool "ELE S4xx with Persistent Storage"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.s3mu
         select MCUX_COMPONENT_component.ele_crypto
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
@@ -255,29 +252,17 @@ menu "psaCryptoDriver"
         select MCUX_COMPONENT_middleware.mbedtls3x.crypto_storage_fatfs
         if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage
           choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
-          choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedtls3x
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedtls3x
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
@@ -292,6 +277,7 @@ menu "psaCryptoDriver"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
         bool "ELE S200"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.opaque
@@ -301,18 +287,6 @@ menu "psaCryptoDriver"
 
         if MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
           choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
-          choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedtls3x
 
@@ -320,16 +294,17 @@ menu "psaCryptoDriver"
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.casper
         bool "CASPER"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.casper
 
         # We provide option to have hashcrypt-only, or CASPER+hashcrypt, but CASPER-only is not available.
@@ -340,49 +315,26 @@ menu "psaCryptoDriver"
 
         if MCUX_COMPONENT_component.psa_crypto_driver.casper
           choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
-          choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.mbedtls3x
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.mbedtls3x
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt
         bool "HASHCRYPT"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.hashcrypt
         select MCUX_COMPONENT_component.rng_adapter_interface
         if MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt
-          choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
           choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.mbedtls3x
@@ -390,30 +342,19 @@ menu "psaCryptoDriver"
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.mbedtls3x
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.caam
         bool "CAAM"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.caam
         if MCUX_COMPONENT_component.psa_crypto_driver.caam
-          choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
           choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.mbedtls3x
@@ -421,71 +362,49 @@ menu "psaCryptoDriver"
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.mbedtls3x
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ela_csec
         bool "ELA CSEC"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.ela_csec
         if MCUX_COMPONENT_component.psa_crypto_driver.ela_csec
-          choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
           choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedtls3x
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
         bool "ELE HSEB"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_component.ele_hseb
         if MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
-          choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
           choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.mbedtls3x
 
             config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.mbedtls3x
                 bool "Mbed TLS 3.x"
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
 
@@ -497,24 +416,13 @@ menu "psaCryptoDriver"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi
         bool "SGI"
+        select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
         select MCUX_COMPONENT_component.sgi_pkc
         select MCUX_COMPONENT_component.sgi_pkc.example
 
         if MCUX_COMPONENT_component.psa_crypto_driver.sgi
-          choice
-            prompt "OSAL Selection"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.osal_baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.osal_baremetal
-                bool "Baremetal"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.osal_frtos
-                bool "FreeRTOS"
-                select MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
-          endchoice
           choice
             prompt "Mbed TLS Version"
             default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedtls3x
@@ -523,13 +431,29 @@ menu "psaCryptoDriver"
                 bool "Mbed TLS 3.x"
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
                 imply MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
-                select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+                select USING_MBEDTLS_3X
 
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedcrypto
-                bool "Mbed Crypto"
-                select MCUX_COMPONENT_middleware.mbedcrypto
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.tf_psa_crypto
+                bool "TF PSA Crypto"
+                select USING_TF_PSA_CRYPTO
           endchoice
         endif
+
+    config USING_TF_PSA_CRYPTO
+        bool
+        default n
+        select MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto
+        help
+            This config option is set to 'y' when TF PSA Crypto is selected
+            as the caller of PSA Crypto Driver.
+
+    config USING_MBEDTLS_3X
+        bool
+        default n
+        select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+        help
+            This config option is set to 'y' when Mbed TLS 3.x is selected
+            as the caller of PSA Crypto Driver.
 
     ##################################################################
     #                           Utilities                            #

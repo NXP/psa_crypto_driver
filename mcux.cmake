@@ -1,11 +1,12 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.osal)
     mcux_add_source(
         SOURCES osal/osal_mutex.h
+                osal/threading_alt.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
@@ -18,6 +19,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos)
     mcux_add_source(
         SOURCES osal/frtos/osal_mutex.c
                 osal/frtos/osal_mutex_platform.h
+                osal/frtos/threading_alt.c
+                osal/frtos/threading_alt_platform.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
@@ -26,10 +29,26 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos)
     )
 endif()
 
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.osal.zephyr)
+    mcux_add_source(
+        SOURCES osal/zephyr/osal_mutex.c
+                osal/zephyr/osal_mutex_platform.h
+                osal/zephyr/threading_alt.c
+                osal/zephyr/threading_alt_platform.h
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_include(
+        INCLUDES osal/zephyr
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+endif()
+
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal)
     mcux_add_source(
         SOURCES osal/baremetal/osal_mutex.c
                 osal/baremetal/osal_mutex_platform.h
+                osal/baremetal/threading_alt.c
+                osal/baremetal/threading_alt_platform.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
@@ -39,15 +58,6 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal)
 endif()
 
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt)
-    mcux_add_source(
-        SOURCES mbedtls_thread_alt/threading_alt.c
-                mbedtls_thread_alt/threading_alt.h
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
-    mcux_add_include(
-        INCLUDES mbedtls_thread_alt
-        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
-    )
     mcux_add_macro(
         "-DPSA_CRYPTO_DRIVER_THREAD_EN"
     )

@@ -1,5 +1,5 @@
  #
- # Copyright 2023 NXP
+ # Copyright 2023,2026 NXP
  #
  # SPDX-License-Identifier: BSD-3-Clause
  #
@@ -20,6 +20,7 @@ target_sources(
         #frtos/osal_mutex.c
         zephyr/osal_mutex.c
         zephyr/osal_mutex_platform.h
+        zephyr/threading_alt.c
 )
 endif() #CONFIG_PSA_CRYPTO_DRIVER_DCP
 
@@ -39,6 +40,7 @@ target_sources(
         #baremetal/osal_mutex.c
         #frtos/osal_mutex.c
         zephyr/osal_mutex.c
+        zephyr/threading_alt.c
 )
 endif() # CONFIG_PSA_CRYPTO_DRIVER_ELS_PKC
 
@@ -58,5 +60,6 @@ target_sources(
         #baremetal/osal_mutex.c
         #frtos/osal_mutex.c
         zephyr/osal_mutex.c
+        zephyr/threading_alt.c
 )
 endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx

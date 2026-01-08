@@ -54,4 +54,11 @@ config PSA_CRYPTO_DRIVER_THREAD_EN
 	help
 	    Enables PSA_CRYPTO_THREAD
 
+config USING_MBEDTLS_3X
+	bool
+	depends on MBEDTLS_PSA_CRYPTO_C
+	default y
+	help
+	    Tells the PSA crypto driver layer that it's caller is
+	    MbedTLS 3.x for backward compatibility.
 

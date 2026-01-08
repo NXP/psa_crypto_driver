@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 #
 #-------------------------------------------------------------------------------
@@ -442,7 +442,8 @@ if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 				target_include_directories(McuxPsaCryptoDriverElsPkc
 					PUBLIC
 					# zephyr includes for mutex functions for mbedtls layer
-					${CMAKE_CURRENT_LIST_DIR}/mbedtls_thread_alt/.
+					${CMAKE_CURRENT_LIST_DIR}/osal/zephyr/.
+					${CMAKE_CURRENT_LIST_DIR}/osal/.
 					${ZEPHYR_BASE}/include
 					${CMAKE_BINARY_DIR}
 				)
@@ -450,7 +451,7 @@ if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 					McuxPsaCryptoDriverElsPkc
 					PRIVATE
 					# Providing threading alt source for mbedtls
-					${CMAKE_CURRENT_LIST_DIR}/mbedtls_thread_alt/threading_alt.c
+					${CMAKE_CURRENT_LIST_DIR}/osal/zephyr/threading_alt.c
 				)
 				target_compile_definitions(
 					McuxPsaCryptoDriverElsPkc
