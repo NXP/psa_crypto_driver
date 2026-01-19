@@ -22,6 +22,10 @@
 #include "mcux_psa_hashcrypt_entropy.h"
 #include "fsl_adapter_rng.h"
 
+#if defined(CONFIG_USING_TF_PSA_CRYPTO) && (CONFIG_USING_TF_PSA_CRYPTO > 0)
+#include "crypto_driver_random.h"
+#endif /* defined(USING_TF_PSA_CRYPTO) && (USING_TF_PSA_CRYPTO > 0) */
+
 static mcux_mutex_t *s_mutex = NULL;
 
 psa_status_t hal_rng_to_psa_status(hal_rng_status_t status)
@@ -119,11 +123,17 @@ psa_status_t mcux_psa_hashcrypt_entropy_get(uint32_t flags,
 }
 /** @} */ // end of psa_entropy
 
+#if defined(CONFIG_USING_TF_PSA_CRYPTO) && (CONFIG_USING_TF_PSA_CRYPTO > 0)
+int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+                                 size_t *estimate_bits,
+                                 unsigned char *output, size_t output_size)
+{
+    return mcux_psa_hashcrypt_entropy_get(flags, estimate_bits, output, output_size);
+}
+#endif /* defined(CONFIG_USING_TF_PSA_CRYPTO) && (CONFIG_USING_TF_PSA_CRYPTO > 0) */
+
 /*
- * FixMe: This function is required to integrate into Mbed TLS as the PSA
- * subsystem does not yet support entropy entry points. See the header
- * entropy_poll.h for details. This needs to be revised once Mbed TLS adds
- * support for entropy.
+ * Keep mbedtls_hardware_poll() for backward compatibility
  */
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {

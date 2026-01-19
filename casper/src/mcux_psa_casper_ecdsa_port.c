@@ -10,16 +10,19 @@
  *
  * SEC1 https://www.secg.org/sec1-v2.pdf
  */
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 
 #include "mcux_psa_casper_ecdsa_port.h"
 #include "mcux_psa_casper_ecp_port.h"
 
 //  #include "mbedtls/asn1write.h"
-
-#include "mbedtls/ecdsa.h"
+#include "private_access.h"
+#include "ecdsa.h"
+#include "ecp.h"
+#include "bignum.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/error.h"
-#include "mbedtls/hmac_drbg.h"
+#include "hmac_drbg.h"
 
 
 /*

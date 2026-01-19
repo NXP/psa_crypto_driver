@@ -131,20 +131,6 @@ menu "PSA Crypto Driver"
                 depends on MCUX_HW_DEVICE_MCXN546 || MCUX_HW_DEVICE_MCXN547 || MCUX_HW_DEVICE_MCXN946 || MCUX_HW_DEVICE_MCXN947 || MCUX_HW_DEVICE_MCXN235 || MCUX_HW_DEVICE_MCXN236 || MCUX_HW_DEVICE_MCXN247 || MCUX_HW_DEVICE_MCXN526 || MCUX_HW_DEVICE_MCXN527 || MCUX_HW_DEVICE_MCXN536 || MCUX_HW_DEVICE_MCXN537 || MCUX_HW_DEVICE_MCXN556S || MCUX_HW_DEVICE_MIMXRT798S || MCUX_HW_DEVICE_MIMXRT758S || MCUX_HW_DEVICE_MIMXRT735S || MCUX_HW_DEVICE_LPC55S36
 
           endchoice
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
         endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.dcp
@@ -153,21 +139,6 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_driver.dcp
         select MCUX_COMPONENT_driver.trng
         select MCUX_COMPONENT_component.osa
-        if MCUX_COMPONENT_component.psa_crypto_driver.dcp
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.dcp.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option
         bool "Use TRNG"
@@ -177,21 +148,6 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.s3mu
         select MCUX_COMPONENT_component.ele_crypto
-        if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent
         bool "ELE S4xx Transparent"
@@ -224,21 +180,6 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_opaque
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent
-        if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage
         bool "ELE S4xx with Persistent Storage"
@@ -250,21 +191,6 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent
         select MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr
         select MCUX_COMPONENT_middleware.mbedtls3x.crypto_storage_fatfs
-        if MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_ps.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common
         bool "ELE S200 Common"
@@ -285,23 +211,6 @@ menu "PSA Crypto Driver"
 
         imply MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
 
-        if MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_s200.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
-
     config MCUX_COMPONENT_component.psa_crypto_driver.casper
         bool "CASPER"
         select MCUX_COMPONENT_component.psa_crypto_driver
@@ -310,103 +219,26 @@ menu "PSA Crypto Driver"
         # We provide option to have hashcrypt-only, or CASPER+hashcrypt, but CASPER-only is not available.
         select MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt
 
-        # Casper requires the bignum module of mbedtls3x, hence this dependency
-        select MCUX_COMPONENT_middleware.mbedtls3x.crypto.no_psa
-
-        if MCUX_COMPONENT_component.psa_crypto_driver.casper
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.casper.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
-
     config MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt
         bool "HASHCRYPT"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.hashcrypt
         select MCUX_COMPONENT_component.rng_adapter_interface
-        if MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.hashcrypt.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.caam
         bool "CAAM"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.caam
-        if MCUX_COMPONENT_component.psa_crypto_driver.caam
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.caam.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ela_csec
         bool "ELA CSEC"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.ela_csec
-        if MCUX_COMPONENT_component.psa_crypto_driver.ela_csec
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.mbedtls3x
-                bool "Mbed TLS 3.x"
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ela_csec.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
         bool "ELE HSEB"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_component.ele_hseb
-        if MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.mbedtls3x
-                bool "Mbed TLS 3.x"
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.ele_hseb.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
         bool "SGI Common"
@@ -422,35 +254,16 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.sgi_pkc
         select MCUX_COMPONENT_component.sgi_pkc.example
 
-        if MCUX_COMPONENT_component.psa_crypto_driver.sgi
-          choice
-            prompt "Mbed TLS Version"
-            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedtls3x
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.mbedtls3x
-                bool "Mbed TLS 3.x"
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.psa_crypto_config if (!MCUX_COMPONENT_middleware.tfm.s)
-                imply MCUX_COMPONENT_middleware.mbedtls3x.port.only_accelerator_config if (MCUX_COMPONENT_middleware.tfm.s)
-                select USING_MBEDTLS_3X
-
-            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.sgi.tf_psa_crypto
-                bool "TF PSA Crypto"
-                select USING_TF_PSA_CRYPTO
-          endchoice
-        endif
-
     config USING_TF_PSA_CRYPTO
         bool
-        default n
-        select MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto
+        default y if MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto
         help
             This config option is set to 'y' when TF PSA Crypto is selected
             as the caller of PSA Crypto Driver.
 
     config USING_MBEDTLS_3X
         bool
-        default n
-        select MCUX_COMPONENT_middleware.mbedtls3x.crypto
+        default y if MCUX_COMPONENT_middleware.mbedtls3x
         help
             This config option is set to 'y' when Mbed TLS 3.x is selected
             as the caller of PSA Crypto Driver.

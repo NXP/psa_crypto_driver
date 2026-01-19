@@ -26,18 +26,22 @@
 #if defined(MBEDTLS_PSA_CRYPTO_C)
 
 /* BEGIN-driver headers */
-{% for driver in drivers -%}
-/* Headers for {{driver.prefix}} {{driver.type}} driver */
-{% if driver['mbedtls/h_condition'] is defined -%}
-#if {{ driver['mbedtls/h_condition'] }}
-{% endif -%}
-{% for header in driver.headers -%}
-#include "{{ header }}"
-{% endfor %}
-{% if driver['mbedtls/h_condition'] is defined -%}
+/* Headers for p256 transparent driver */
+#if defined(MBEDTLS_PSA_P256M_DRIVER_ENABLED)
+#include "../drivers/p256-m/p256-m_driver_entrypoints.h"
+
 #endif
-{% endif -%}
-{% endfor %}
+/* Headers for hashcrypt transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_HASHCRYPT)
+#include "hashcrypt.h"
+
+#endif
+/* Headers for casper transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_CASPER)
+#include "casper.h"
+
+#endif
+
 /* END-driver headers */
 
 /* Auto-generated values depending on which drivers are registered.
@@ -45,19 +49,14 @@
  * ID 1 is reserved for the Mbed TLS software driver. */
 /* BEGIN-driver id definition */
 #define PSA_CRYPTO_MBED_TLS_DRIVER_ID (1)
-{% for driver in drivers -%}
-#define {{(driver.prefix + "_" + driver.type + "_driver_id").upper()}} ({{ loop.index + 1 }})
-{% endfor %}
+#define P256_TRANSPARENT_DRIVER_ID (2)
+#define HASHCRYPT_TRANSPARENT_DRIVER_ID (3)
+#define CASPER_TRANSPARENT_DRIVER_ID (4)
+
 /* END-driver id */
 
 /* BEGIN-Common Macro definitions */
-{% macro entry_point_name(capability, entry_point, driver) -%}
-    {% if capability.name is defined and entry_point in capability.names.keys() -%}
-    {{ capability.names[entry_point]}}
-    {% else -%}
-    {{driver.prefix}}_{{driver.type}}_{{entry_point}}
-    {% endif -%}
-{% endmacro %}
+
 /* END-Common Macro definitions */
 
 static inline psa_status_t psa_driver_wrapper_init( void )
@@ -845,16 +844,7 @@ static inline psa_status_t psa_driver_wrapper_import_key(
     size_t *key_buffer_length,
     size_t *bits )
 {
-{% with entry_point = "import_key" -%}
-{% macro entry_point_param(driver) -%}
-attributes,
-data,
-data_length,
-key_buffer,
-key_buffer_size,
-key_buffer_length,
-bits
-{% endmacro %}
+
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(
                                       psa_get_key_lifetime( attributes ) );
@@ -865,9 +855,25 @@ bits
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
-{% with nest_indent=12 %}
-{% include "OS-template-transparent.jinja" -%}
-{% endwith -%}
+
+#if (defined(MBEDTLS_PSA_P256M_DRIVER_ENABLED) )
+            status = p256_transparent_import_key
+                (attributes,
+                                data,
+                                data_length,
+                                key_buffer,
+                                key_buffer_size,
+                                key_buffer_length,
+                                bits
+            );
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif
+
+
+
+
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -877,15 +883,14 @@ bits
                                               key_buffer_length, bits ) );
         /* Add cases for opaque driver here */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
-{% with nest_indent=8 %}
-{% include "OS-template-opaque.jinja" -%}
-{% endwith -%}
+
+
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void)status;
             return( PSA_ERROR_INVALID_ARGUMENT );
     }
-{% endwith %}
+
 }
 
 static inline psa_status_t psa_driver_wrapper_export_key(
@@ -894,15 +899,7 @@ static inline psa_status_t psa_driver_wrapper_export_key(
     uint8_t *data, size_t data_size, size_t *data_length )
 
 {
-{% with entry_point = "export_key" -%}
-{% macro entry_point_param(driver) -%}
-attributes,
-key_buffer,
-key_buffer_size,
-data,
-data_size,
-data_length
-{% endmacro %}
+
     psa_status_t status = PSA_ERROR_INVALID_ARGUMENT;
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(
                                       psa_get_key_lifetime( attributes ) );
@@ -919,15 +916,14 @@ data_length
 
         /* Add cases for opaque driver here */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
-{% with nest_indent=8 %}
-{% include "OS-template-opaque.jinja" -%}
-{% endwith -%}
+
+
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
             return( status );
     }
-{% endwith %}
+
 }
 
 static inline psa_status_t psa_driver_wrapper_copy_key(
@@ -936,15 +932,7 @@ static inline psa_status_t psa_driver_wrapper_copy_key(
     uint8_t *target_key_buffer, size_t target_key_buffer_size,
     size_t *target_key_buffer_length )
 {
-{% with entry_point = "copy_key" -%}
-{% macro entry_point_param(driver) -%}
-attributes,
-source_key,
-source_key_length,
-target_key_buffer,
-target_key_buffer_size,
-target_key_buffer_length
-{% endmacro %}
+
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_location_t location =
         PSA_KEY_LIFETIME_GET_LOCATION( psa_get_key_lifetime(attributes) );
@@ -952,9 +940,8 @@ target_key_buffer_length
     switch( location )
     {
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
-{% with nest_indent=8 %}
-{% include "OS-template-opaque.jinja" -%}
-{% endwith -%}
+
+
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void)source_key;
@@ -965,7 +952,7 @@ target_key_buffer_length
             status = PSA_ERROR_INVALID_ARGUMENT;
     }
     return( status );
-{% endwith %}
+
 }
 
 /*

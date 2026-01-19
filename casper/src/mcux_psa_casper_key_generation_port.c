@@ -2,10 +2,12 @@
  *  Copyright The Mbed TLS Contributors
  *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 
 #include "mcux_psa_casper_key_generation_port.h"
 
-#include "mbedtls/ecp.h"
+#include "ecp.h"
+#include "psa_util_internal.h"
 #include "mbedtls/error.h"
 #include "mbedtls/private_access.h"
 #include "mbedtls/psa_util.h"
@@ -70,7 +72,6 @@ static int casper_mbedtls_ecp_gen_key(mbedtls_ecp_group_id grp_id,
 /*****************************************************************************
  * psa_crypto_ecp.c
  *****************************************************************************/
-
 psa_status_t casper_mbedtls_psa_ecp_generate_key(const psa_key_attributes_t *attributes,
                                                  uint8_t *key_buffer,
                                                  size_t key_buffer_size,
@@ -81,7 +82,6 @@ psa_status_t casper_mbedtls_psa_ecp_generate_key(const psa_key_attributes_t *att
 
     psa_ecc_family_t curve      = PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(attributes));
     mbedtls_ecp_group_id grp_id = mbedtls_ecc_group_from_psa(curve, psa_get_key_bits(attributes));
-
     const mbedtls_ecp_curve_info *curve_info = mbedtls_ecp_curve_info_from_grp_id(grp_id);
     mbedtls_ecp_keypair ecp;
 

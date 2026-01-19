@@ -13,7 +13,6 @@
  *
  */
 
-#include "mbedtls/ecp.h"
 #include "mbedtls/error.h"
 #include "mbedtls/private_access.h"
 

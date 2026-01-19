@@ -11,8 +11,8 @@
 #include "mbedtls/build_info.h"
 
 #include "fsl_casper.h"
+#include "ecp.h"
 
-#include "mbedtls/ecp.h"
 #include "mbedtls/threading.h"
 #include "mbedtls/platform_util.h"
 

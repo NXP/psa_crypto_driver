@@ -4,15 +4,18 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+   
 #include "psa/crypto.h"
 #include "psa_crypto_ecp.h"
 
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ecdsa.h"
+#include "ctr_drbg.h"
+#include "entropy.h"
+#include "ecdsa.h"
+#include "ecp.h"
+#include "psa_util_internal.h"
 #include "mbedtls/psa_util.h"
 
 #include "mcux_psa_common_key_management.h"
@@ -29,11 +32,6 @@ psa_status_t psa_to_ecc_group_id(psa_key_type_t key_type, psa_algorithm_t key_al
         {
             switch (algo)
             {
-                case PSA_ALG_SHA_224:
-                {
-                    *ecp_grou_id = MBEDTLS_ECP_DP_SECP224K1;
-                    break;
-                }
                 case PSA_ALG_SHA_256:
                 {
                     *ecp_grou_id = MBEDTLS_ECP_DP_SECP256K1;

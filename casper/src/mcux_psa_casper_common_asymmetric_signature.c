@@ -13,6 +13,8 @@
  *
  */
 
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+
 #include "mcux_psa_casper_ecdsa_port.h"
 #include "mcux_psa_casper_ecp_port.h"
 #include "mcux_psa_casper_common_asymmetric_signature.h"
@@ -28,6 +30,8 @@
 #include "mbedtls/build_info.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/error.h"
+
+#include "psa/crypto_builtin_composites.h"
 
 /** \defgroup psa_asym_sign PSA driver entry points for rsa sign/verify
  *
