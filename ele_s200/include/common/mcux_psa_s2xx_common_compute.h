@@ -89,6 +89,9 @@ size_t ele_s2xx_get_ecc_keypair_size(size_t key_bits);
 psa_status_t translate_psa_ecc_family_to_ele_cipher_type(const psa_key_attributes_t *attributes,
                                                          sss_cipher_type_t *cipher_type);
 
+psa_status_t translate_psa_algorithm_to_ele_key_property(psa_algorithm_t alg,
+                                                         sss_sscp_key_property_t *prop);
+
 #ifdef __cplusplus
 }
 #endif

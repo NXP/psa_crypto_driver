@@ -384,3 +384,45 @@ psa_status_t translate_psa_ecc_family_to_ele_cipher_type(const psa_key_attribute
     }
     return status;
 }
+
+psa_status_t translate_psa_algorithm_to_ele_key_property(psa_algorithm_t alg,
+                                                         sss_sscp_key_property_t *prop)
+{
+    psa_status_t status = PSA_SUCCESS;
+
+    /* Translation and coarse validation to support all feature sets between
+     * S200 devices + FWs. Support for specific PSA_ALG_XXX is to be checked
+     * on key usage (per device and key location, as support may differ) during
+     * crypto operations.
+     */
+    if (true == PSA_ALG_IS_ECDSA(alg) || PSA_ALG_PURE_EDDSA == alg ||
+        PSA_ALG_ED25519PH == alg)
+    {
+        *prop |= kSSS_KeyProp_CryptoAlgo_AsymSignVerify;
+    }
+    else if (PSA_ALG_ECB_NO_PADDING == alg || PSA_ALG_CBC_NO_PADDING == alg ||
+             PSA_ALG_CTR == alg || ALG_NXP_ALL_CIPHER == alg)
+    {
+        *prop |= kSSS_KeyProp_CryptoAlgo_AES;
+    }
+    else if (PSA_ALG_CCM == alg || PSA_ALG_GCM == alg ||
+             ALG_NXP_ALL_AEAD == alg)
+    {
+        *prop |= kSSS_KeyProp_CryptoAlgo_AEAD;
+    }
+    else if (true == PSA_ALG_IS_HMAC(alg) || PSA_ALG_CMAC == alg)
+    {
+        *prop |= kSSS_KeyProp_CryptoAlgo_MAC;
+    }
+    else if (true == PSA_ALG_IS_ANY_HKDF(alg) || true == PSA_ALG_IS_ECDH(alg) ||
+             ALG_S200_ECBKDF_OR_CKDF == alg || ALG_S200_ECDH_CKDF == alg)
+    {
+        *prop |= kSSS_KeyProp_CryptoAlgo_KDF;
+    }
+    else
+    {
+        status = PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    return status;
+}

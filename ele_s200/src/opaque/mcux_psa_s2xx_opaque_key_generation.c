@@ -517,7 +517,6 @@ exit:
     return status;
 }
 
-
 psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes,
                                           uint8_t *key_buffer,
                                           size_t key_buffer_size,
@@ -542,9 +541,17 @@ psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    // TBD is this OK?
-    /* We'll be permissive and leave the key usage checks to PSA */
-    uint32_t keyprops = 0x1fu;
+    /* We disable plain writes and reads to/from this opaque key and limit
+     * the allowed algorithms per the key algorithm attribute.
+     */
+    sss_sscp_key_property_t keyprops = kSSS_KeyProp_NoPlainWrite |
+                                       kSSS_KeyProp_NoPlainRead;
+    status = translate_psa_algorithm_to_ele_key_property(psa_get_key_algorithm(attributes),
+                                                         &keyprops);
+    if (PSA_SUCCESS != status)
+    {
+        return status;
+    }
 
     /* For opaque keygen we support non-EL2GO opaque keys */
     if (false == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location))
@@ -555,7 +562,7 @@ psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes
     if (true == PSA_KEY_TYPE_IS_ASYMMETRIC(type))
     {
         // ASYMMETRIC
-        if (false == PSA_KEY_TYPE_IS_ECC(type) && false == PSA_KEY_TYPE_IS_DH(type))
+        if (false == PSA_KEY_TYPE_IS_ECC(type))
         {
             return PSA_ERROR_NOT_SUPPORTED;
         }
@@ -567,29 +574,11 @@ psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes
          */
         key_part = kSSS_KeyPart_Pair;
 
-        switch (ecc_family)
+        status = translate_psa_ecc_family_to_ele_cipher_type(attributes,
+                                                             &cipher_type);
+        if (PSA_SUCCESS != status)
         {
-            case PSA_ECC_FAMILY_SECP_R1:
-                cipher_type = kSSS_CipherType_EC_NIST_P;
-                break;
-            case PSA_ECC_FAMILY_MONTGOMERY:
-                cipher_type = kSSS_CipherType_EC_MONTGOMERY;
-                break;
-            case PSA_ECC_FAMILY_TWISTED_EDWARDS:
-                cipher_type = kSSS_CipherType_EC_TWISTED_ED;
-                break;
-#if defined(ELE200_EXTENDED_FEATURES)
-            case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
-                cipher_type = kSSS_CipherType_EC_BRAINPOOL_R1;
-                break;
-#endif /* ELE200_EXTENDED_FEATURES */
-            default:
-                cipher_type = kSSS_CipherType_NONE;
-                break;
-        }
-        if (kSSS_CipherType_NONE == cipher_type)
-        {
-            return  PSA_ERROR_NOT_SUPPORTED;
+            return status;
         }
 
         /* The S200 expects 256 bitlen for Ed25519, so we update the bits
@@ -630,7 +619,7 @@ psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes
 
     if ((sss_sscp_key_object_allocate_handle(&sssKey, 0u, /* key id */
                                              key_part, cipher_type, allocation_size,
-                                             keyprops)) != kStatus_SSS_Success)
+                                             (uint32_t)keyprops)) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_GENERIC_ERROR;
         goto exit;
