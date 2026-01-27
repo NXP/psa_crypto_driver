@@ -37,7 +37,8 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
 
     if (false == (MCUXCLPSADRIVER_IS_LOCAL_STORAGE(location)))
     {
-        if (true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location)))
+        if (true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location)) ||
+            true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location)))
         {
             /* Validate blob in software and import to let S200 validate too */
             status = ele_s2xx_import_key(attributes, data, data_length, &sssKey);
@@ -102,9 +103,10 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     }
 
 exit:
-    if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
+    if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location) ||
+        true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location))
     {
-        /* We won't be keeping the EL2GO key in S200 keystore */
+        /* We won't be keeping the key in S200 keystore */
         (void)ele_s2xx_delete_key(&sssKey);
     }
 

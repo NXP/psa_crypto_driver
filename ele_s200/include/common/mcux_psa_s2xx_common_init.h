@@ -30,9 +30,6 @@ typedef struct
     sss_sscp_session_t sssSession;
     sscp_context_t sscpContext;
     sss_sscp_rng_t rngctx;
-
-    bool is_fw_loaded;
-
 } ele_s2xx_ctx_t;
 
 #define ELE_MAX_SUBSYSTEM_WAIT (0xFFFFFFFFu)

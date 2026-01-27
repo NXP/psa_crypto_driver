@@ -308,9 +308,10 @@ static psa_status_t ele_s2xx_get_algo_keyprop(const psa_key_attributes_t *attrib
                                               sss_cipher_type_t *s2xx_cipher_type,
                                               size_t *allocation_size)
 {
-    psa_status_t status     = PSA_SUCCESS;
-    psa_key_type_t key_type = psa_get_key_type(attributes);
-    size_t key_bits         = psa_get_key_bits(attributes);
+    psa_status_t status         = PSA_SUCCESS;
+    psa_key_type_t key_type     = psa_get_key_type(attributes);
+    size_t key_bits             = psa_get_key_bits(attributes);
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
     /* Wrapcheck for PSA_BITS_TO_BYTES(key_bits) */
     if (true == mcux_psa_add_size_t_wrapcheck(key_bits, 7u))
@@ -337,6 +338,13 @@ static psa_status_t ele_s2xx_get_algo_keyprop(const psa_key_attributes_t *attrib
             status = PSA_ERROR_INVALID_ARGUMENT;
             goto exit;
         }
+
+        status = translate_psa_ecc_family_to_ele_cipher_type(attributes,
+                                                             s2xx_cipher_type);
+        if (PSA_SUCCESS != status)
+        {
+            goto exit;
+        }
     }
     else
     {
@@ -346,59 +354,16 @@ static psa_status_t ele_s2xx_get_algo_keyprop(const psa_key_attributes_t *attrib
         *allocation_size  = PSA_BITS_TO_BYTES(key_bits);
     }
 
-    status = PSA_SUCCESS;
-
-    /* Parse the actual algorithm that is to be used */
-    switch (psa_get_key_algorithm(attributes))
+    /* Translate and validate actual algorithm that is to be used.
+     * Add check for PSA_ALG_NONE, since it is ok for some EL2GO blobs.
+     */
+    status = translate_psa_algorithm_to_ele_key_property(psa_get_key_algorithm(attributes),
+                                                         s2xx_algo_prop);
+    if (PSA_ERROR_NOT_SUPPORTED == status &&
+        PSA_ALG_NONE == psa_get_key_algorithm(attributes) &&
+        true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
     {
-        case PSA_ALG_ECB_NO_PADDING:
-        case PSA_ALG_CBC_NO_PADDING:
-        case PSA_ALG_CTR:
-        case ALG_NXP_ALL_CIPHER:
-            *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_AES;
-            break;
-        case PSA_ALG_CCM:
-        case PSA_ALG_GCM:
-        case ALG_NXP_ALL_AEAD:
-            *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_AEAD;
-            break;
-        case PSA_ALG_CMAC:
-        case PSA_ALG_HMAC(PSA_ALG_SHA_1):
-        case PSA_ALG_HMAC(PSA_ALG_SHA_224):
-        case PSA_ALG_HMAC(PSA_ALG_SHA_256):
-        case PSA_ALG_HMAC(PSA_ALG_SHA_384):
-        case PSA_ALG_HMAC(PSA_ALG_SHA_512):
-            *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_MAC;
-            break;
-        case ALG_S200_ECBKDF_OR_CKDF:
-            *s2xx_algo_prop = kSSS_KeyProp_CryptoAlgo_KDF;
-            break;
-        case ALG_S200_ECDH_CKDF:
-            *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_KDF;
-            *s2xx_cipher_type = kSSS_CipherType_EC_NIST_P;
-            break;
-        case PSA_ALG_ECDH:
-            *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_KDF;
-            *s2xx_cipher_type = kSSS_CipherType_EC_MONTGOMERY;
-            break;
-        case PSA_ALG_ECDSA(PSA_ALG_SHA_224):
-        case PSA_ALG_ECDSA(PSA_ALG_SHA_256):
-        case PSA_ALG_ECDSA(PSA_ALG_SHA_384):
-        case PSA_ALG_ECDSA(PSA_ALG_SHA_512):
-            *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_AsymSignVerify;
-            *s2xx_cipher_type = kSSS_CipherType_EC_NIST_P;
-            break;
-        case PSA_ALG_ED25519PH:
-        case PSA_ALG_PURE_EDDSA:
-            *s2xx_algo_prop   = kSSS_KeyProp_CryptoAlgo_AsymSignVerify;
-            *s2xx_cipher_type = kSSS_CipherType_EC_TWISTED_ED;
-            break;
-        case PSA_ALG_NONE:
-            *s2xx_algo_prop = (sss_sscp_key_property_t)0u;
-            break;
-        default:
-            status = PSA_ERROR_INVALID_ARGUMENT;
-            break;
+        status = PSA_SUCCESS;
     }
 
 exit:
@@ -411,13 +376,13 @@ static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attribu
                                              size_t blob_size,
                                              sss_sscp_object_t *sssKey)
 {
-    psa_status_t psa_status                        = PSA_ERROR_CORRUPTION_DETECTED;
-    sss_sscp_key_property_t algorithm_key_property = {0u};
-    sss_key_part_t key_part                        = {0u};
-    sss_cipher_type_t cipher_type                  = {0u};
-    size_t allocation_size                         = 0u;
-    psa_key_location_t location                    = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
-    sss_sscp_blob_type_t blob_type                 = kSSS_blobType_ELKE_blob;
+    psa_status_t psa_status          = PSA_ERROR_CORRUPTION_DETECTED;
+    sss_sscp_key_property_t keyprops = {0u};
+    sss_key_part_t key_part          = {0u};
+    sss_cipher_type_t cipher_type    = {0u};
+    size_t allocation_size           = 0u;
+    psa_key_location_t location      = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    sss_sscp_blob_type_t blob_type   = kSSS_blobType_ELKE_blob;
 
     if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
     {
@@ -454,7 +419,7 @@ static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attribu
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Keyobject init failed");
     }
 
-    psa_status = ele_s2xx_get_algo_keyprop(attributes, &algorithm_key_property, &key_part, &cipher_type, &allocation_size);
+    psa_status = ele_s2xx_get_algo_keyprop(attributes, &keyprops, &key_part, &cipher_type, &allocation_size);
     if (PSA_SUCCESS != psa_status)
     {
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Valid keyproperty not found");
@@ -475,7 +440,7 @@ static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attribu
         if (sss_sscp_key_object_allocate_handle(sssKey, MBEDTLS_SVC_KEY_ID_GET_KEY_ID(psa_get_key_id(attributes)),
                                                 key_part, cipher_type,
                                                 allocation_size,
-                                                algorithm_key_property) != kStatus_SSS_Success)
+                                                keyprops) != kStatus_SSS_Success)
         {
             (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
@@ -490,6 +455,26 @@ static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attribu
             (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
             PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error, Blob import failed");
+        }
+
+        /* In case the original blob did not prohibit plain reads and writes,
+         * we fetch the final keyprops (they are always overwritten by the ones
+         * contained in the blob) and force plain read/write prohibition flags.
+         */
+        if (sss_sscp_key_object_get_properties(sssKey, &keyprops) != kStatus_SSS_Success)
+        {
+            (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
+            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+            goto exit;
+        }
+
+        keyprops |= kSSS_KeyProp_NoPlainWrite | kSSS_KeyProp_NoPlainRead;
+
+        if (sss_sscp_key_object_set_properties(sssKey, keyprops) != kStatus_SSS_Success)
+        {
+            (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
+            psa_status = PSA_ERROR_HARDWARE_FAILURE;
+            goto exit;
         }
     }
 
@@ -693,10 +678,5 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
     /* Import the key blob */
     psa_status = ele_s2xx_import_key_blob(attributes, key_buffer,
                                           key_buffer_size, sssKey);
-    if (PSA_SUCCESS != psa_status)
-    {
-        return psa_status;
-    }
-
-    return PSA_SUCCESS;
+    return psa_status;
 }
