@@ -458,19 +458,12 @@ static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attribu
         }
 
         /* In case the original blob did not prohibit plain reads and writes,
-         * we fetch the final keyprops (they are always overwritten by the ones
-         * contained in the blob) and force plain read/write prohibition flags.
+         * we add plain read/write prohibition flags. This does not override
+         * existing flags from the blob import, as writeable flags are sticky.
          */
-        if (sss_sscp_key_object_get_properties(sssKey, &keyprops) != kStatus_SSS_Success)
-        {
-            (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
-            psa_status = PSA_ERROR_HARDWARE_FAILURE;
-            goto exit;
-        }
+        keyprops = kSSS_KeyProp_NoPlainWrite | kSSS_KeyProp_NoPlainRead;
 
-        keyprops |= kSSS_KeyProp_NoPlainWrite | kSSS_KeyProp_NoPlainRead;
-
-        if (sss_sscp_key_object_set_properties(sssKey, keyprops) != kStatus_SSS_Success)
+        if (sss_sscp_key_object_set_properties(sssKey, (uint32_t)keyprops) != kStatus_SSS_Success)
         {
             (void)sss_sscp_key_object_free(sssKey, kSSS_keyObjFree_KeysStoreDefragment);
             psa_status = PSA_ERROR_HARDWARE_FAILURE;
