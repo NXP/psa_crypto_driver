@@ -130,6 +130,10 @@ psa_status_t ele_s4xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
     macParam.payload = (uint32_t) input;
     macParam.payload_size = input_length;
 
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
     ele_status = ELE_OpenMacService(S3MU, g_ele_ctx.key_store_handle, &macHandleID);
     status = ele_to_psa_status(ele_status);
     if (status != PSA_SUCCESS) {

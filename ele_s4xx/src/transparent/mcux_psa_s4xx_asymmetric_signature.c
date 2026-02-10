@@ -100,7 +100,6 @@ static psa_status_t ele_s4xx_transparent_rsa_sign_common(
     uint32_t key_bytes = key_bits / 8;
     size_t slen = -1;
     size_t hlen = PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg));
-    int lock = 0;
 
     /* First check if the key size is supported by hardware, then any further checks */
     if (key_bits != 2048 && key_bits != 3072 && key_bits != 4096) {
@@ -146,11 +145,11 @@ static psa_status_t ele_s4xx_transparent_rsa_sign_common(
         /* For PSA API, explicit salt length is not passed by caller */
         /* Calculate the largest possible salt length, up to the hash size.
          * Normally this is the hash length, which is the maximum salt length
-         * according to FIPS 185-4 §5.5 (e) and common practice. If there is not
+         * according to FIPS 186-4 5.5 (e) and common practice. If there is not
          * enough room, use the maximum salt length that fits. The constraint is
          * that the hash length plus the salt length plus 2 bytes must be at most
-         * the key length. This complies with FIPS 186-4 §5.5 (e) and RFC 8017
-         * (PKCS#1 v2.2) §9.1.1 step 3. */
+         * the key length. This complies with FIPS 186-4 5.5 (e) and RFC 8017
+         * (PKCS#1 v2.2) Section 9.1.1 step 3. */
         min_slen = hlen - 2;
         if (signature_size < hlen + min_slen + 2) {
             return PSA_ERROR_INVALID_ARGUMENT;
@@ -205,9 +204,7 @@ static psa_status_t ele_s4xx_transparent_rsa_sign_common(
     }
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
-        lock = 1;
-        status = PSA_ERROR_COMMUNICATION_FAILURE;
-        goto cleanup;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     ele_status = ELE_GenericRsa(S3MU, &GenericRsaSign);
@@ -216,13 +213,10 @@ static psa_status_t ele_s4xx_transparent_rsa_sign_common(
     // Nothing returned from ELE, so assign signature length as key bytes
     *signature_length = key_bytes;
 
-cleanup:
     mcux_free_raw_rsa(rsa_key);
 
-    if (lock) {
-        if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-            return PSA_ERROR_BAD_STATE;
-        }
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -244,7 +238,6 @@ static psa_status_t ele_s4xx_transparent_rsa_verify_common(
     generic_rsa_algo_t sig_scheme;
     size_t key_bits = psa_get_key_bits(attributes);
     uint32_t key_bytes = key_bits / 8;
-    int lock = 0;
     struct rsa_keypair rsa_key;
     size_t hlen = PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg));
 
@@ -320,9 +313,7 @@ static psa_status_t ele_s4xx_transparent_rsa_verify_common(
     }
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
-        lock = 1;
-        status = PSA_ERROR_COMMUNICATION_FAILURE;
-        goto cleanup;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     ele_status = ELE_GenericRsa(S3MU, &GenericRsaVerif);
@@ -332,13 +323,10 @@ static psa_status_t ele_s4xx_transparent_rsa_verify_common(
         status = PSA_ERROR_INVALID_SIGNATURE;
     }
 
-cleanup:
     mcux_free_raw_rsa(rsa_key);
 
-    if (lock) {
-        if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-            return PSA_ERROR_BAD_STATE;
-        }
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

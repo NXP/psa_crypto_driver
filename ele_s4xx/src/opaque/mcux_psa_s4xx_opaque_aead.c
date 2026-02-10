@@ -188,6 +188,10 @@ ele_s4xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes,
     ctx.output = (uint32_t) ciphertext;
     ctx.output_size = ciphertext_length;
 
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
     ele_status = ELE_OpenCipherService(S3MU, g_ele_ctx.key_store_handle, &cipherHandleID);
     status = ele_to_psa_status(ele_status);
     if (status != PSA_SUCCESS) {
@@ -305,6 +309,10 @@ psa_status_t ele_s4xx_opaque_aead_decrypt(
     /* Cipher text */
     ctx.output = (uint32_t) plaintext;
     ctx.output_size = &output_length;
+
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
 
     ele_status = ELE_OpenCipherService(S3MU, g_ele_ctx.key_store_handle, &cipherHandleID);
     status = ele_to_psa_status(ele_status);

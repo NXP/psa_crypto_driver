@@ -196,7 +196,7 @@ static psa_status_t ele_s4xx_opaque_sign_common(
         ELE_CloseSignService(S3MU, signHandleID);
         goto out;
     }
-        
+
     ele_status = ELE_CloseSignService(S3MU, signHandleID);
     status = ele_to_psa_status(ele_status);
 
@@ -281,11 +281,6 @@ static psa_status_t ele_s4xx_opaque_verify_common(
         verifyParam.salt_size = hlen;
     } else {
         verifyParam.salt_size = 0u;
-    }
-
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
-        free(tmp);
-        return PSA_ERROR_COMMUNICATION_FAILURE;
     }
 
     ele_status = ELE_OpenVerifyService(S3MU, g_ele_ctx.session_handle, &verifyHandleID);
