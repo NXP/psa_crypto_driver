@@ -178,8 +178,8 @@ static psa_status_t ele_s4xx_opaque_sign_common(
         signGenParam.salt_size = 0u;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     ele_status = ELE_OpenSignService(S3MU, g_ele_ctx.key_store_handle, &signHandleID);
@@ -202,8 +202,8 @@ static psa_status_t ele_s4xx_opaque_sign_common(
 
 out:
     *signature_length = sig_size;
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -248,9 +248,9 @@ static psa_status_t ele_s4xx_opaque_verify_common(
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         free(tmp);
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     ele_status = ELE_GeneratePubKey(S3MU, g_ele_ctx.key_store_handle, key_id,
@@ -301,8 +301,8 @@ static psa_status_t ele_s4xx_opaque_verify_common(
 
 out:
     free(tmp);
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

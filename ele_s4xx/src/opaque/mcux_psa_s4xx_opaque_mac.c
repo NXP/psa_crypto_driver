@@ -130,7 +130,7 @@ psa_status_t ele_s4xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
     macParam.payload = (uint32_t) input;
     macParam.payload_size = input_length;
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -154,8 +154,8 @@ psa_status_t ele_s4xx_opaque_mac_compute(const psa_key_attributes_t *attributes,
     status = ele_to_psa_status(ele_status);
 
 out:
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

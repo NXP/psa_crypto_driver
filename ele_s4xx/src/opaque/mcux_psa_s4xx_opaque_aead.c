@@ -188,7 +188,7 @@ ele_s4xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes,
     ctx.output = (uint32_t) ciphertext;
     ctx.output_size = ciphertext_length;
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -212,8 +212,8 @@ ele_s4xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes,
     }
 
 out:
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -310,7 +310,7 @@ psa_status_t ele_s4xx_opaque_aead_decrypt(
     ctx.output = (uint32_t) plaintext;
     ctx.output_size = &output_length;
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -336,8 +336,8 @@ psa_status_t ele_s4xx_opaque_aead_decrypt(
     status = ele_to_psa_status(ele_status);
 
 out:
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

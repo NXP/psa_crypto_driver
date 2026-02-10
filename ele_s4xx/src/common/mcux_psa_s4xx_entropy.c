@@ -57,7 +57,7 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* We need proper RNG init in case of MbedTLS3.x SW-only builds.
@@ -84,7 +84,7 @@ psa_status_t ele_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t *out
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_GENERIC_ERROR;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS)

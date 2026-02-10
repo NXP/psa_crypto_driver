@@ -292,8 +292,8 @@ psa_status_t ele_internal_gen_keypair(const psa_key_attributes_t *attributes,
         sync = true;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     ele_status = ELE_GenerateKey(S3MU,
@@ -312,8 +312,8 @@ psa_status_t ele_internal_gen_keypair(const psa_key_attributes_t *attributes,
         }
     }
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* The key_id returned needs to be saved in data for perisstent keys for now */
@@ -431,18 +431,18 @@ static psa_status_t export_rsa_public_key(psa_key_type_t key_type,
     memset(tmp, 0, size);
     memset(data, 0, data_size);
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         free(tmp);
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     ele_status = ELE_GeneratePubKey(S3MU, g_ele_ctx.key_store_handle, key_id,
                                     (uint32_t *) tmp, data_size, &out_size);
     status = ele_to_psa_status(ele_status);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
         free(tmp);
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS) {
@@ -493,16 +493,16 @@ static psa_status_t export_ecc_public_key(psa_key_type_t key_type,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     ele_status = ELE_GeneratePubKey(S3MU, g_ele_ctx.key_store_handle, key_id,
                                     (uint32_t *) tmp, data_size - 1, &out_size);
     status = ele_to_psa_status(ele_status);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* ECC key will have 0x4 at first offset */
@@ -578,15 +578,15 @@ psa_status_t ele_s4xx_opaque_destroy_key(const psa_key_attributes_t *attributes,
         sync = true;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     ele_status = ELE_DeleteKey(S3MU, g_ele_ctx.key_management_handle, key_id, mono, sync);
     status = ele_to_psa_status(ele_status);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

@@ -203,7 +203,7 @@ static psa_status_t ele_s4xx_transparent_rsa_sign_common(
         GenericRsaSign.flags = kFlagDigest;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -215,7 +215,7 @@ static psa_status_t ele_s4xx_transparent_rsa_sign_common(
 
     mcux_free_raw_rsa(rsa_key);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -312,7 +312,7 @@ static psa_status_t ele_s4xx_transparent_rsa_verify_common(
         GenericRsaVerif.flags = kFlagDigest;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -325,7 +325,7 @@ static psa_status_t ele_s4xx_transparent_rsa_verify_common(
 
     mcux_free_raw_rsa(rsa_key);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 

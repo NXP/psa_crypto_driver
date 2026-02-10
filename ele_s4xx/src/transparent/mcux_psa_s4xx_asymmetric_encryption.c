@@ -156,7 +156,7 @@ static psa_status_t ele_s4xx_transparent_internal_rsa_encrypt(
         GenericRsaEncrypt.label_size = label_len;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -170,7 +170,7 @@ static psa_status_t ele_s4xx_transparent_internal_rsa_encrypt(
 
     mcux_free_raw_rsa(rsa_key);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -250,7 +250,7 @@ static psa_status_t ele_s4xx_transparent_internal_rsa_decrypt(
         GenericRsaDecrypt.label_size = label_len;
     }
 
-    if (mcux_mutex_lock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
@@ -264,7 +264,7 @@ static psa_status_t ele_s4xx_transparent_internal_rsa_decrypt(
 
     mcux_free_raw_rsa(rsa_key);
 
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex)) {
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
