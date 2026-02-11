@@ -598,7 +598,30 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi)
   mcux_add_include(INCLUDES sgi BASE_PATH
                    ${SdkRootDirPath}/components/psa_crypto_driver/)
   mcux_add_macro("-DPSA_CRYPTO_DRIVER_SGI")
-  mcux_add_macro("-DMBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED")
+endif()
+
+####### PKC ########
+
+if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.pkc)
+  mcux_add_source(SOURCES
+    pkc/include/mcux_psa_pkc_asymmetric_signature.h
+    pkc/include/mcux_psa_pkc_init.h
+    pkc/include/mcux_psa_pkc_utils.h
+    pkc/include/mcux_psa_pkc_key_generation.h
+    pkc/src/mcux_psa_pkc_asymmetric_signature.c
+    pkc/src/mcux_psa_pkc_init.c
+    pkc/src/mcux_psa_pkc_utils.c
+    pkc/src/mcux_psa_pkc_key_generation.c
+	pkc/pkc.h
+    BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/)
+  mcux_add_include(
+        INCLUDES pkc
+                 pkc/include
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        "PSA_CRYPTO_DRIVER_PKC"
+    )
 endif()
 
 ########################

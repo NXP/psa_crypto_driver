@@ -254,6 +254,18 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.sgi_pkc
         select MCUX_COMPONENT_component.sgi_pkc.example
 
+        select MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.pkc
+        bool "SGI PKC"
+        select MCUX_COMPONENT_component.sgi_pkc.pkc
+        select MCUX_COMPONENT_component.sgi_pkc.ecc
+        select MCUX_COMPONENT_component.sgi_pkc.signature
+        select MCUX_COMPONENT_component.sgi_pkc.rsa
+		
+		# We provide option to have SGI-only, or SGI+PKC, but PKC-only is not available.
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi
+
     config USING_TF_PSA_CRYPTO
         bool
         default y if MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto

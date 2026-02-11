@@ -1,0 +1,341 @@
+/*
+ * Copyright 2026 NXP
+ *
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+/** \file mcux_psa_pkc_asymmetric_signature.c
+ *
+ * This file contains the implementation of the entry points associated to the
+ * asymmetric signature capability as described by the PSA Cryptoprocessor
+ * Driver interface specification
+ *
+ */
+#include "mcux_psa_pkc_asymmetric_signature.h"
+
+/* For exporting public keys, we will directly use the internal export wrapper,
+ * so that we don't call the public psa_export_public_key() API.
+ */
+extern psa_status_t psa_export_public_key_internal(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer,
+    size_t key_buffer_size,
+    uint8_t *data,
+    size_t data_size,
+    size_t *data_length);
+
+/* Public key is double length of private key + 1byte for leading byte (0x04) which is indicating uncompressed format.
+ * Support for 521 means we might need two additional bytes per ECC coordinate, hence 132 Bytes in total. */
+#define MAX_PUB_KEY_SIZE_IN_BYTES  (132u + 1u)
+#define MAX_PAIR_KEY_SIZE_IN_BYTES (MAX_PUB_KEY_SIZE_IN_BYTES + 66u)
+
+psa_status_t pkc_sign_hash(const psa_key_attributes_t *attributes,
+                           const uint8_t *key_buffer,
+                           size_t key_buffer_size,
+                           psa_algorithm_t alg, const uint8_t *input,
+                           size_t input_length, uint8_t *signature,
+                           size_t signature_size, size_t *signature_length)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    mcuxClKey_Type_t asym_algo = { NULL };
+    size_t output_size = 0;
+    uint32_t signatureSize = 0u;
+
+    /* Validate all parameters BEFORE acquiring mutex */
+    if (NULL == key_buffer || 0u == key_buffer_size) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (NULL == input || 0u == input_length) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (NULL == signature || NULL == signature_length) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Convert PSA_ALG to PKC value and validate supported alg */
+    status = psa_to_pkc_asym_alg_priv(attributes, &asym_algo);
+    if (PSA_SUCCESS != status) {
+        return status;
+    }
+
+    /* Deterministic ECDSA not supported */
+    if (true == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg)) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    output_size = PSA_SIGN_OUTPUT_SIZE(psa_get_key_type(attributes),
+                                       psa_get_key_bits(attributes),
+                                       alg);
+    if (output_size > signature_size) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    /* Acquire mutex */
+    if (mcux_mutex_lock(&pkc_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    /* Setup one session to be used by all functions called */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLSIGNATURE_SIGN_ECDSA_WACPU_SIZE,
+                                                  MCUXCLSIGNATURE_SIGN_ECDSA_WAPKC_SIZE_640);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    /* Allocate space for and initialize private key handle for an ECC private key */
+    uint32_t privKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
+    mcuxClKey_Handle_t privKey = (mcuxClKey_Handle_t) &privKeyDesc;
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status,
+                                     ki_token,
+                                     mcuxClKey_init(
+                                         session,
+                                         privKey,
+                                         asym_algo,
+                                         key_buffer,
+                                         key_buffer_size));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) ||
+        (MCUXCLKEY_STATUS_OK != ki_status)) {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Initialize the RNG context and Initialize the PRNG */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
+                                              MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
+                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ss_status, ss_token, mcuxClSignature_sign(
+                                         session,
+                                         privKey,
+                                         mcuxClSignature_Mode_ECDSA,
+                                         input,
+                                         input_length,
+                                         signature,
+                                         &signatureSize)
+                                     );
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSignature_sign) != ss_token) ||
+        (MCUXCLSIGNATURE_STATUS_OK != ss_status)) {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    *signature_length = signatureSize;
+    status = PSA_SUCCESS;
+
+exit:
+    /**************************************************************************/
+    /* Session clean-up                                                       */
+    /**************************************************************************/
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        /* Don't override previous success/error, but if we were successful, report corruption */
+        if (PSA_SUCCESS == status) {
+            status = PSA_ERROR_CORRUPTION_DETECTED;
+        }
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    if (mcux_mutex_unlock(&pkc_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    return status;
+}
+
+psa_status_t pkc_verify_hash(const psa_key_attributes_t *attributes,
+                             const uint8_t *key_buffer,
+                             size_t key_buffer_size,
+                             psa_algorithm_t alg, const uint8_t *hash,
+                             size_t hash_length, const uint8_t *signature,
+                             size_t signature_length)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    mcuxClKey_Type_t asym_algo = { NULL };
+
+    if (PSA_ALG_IS_ECDSA(alg) != true) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (NULL == key_buffer || 0u == key_buffer_size) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (NULL == hash || 0u == hash_length) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (NULL == signature || 0u == signature_length) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+
+    if ((PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes)) != true)
+        && (PSA_KEY_TYPE_IS_PUBLIC_KEY(psa_get_key_type(attributes)) != true)) {
+        /* Invalid key type detected, The response shall be PSA_ERROR_NOT_SUPPORTED */
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    /* Convert PSA_ALG to PKC value and validate supported alg */
+    status = psa_to_pkc_asym_alg_pub(attributes, &asym_algo);
+    if (PSA_SUCCESS != status) {
+        return status;
+    }
+
+    /* Acquire mutex */
+    if (mcux_mutex_lock(&pkc_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    const uint8_t *key_data_pub = NULL;
+    size_t key_data_size = 0u;
+
+    /* For exporting the public part of the key */
+    uint8_t public_key_data[MAX_PAIR_KEY_SIZE_IN_BYTES] = { 0u };
+    size_t public_key_data_length = 0u;
+
+    if (true == PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes))) {
+        /* In PSA, an ECC key pair is represented by the secret value,
+         * so we need to also export the public part and position them
+         * correctly in memory [pub_x, pub_y, private] */
+        status = psa_export_public_key_internal(attributes,
+                                                key_buffer,
+                                                key_buffer_size,
+                                                public_key_data,
+                                                MAX_PAIR_KEY_SIZE_IN_BYTES,
+                                                &public_key_data_length);
+
+        if (PSA_SUCCESS != status) {
+            goto exit;
+        }
+
+        if (0u == public_key_data_length) {
+            status = PSA_ERROR_GENERIC_ERROR;
+            goto exit;
+        }
+
+        /* Need to move 1byte for leading byte (0x04) which is indicating uncompressed format. */
+        key_data_pub = public_key_data + 1;
+        key_data_size = public_key_data_length - 1u;
+    } else if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(psa_get_key_type(attributes))) {
+
+        /* Need to move 1byte for leading byte (0x04) which is indicating uncompressed format. */
+        key_data_pub = (const uint8_t *) key_buffer + 1;
+        key_data_size = key_buffer_size - 1u;
+    } else {
+        /* Expecting public key or keypair */
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
+    /* Setup one session to be used by all functions called */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLSIGNATURE_SIGN_ECDSA_WACPU_SIZE,
+                                                  MCUXCLSIGNATURE_SIGN_ECDSA_WAPKC_SIZE_640);
+
+    /* Initialize the PRNG */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    /* Allocate space for and initialize private key handle for public key */
+    uint32_t pubKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
+    mcuxClKey_Handle_t pubKey = (mcuxClKey_Handle_t) &pubKeyDesc;
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_pub_status,
+                                     ki_pub_token,
+                                     mcuxClKey_init(
+                                         session,
+                                         pubKey,
+                                         asym_algo,
+                                         key_data_pub,
+                                         key_data_size)
+                                     );
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_pub_token) ||
+        (MCUXCLKEY_STATUS_OK != ki_pub_status)) {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Initialize the RNG context and Initialize the PRNG */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
+                                              MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
+                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+
+    /**************************************************************************/
+    /* ECDSA signature verification                                            */
+    /**************************************************************************/
+    /* Record critical parameters for additional protection */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(rp_status, rp_token, mcuxClSignature_verify_recordParam(
+                                         session,
+                                         mcuxClSignature_Mode_ECDSA,
+                                         hash,
+                                         hash_length)
+                                     );
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSignature_verify_recordParam) != rp_token) ||
+        (MCUXCLSIGNATURE_STATUS_OK != rp_status)) {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(sv_status, sv_token, mcuxClSignature_verify(
+                                         session,
+                                         pubKey,
+                                         mcuxClSignature_Mode_ECDSA,
+                                         hash,
+                                         hash_length,
+                                         signature,
+                                         signature_length)
+                                     );
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSignature_verify) != sv_token) ||
+        (MCUXCLSIGNATURE_STATUS_OK != sv_status)) {
+        status = PSA_ERROR_INVALID_SIGNATURE;
+        goto exit;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    status = PSA_SUCCESS;
+
+exit:
+    /**************************************************************************/
+    /* Session clean-up                                                       */
+    /**************************************************************************/
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        /* Don't override previous success/error, but if we were successful, report corruption */
+        if (PSA_SUCCESS == status) {
+            status = PSA_ERROR_CORRUPTION_DETECTED;
+        }
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    if (mcux_mutex_unlock(&pkc_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    return status;
+}
+
+
+/** @} */ // end of psa_asym_sign
