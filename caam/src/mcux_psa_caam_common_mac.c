@@ -114,7 +114,7 @@ psa_status_t caam_common_mac_compute(const psa_key_attributes_t *attributes,
     }
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     caam_status =
@@ -133,7 +133,7 @@ psa_status_t caam_common_mac_compute(const psa_key_attributes_t *attributes,
     status = caam_to_psa_status(caam_status);
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0u) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

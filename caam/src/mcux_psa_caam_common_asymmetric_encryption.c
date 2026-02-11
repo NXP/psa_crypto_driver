@@ -88,8 +88,8 @@ psa_status_t caam_common_internal_rsa_encrypt(mcux_psa_caam_key_type_t caam_key_
     }
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        err  = PSA_ERROR_BAD_STATE;
-        err2 = PSA_ERROR_BAD_STATE;
+        err  = PSA_ERROR_SERVICE_FAILURE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (err == PSA_SUCCESS) {
@@ -109,7 +109,7 @@ psa_status_t caam_common_internal_rsa_encrypt(mcux_psa_caam_key_type_t caam_key_
     }
 
     if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
-        err2 = PSA_ERROR_BAD_STATE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (caam_key_type == MCUX_PSA_CAAM_KEY_TYPE_NONE) {
@@ -214,8 +214,8 @@ static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type
 #endif
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        err  = PSA_ERROR_BAD_STATE;
-        err2 = PSA_ERROR_BAD_STATE;
+        err  = PSA_ERROR_SERVICE_FAILURE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (err == PSA_SUCCESS) {
@@ -231,7 +231,7 @@ static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type
     }
 
     if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
-        err2 = PSA_ERROR_BAD_STATE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (err == PSA_SUCCESS) {
@@ -401,8 +401,8 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
 
     if (err == PSA_SUCCESS) {
         if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-            err  = PSA_ERROR_BAD_STATE;
-            err2 = PSA_ERROR_BAD_STATE;
+            err  = PSA_ERROR_SERVICE_FAILURE;
+            err2 = PSA_ERROR_SERVICE_FAILURE;
         }
     }
 
@@ -423,7 +423,7 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
     }
 
     if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
-        err2 = PSA_ERROR_BAD_STATE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (err == PSA_SUCCESS) {

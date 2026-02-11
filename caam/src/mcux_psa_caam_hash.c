@@ -83,7 +83,7 @@ psa_status_t caam_hash_setup(mcux_caam_hash_operation_t *operation, psa_algorith
     operation->psa_mode = PSA_ALG_GET_HASH(alg);
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     caam_status = CAAM_HASH_Init(PSA_CAAM,
@@ -95,7 +95,7 @@ psa_status_t caam_hash_setup(mcux_caam_hash_operation_t *operation, psa_algorith
     status      = caam_to_psa_status(caam_status);
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -144,14 +144,14 @@ psa_status_t caam_hash_update(mcux_caam_hash_operation_t *operation,
     }
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     caam_status = CAAM_HASH_Update(&operation->ctx, input, input_length);
     status      = caam_to_psa_status(caam_status);
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -187,14 +187,14 @@ psa_status_t caam_hash_finish(mcux_caam_hash_operation_t *operation,
     *hash_length = 0;
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     caam_status = CAAM_HASH_Finish(&operation->ctx, hash, hash_length);
     status      = caam_to_psa_status(caam_status);
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -244,7 +244,7 @@ psa_status_t caam_hash_compute(psa_algorithm_t alg,
     *hash_length = 0;
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     caam_status = CAAM_HASH(PSA_CAAM,
@@ -259,7 +259,7 @@ psa_status_t caam_hash_compute(psa_algorithm_t alg,
     status      = caam_to_psa_status(caam_status);
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

@@ -174,8 +174,8 @@ static psa_status_t caam_common_internal_ecc_sign(mcux_psa_caam_key_type_t caam_
     }
 
     if ((err == PSA_SUCCESS) && (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0)) {
-        err  = PSA_ERROR_BAD_STATE;
-        err2 = PSA_ERROR_BAD_STATE;
+        err  = PSA_ERROR_SERVICE_FAILURE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (err == PSA_SUCCESS) {
@@ -192,7 +192,7 @@ static psa_status_t caam_common_internal_ecc_sign(mcux_psa_caam_key_type_t caam_
     }
 
     if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
-        err2 = PSA_ERROR_BAD_STATE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     err3 = mcux_free_raw_ecc(&ecc_key);
@@ -279,8 +279,8 @@ static psa_status_t caam_common_internal_ecc_verify(mcux_psa_caam_key_type_t caa
 
     if (err == PSA_SUCCESS) {
         if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-            err  = PSA_ERROR_BAD_STATE;
-            err2 = PSA_ERROR_BAD_STATE;
+            err  = PSA_ERROR_SERVICE_FAILURE;
+            err2 = PSA_ERROR_SERVICE_FAILURE;
         }
     }
 
@@ -298,7 +298,7 @@ static psa_status_t caam_common_internal_ecc_verify(mcux_psa_caam_key_type_t caa
     }
 
     if ((err2 == PSA_SUCCESS) && (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
-        err2 = PSA_ERROR_BAD_STATE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
 #if defined(USE_MALLOC)

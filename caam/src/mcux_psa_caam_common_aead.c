@@ -174,7 +174,7 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
     *ciphertext_length = 0u;
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     switch (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg)) {
@@ -228,7 +228,7 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
     status = caam_to_psa_status(caam_status);
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS) {
@@ -426,7 +426,7 @@ psa_status_t caam_internal_aead_decrypt(mcux_psa_caam_key_type_t caam_key_type,
     tag = (uint8_t *) (ciphertext + cipher_length);
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     switch (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg)) {
@@ -480,7 +480,7 @@ psa_status_t caam_internal_aead_decrypt(mcux_psa_caam_key_type_t caam_key_type,
     status = caam_to_psa_status(caam_status);
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS) {

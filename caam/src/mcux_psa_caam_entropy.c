@@ -56,8 +56,8 @@ psa_status_t caam_get_entropy(uint32_t flags,
     }
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        err  = PSA_ERROR_BAD_STATE;
-        err2 = PSA_ERROR_BAD_STATE;
+        err  = PSA_ERROR_SERVICE_FAILURE;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     result = CAAM_RNG_GetRandomData(PSA_CAAM,
@@ -71,7 +71,7 @@ psa_status_t caam_get_entropy(uint32_t flags,
 
     if ((err2 == PSA_SUCCESS) &&
         (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0)) {
-        err2 = PSA_ERROR_GENERIC_ERROR;
+        err2 = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (err2 != PSA_SUCCESS) {

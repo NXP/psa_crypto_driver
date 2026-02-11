@@ -334,7 +334,7 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
     }
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
@@ -538,7 +538,7 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
 #endif
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS) {
@@ -853,7 +853,7 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
 #endif
 
     if (mcux_mutex_lock(&caam_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     switch (key_type) {
@@ -1035,7 +1035,7 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
     }
 
     if (mcux_mutex_unlock(&caam_hwcrypto_mutex) != 0) {
-        status = PSA_ERROR_BAD_STATE;
+        status = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS) {
