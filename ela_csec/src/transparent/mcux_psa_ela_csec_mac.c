@@ -60,7 +60,7 @@ psa_status_t ela_csec_transparent_mac_compute(const psa_key_attributes_t *attrib
 
     if (mcux_mutex_lock(&ela_csec_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Load the transparent key */
@@ -89,7 +89,7 @@ exit:
 
     if (mcux_mutex_unlock(&ela_csec_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

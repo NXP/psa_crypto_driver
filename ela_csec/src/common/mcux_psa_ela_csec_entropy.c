@@ -44,12 +44,10 @@ psa_status_t ela_csec_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t
         goto exit;
     }
 
-#if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_lock(&ela_csec_hwcrypto_mutex) != 0)
+    if (mcux_mutex_lock(&ela_csec_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
-#endif
 
     /* CSEc can do 128bit blocks of random data per call. Do the max number
      * of full 128bit iterations + one last incomplete block, if needed.
@@ -77,12 +75,10 @@ psa_status_t ela_csec_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t
         (void)memcpy(output + (full_iterations * ELA_CSEC_RANDOM_SIZE), rnd_buf, remainder);
     }
 
-#if defined(MBEDTLS_THREADING_C)
-    if (mbedtls_mutex_unlock(&ela_csec_hwcrypto_mutex) != 0)
+    if (mcux_mutex_unlock(&ela_csec_hwcrypto_mutex) != 0)
     {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
-#endif
 
     status = ela_csec_to_psa_status(result);
 
