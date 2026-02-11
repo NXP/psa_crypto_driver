@@ -66,7 +66,7 @@ psa_status_t hashcrypt_hash_setup(mcux_hashcrypt_hash_operation_t *operation, ps
     operation->psa_mode = PSA_ALG_GET_HASH(alg);
 
     if (mcux_mutex_lock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     hashcrypt_status = HASHCRYPT_SHA_Init(PSA_HASHCRYPT, &operation->ctx,
@@ -74,7 +74,7 @@ psa_status_t hashcrypt_hash_setup(mcux_hashcrypt_hash_operation_t *operation, ps
     status           = hashcrypt_to_psa_status(hashcrypt_status);
 
     if (mcux_mutex_unlock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -116,14 +116,14 @@ psa_status_t hashcrypt_hash_update(mcux_hashcrypt_hash_operation_t *operation,
     }
 
     if (mcux_mutex_lock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     hashcrypt_status = HASHCRYPT_SHA_Update(PSA_HASHCRYPT, &operation->ctx, input, input_length);
     status           = hashcrypt_to_psa_status(hashcrypt_status);
 
     if (mcux_mutex_unlock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -159,7 +159,7 @@ psa_status_t hashcrypt_hash_finish(mcux_hashcrypt_hash_operation_t *operation,
     }
 
     if (mcux_mutex_lock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     *hash_length = hash_size;
@@ -168,7 +168,7 @@ psa_status_t hashcrypt_hash_finish(mcux_hashcrypt_hash_operation_t *operation,
 
     if (mcux_mutex_unlock(&hashcrypt_hwcrypto_mutex) != 0) {
         *hash_length = 0;
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -219,7 +219,7 @@ psa_status_t hashcrypt_hash_compute(psa_algorithm_t alg,
     }
 
     if (mcux_mutex_lock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     *hash_length = hash_size;
@@ -228,7 +228,7 @@ psa_status_t hashcrypt_hash_compute(psa_algorithm_t alg,
 
     if (mcux_mutex_unlock(&hashcrypt_hwcrypto_mutex) != 0) {
         *hash_length = 0;
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

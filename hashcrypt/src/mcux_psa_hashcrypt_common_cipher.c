@@ -124,7 +124,7 @@ psa_status_t hashcrypt_cipher_encrypt(const psa_key_attributes_t *attributes,
     }
 
     if (mcux_mutex_lock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
@@ -247,7 +247,7 @@ psa_status_t hashcrypt_cipher_encrypt(const psa_key_attributes_t *attributes,
 #endif
 
     if (mcux_mutex_unlock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS) {
@@ -425,7 +425,7 @@ psa_status_t hashcrypt_cipher_decrypt(const psa_key_attributes_t *attributes,
 #endif
 
     if (mcux_mutex_lock(&hashcrypt_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Set key */
@@ -523,7 +523,7 @@ psa_status_t hashcrypt_cipher_decrypt(const psa_key_attributes_t *attributes,
     }
 
     if (mcux_mutex_unlock(&hashcrypt_hwcrypto_mutex) != 0) {
-        status = PSA_ERROR_BAD_STATE;
+        status = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS) {

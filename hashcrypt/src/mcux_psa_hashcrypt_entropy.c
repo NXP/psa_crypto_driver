@@ -101,7 +101,7 @@ psa_status_t mcux_psa_hashcrypt_entropy_get(uint32_t flags,
     }
 
     if (mcux_mutex_lock(s_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     result = HAL_RngHwGetData((uint8_t *) output, output_size);
@@ -112,7 +112,7 @@ psa_status_t mcux_psa_hashcrypt_entropy_get(uint32_t flags,
     err = hal_rng_to_psa_status((hal_rng_status_t) result);
 
     if (mcux_mutex_unlock(s_mutex) != 0) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (err == PSA_SUCCESS) {

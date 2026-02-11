@@ -80,7 +80,7 @@ static psa_status_t casper_common_internal_ecc_sign(const psa_key_attributes_t *
 
     /* Lock mutex */
     if ((status == PSA_SUCCESS) && (mcux_mutex_lock(&casper_hwcrypto_mutex) != 0)) {
-        status = PSA_ERROR_BAD_STATE;
+        status = PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Sign hash */
@@ -113,7 +113,7 @@ static psa_status_t casper_common_internal_ecc_sign(const psa_key_attributes_t *
 
     /* Unlock mutex */
     if ((status == PSA_SUCCESS) && (mcux_mutex_unlock(&casper_hwcrypto_mutex) != 0)) {
-        status = PSA_ERROR_BAD_STATE;
+        status = PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Check verification status */
@@ -195,7 +195,7 @@ static psa_status_t casper_common_internal_ecc_verify(const psa_key_attributes_t
 
     /* Lock mutex */
     if ((status == PSA_SUCCESS) && (mcux_mutex_lock(&casper_hwcrypto_mutex) != 0)) {
-        status = PSA_ERROR_BAD_STATE;
+        status = PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Verify signature */
@@ -223,7 +223,7 @@ static psa_status_t casper_common_internal_ecc_verify(const psa_key_attributes_t
 
     /* Unlock mutex */
     if ((status == PSA_SUCCESS) && (mcux_mutex_unlock(&casper_hwcrypto_mutex) != 0)) {
-        status = PSA_ERROR_BAD_STATE;
+        status = PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Check verification status */
