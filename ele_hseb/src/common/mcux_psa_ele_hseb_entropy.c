@@ -43,20 +43,16 @@ psa_status_t ele_hseb_get_entropy(uint32_t flags,
         goto exit;
     }
 
-#if defined(MBEDTLS_THREADING_C)
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
-#endif
 
     /* We use the highest quality, but slow, RNG for gathering entropy */
     hseb_status = GetRngNum(output, output_size, HSE_RNG_CLASS_PTG3);
 
-#if defined(MBEDTLS_THREADING_C)
     if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
-#endif
 
     status = ele_hseb_to_psa_status(hseb_status);
 
