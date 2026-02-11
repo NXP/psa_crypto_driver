@@ -344,6 +344,10 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
     /* Input buffer i.e plaintext or AAD is allowed to be 0 in encrypt
      * Operation. Hence output of a decrypt can be of size 0. Hence no
      * check involving plaintext buffer.
