@@ -78,14 +78,14 @@ psa_status_t dcp_hash_setup(mcux_dcp_hash_operation_t *operation, psa_algorithm_
     operation->psa_mode = PSA_ALG_GET_HASH(alg);
 
     if (mcux_mutex_lock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     dcp_status = DCP_HASH_Init(PSA_DCP, &operation->handle, &operation->ctx, operation->dcp_mode);
     status     = dcp_to_psa_status(dcp_status);
 
     if (mcux_mutex_unlock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -138,14 +138,14 @@ psa_status_t dcp_hash_update(mcux_dcp_hash_operation_t *operation,
     }
 
     if (mcux_mutex_lock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     dcp_status = DCP_HASH_Update(PSA_DCP, &operation->ctx, input, input_length);
     status     = dcp_to_psa_status(dcp_status);
 
     if (mcux_mutex_unlock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -181,7 +181,7 @@ psa_status_t dcp_hash_finish(mcux_dcp_hash_operation_t *operation,
     }
 
     if (mcux_mutex_lock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     *hash_length = hash_size;
@@ -190,7 +190,7 @@ psa_status_t dcp_hash_finish(mcux_dcp_hash_operation_t *operation,
 
     if (mcux_mutex_unlock(&dcp_hwcrypto_mutex)) {
         *hash_length = 0;
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;
@@ -246,7 +246,7 @@ psa_status_t dcp_hash_compute(psa_algorithm_t alg,
     }
 
     if (mcux_mutex_lock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     *hash_length = hash_size;
@@ -255,7 +255,7 @@ psa_status_t dcp_hash_compute(psa_algorithm_t alg,
 
     if (mcux_mutex_unlock(&dcp_hwcrypto_mutex)) {
         *hash_length = 0;
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     return status;

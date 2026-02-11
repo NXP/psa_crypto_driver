@@ -111,7 +111,7 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
     }
 
     if (mcux_mutex_lock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Set key */
@@ -266,7 +266,7 @@ psa_status_t dcp_cipher_encrypt(const psa_key_attributes_t *attributes,
 #endif
 
     if (mcux_mutex_unlock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status != PSA_SUCCESS) {
@@ -413,7 +413,7 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     }
 
     if (mcux_mutex_lock(&dcp_hwcrypto_mutex)) {
-        return PSA_ERROR_COMMUNICATION_FAILURE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Set key */
@@ -529,13 +529,13 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     }
 
     if (mcux_mutex_unlock(&dcp_hwcrypto_mutex)) {
-        status = PSA_ERROR_BAD_STATE;
+        status = PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (status == PSA_SUCCESS) {
         status = dcp_to_psa_status(dcp_status);
     }
-    
+
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
     /* Based on last byte, identify plaintext and copy to the final buffer. */
     if (alg == PSA_ALG_CBC_PKCS7) {

@@ -75,7 +75,7 @@ psa_status_t mcux_psa_dcp_entropy_get(uint32_t flags,
 
     if (mcux_mutex_lock(s_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (kStatus_Success != TRNG_GetRandomData(TRNG, output, output_size))
@@ -89,7 +89,7 @@ psa_status_t mcux_psa_dcp_entropy_get(uint32_t flags,
 
     if (mcux_mutex_unlock(s_mutex) != 0)
     {
-        return PSA_ERROR_BAD_STATE;
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (PSA_SUCCESS == status)
