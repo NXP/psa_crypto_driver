@@ -15,15 +15,18 @@
 #include "mcux_psa_casper_ecdsa_port.h"
 #include "mcux_psa_casper_ecp_port.h"
 
-//  #include "mbedtls/asn1write.h"
 #include "private_access.h"
 #include "ecdsa.h"
 #include "ecp.h"
-#include "bignum.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/error.h"
 #include "hmac_drbg.h"
 
+#if defined (CONFIG_USING_MBEDTLS_3X)
+#include "mbedtls/bignum.h"
+#else  // CONFIG_USING_TF_PSA_CRYPTO as default
+#include "mbedtls/private/bignum.h"
+#endif
 
 /*
  * Derive a suitable integer for group grp from a buffer of length len
