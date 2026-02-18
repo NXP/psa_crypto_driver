@@ -14,6 +14,7 @@
  */
 
 #include "mcux_psa_sgi_mac.h"
+#include "tf-psa-crypto/build_info.h"
 
 /*
  * Entry points for MAC computation and verification as described by the PSA

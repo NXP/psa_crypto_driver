@@ -19,6 +19,8 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#include "fsl_device_registers.h"
+
 #if defined(MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED)
 #if defined(FSL_FEATURE_SOC_TRNG_COUNT) && (FSL_FEATURE_SOC_TRNG_COUNT > 0)
 #include "fsl_trng.h"

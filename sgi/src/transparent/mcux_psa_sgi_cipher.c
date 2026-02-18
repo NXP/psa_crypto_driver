@@ -19,6 +19,7 @@
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
 #include "mbedtls/platform.h"
+#include "tf-psa-crypto/build_info.h"
 
 #include <mcuxClKey.h>
 #include <mcuxClCipher.h>

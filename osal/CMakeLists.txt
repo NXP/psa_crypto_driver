@@ -63,3 +63,14 @@ target_sources(
         zephyr/threading_alt.c
 )
 endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx
+
+if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
+zephyr_library_include_directories(
+        ${CMAKE_CURRENT_LIST_DIR}/.
+        zephyr/.
+)
+
+zephyr_library_sources(
+        zephyr/osal_mutex.c
+)
+endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx
