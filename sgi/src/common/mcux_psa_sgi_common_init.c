@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "mcux_psa_sgi_common_init.h" /* ELE Crypto port layer */
+#include "mcux_psa_sgi_common_init.h"
 
 
 /******************************************************************************/
@@ -33,7 +33,7 @@ status_t CRYPTO_InitHardware(void)
     status_t result = kStatus_Fail;
 
     if (g_isCryptoHWInitialized == true) {
-        return 0;
+        return kStatus_Success;
     }
 
     /* Mutex for access to sgi crypto HW */
@@ -41,19 +41,24 @@ status_t CRYPTO_InitHardware(void)
         return kStatus_Fail;
     }
 
-    if ((result = mcux_mutex_lock(&sgi_hwcrypto_mutex)) != 0) {
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        if (mcux_mutex_free(&sgi_hwcrypto_mutex) != 0) {
+            /* Mutex free failed, but we're already in error path */
+        }
         return kStatus_Fail;
     }
 
     do {
         result = kStatus_Success;
-
         g_isCryptoHWInitialized = true;
 
     } while (0);
 
-
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        g_isCryptoHWInitialized = false;
+        if (mcux_mutex_free(&sgi_hwcrypto_mutex) != 0) {
+            /* Mutex free failed, but we're already in error path */
+        }
         return kStatus_Fail;
     }
 
@@ -71,23 +76,24 @@ status_t CRYPTO_DeinitHardware(void)
     status_t result = kStatus_Fail;
 
     if (g_isCryptoHWInitialized == false) {
-        return 0;
+        return kStatus_Success;
     }
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
         return kStatus_Fail;
     }
 
-    if (result == kStatus_Success) {
-        g_isCryptoHWInitialized = false;
-    }
+    result = kStatus_Success;
+    g_isCryptoHWInitialized = false;
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
         return kStatus_Fail;
     }
 
     if (result == kStatus_Success) {
-        (void) mcux_mutex_free(&sgi_hwcrypto_mutex);
+        if (mcux_mutex_free(&sgi_hwcrypto_mutex) != 0) {
+            return kStatus_Fail;
+        }
     }
 
     return result;

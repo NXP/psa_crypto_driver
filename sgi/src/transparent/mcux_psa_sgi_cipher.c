@@ -48,19 +48,18 @@ static inline void psa_cipher_to_sgi_alg(const psa_algorithm_t alg,
 #endif /* PSA_WANT_ALG_CBC_PKCS7 */
 #if defined(PSA_WANT_ALG_ECB_NO_PADDING)
         case PSA_ALG_ECB_NO_PADDING:
-            *mode       = mcuxClCipher_Mode_AES_ECB_NoPadding;
+            *mode = mcuxClCipher_Mode_AES_ECB_NoPadding;
             break;
 #endif /* PSA_WANT_ALG_ECB_NO_PADDING */
         default:
             *mode = NULL;
             break;
     }
-
 }
 
-static inline mcuxClKey_Type_t   get_sgi_keytype(const psa_key_attributes_t *attributes)
+static inline mcuxClKey_Type_t get_sgi_keytype(const psa_key_attributes_t *attributes)
 {
-    size_t key_bits          = psa_get_key_bits(attributes);
+    size_t key_bits = psa_get_key_bits(attributes);
     mcuxClKey_Type_t type = { NULL };
 
     if (psa_get_key_type(attributes) == PSA_KEY_TYPE_AES &&
@@ -95,9 +94,10 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
                                             size_t output_size,
                                             size_t *output_length)
 {
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
-    size_t key_bits         = psa_get_key_bits(attributes);
-    size_t key_bytes        = PSA_BITS_TO_BYTES(key_bits);
+    size_t key_bits = psa_get_key_bits(attributes);
+    size_t key_bytes = PSA_BITS_TO_BYTES(key_bits);
 
     /* Key buffer or size can't be NULL */
     if (NULL == key_buffer || 0u == key_buffer_size) {
@@ -162,7 +162,8 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     mcuxClKey_Type_t type = get_sgi_keytype(attributes);
 
     if (type == NULL) {
-        return PSA_ERROR_NOT_SUPPORTED;
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto cleanup;
     }
 
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
@@ -180,18 +181,18 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status,
-                                     ki_token,
-                                     mcuxClKey_init(
-                                         /* mcuxClSession_Handle_t session:        */ session,
-                                         /* mcuxClKey_Handle_t key:                */ key,
-                                         /* mcuxClKey_Type_t type:                 */ type,
-                                         /* uint8_t * pKeyData:                   */ key_buffer,
-                                         /* uint32_t keyDataLength:               */ key_buffer_size));
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
+                                     mcuxClKey_init(session, key, type,
+                                                    key_buffer, key_buffer_size));
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) ||
-        (MCUXCLKEY_STATUS_OK != ki_status)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLKEY_STATUS_OK != ki_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
@@ -203,45 +204,50 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     const mcuxClCipher_ModeDescriptor_t *mode = NULL;
     psa_cipher_to_sgi_alg(alg, &mode);
     if (NULL == mode) {
-        return PSA_ERROR_NOT_SUPPORTED;
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto cleanup;
     }
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(
-        e_status, e_token,
-        mcuxClCipher_encrypt(
-            /* mcuxClSession_Handle_t session:           */ session,
-            /* const mcuxClKey_Handle_t key:             */ key,
-            /* mcuxClCipher_Mode_t mode:                 */ mode,
-            /* mcuxCl_InputBuffer_t pIv:                 */ iv,
-            /* uint32_t ivLength:                       */ iv_length,
-            /* mcuxCl_InputBuffer_t pIn:                 */ input,
-            /* uint32_t inLength:                       */ input_length,
-            /* mcuxCl_Buffer_t pOut:                     */ output,
-            /* uint32_t * const outLength:              */ &output_length_tmp) /* only relevant in case of padding being
-                                                                                  used */
-        );
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(e_status, e_token,
+                                     mcuxClCipher_encrypt(session, key, mode, iv, iv_length,
+                                                          input, input_length, output,
+                                                          &output_length_tmp));
+
     *output_length = (size_t) output_length_tmp;
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_encrypt) != e_token) ||
-        (MCUXCLCIPHER_STATUS_OK != e_status)) {
-        return PSA_ERROR_GENERIC_ERROR;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_encrypt) != e_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLCIPHER_STATUS_OK != e_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+    status = PSA_SUCCESS;
+
+cleanup:
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
-        (MCUXCLSESSION_STATUS_OK != result)) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+    } else if (MCUXCLSESSION_STATUS_OK != result) {
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_GENERIC_ERROR;
+        }
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_SERVICE_FAILURE;
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_SERVICE_FAILURE;
+        }
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
 
 psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attributes,
@@ -254,11 +260,12 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
                                             size_t output_size,
                                             size_t *output_length)
 {
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
-    size_t key_bits         = psa_get_key_bits(attributes);
-    size_t key_bytes        = PSA_BITS_TO_BYTES(key_bits);
+    size_t key_bits = psa_get_key_bits(attributes);
+    size_t key_bytes = PSA_BITS_TO_BYTES(key_bits);
 
-    uint32_t iv_length          = 0;
+    uint32_t iv_length = 0;
     uint32_t expected_op_length = 0;
 
     if (key_buffer_size != key_bytes) {
@@ -322,12 +329,12 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     mcuxClKey_Type_t type = get_sgi_keytype(attributes);
 
     if (type == NULL) {
-        return PSA_ERROR_NOT_SUPPORTED;
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto cleanup;
     }
 
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
     mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
-
 
     /* Initialize session */
     mcuxClSession_Descriptor_t sessionDesc;
@@ -341,18 +348,18 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status,
-                                     ki_token,
-                                     mcuxClKey_init(
-                                         /* mcuxClSession_Handle_t session:        */ session,
-                                         /* mcuxClKey_Handle_t key:                */ key,
-                                         /* mcuxClKey_Type_t type:                 */ type,
-                                         /* uint8_t * pKeyData:                   */ key_buffer,
-                                         /* uint32_t keyDataLength:               */ key_buffer_size));
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
+                                     mcuxClKey_init(session, key, type,
+                                                    key_buffer, key_buffer_size));
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) ||
-        (MCUXCLKEY_STATUS_OK != ki_status)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLKEY_STATUS_OK != ki_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
@@ -360,55 +367,53 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     const mcuxClCipher_ModeDescriptor_t *mode = NULL;
     psa_cipher_to_sgi_alg(alg, &mode);
     if (NULL == mode) {
-        return PSA_ERROR_NOT_SUPPORTED;
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto cleanup;
     }
 
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d_status, d_token, mcuxClCipher_decrypt(
-                                         /* mcuxClSession_Handle_t session:           */ session,
-                                         /* const mcuxClKey_Handle_t key:             */ key,
-                                         /* mcuxClCipher_Mode_t mode:                 */ mode,
-                                         /* mcuxCl_InputBuffer_t pIv:                 */ input,
-                                         /* uint32_t ivLength:                       */ iv_length,
-                                         /* mcuxCl_InputBuffer_t pIn:                 */ (
-                                             mcuxCl_Buffer_t) (input + iv_length),
-                                         /* uint32_t inLength:                       */ input_length
-                                         - iv_length,
-                                         /* mcuxCl_Buffer_t pOut:                     */ output,
-                                         /* uint32_t * const outLength:              */ &
-                                         expected_op_length)
-                                     );
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d_status, d_token,
+                                     mcuxClCipher_decrypt(session, key, mode, input, iv_length,
+                                                          (mcuxCl_Buffer_t) (input + iv_length),
+                                                          input_length - iv_length, output,
+                                                          &expected_op_length));
 
     *output_length = (size_t) expected_op_length;
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_decrypt) != d_token)) {
-        return PSA_ERROR_GENERIC_ERROR;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_decrypt) != d_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
     }
 
+    if (MCUXCLCIPHER_STATUS_OK == d_status) {
+        status = PSA_SUCCESS;
+    } else if (MCUXCLPADDING_STATUS_ERROR == d_status) {
+        status = PSA_ERROR_INVALID_PADDING;
+    } else {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+cleanup:
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
-        (MCUXCLSESSION_STATUS_OK != result)) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+    } else if (MCUXCLSESSION_STATUS_OK != result) {
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_GENERIC_ERROR;
+        }
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_SERVICE_FAILURE;
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_SERVICE_FAILURE;
+        }
     }
 
-    if (MCUXCLCIPHER_STATUS_OK == d_status) {
-        return PSA_SUCCESS;
-    } else if (MCUXCLPADDING_STATUS_ERROR == d_status) {
-        return PSA_ERROR_INVALID_PADDING;
-    } else {
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
-
-
+    return status;
 }
 
 static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
@@ -418,7 +423,7 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
                                         psa_algorithm_t alg,
                                         psa_encrypt_or_decrypt_t cipher_direction)
 {
-
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
 
 
@@ -457,44 +462,51 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
     mcuxClKey_Type_t type = get_sgi_keytype(attributes);
 
     if (type == NULL) {
-        return PSA_ERROR_NOT_SUPPORTED;
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto cleanup;
     }
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status,
-                                     ki_token,
-                                     mcuxClKey_init(
-                                         /* mcuxClSession_Handle_t session:        */ session,
-                                         /* mcuxClKey_Handle_t key:                */ (
-                                             mcuxClKey_Handle_t) &operation->keyDesc,
-                                         /* mcuxClKey_Type_t type:                 */ type,
-                                         /* uint8_t * pKeyData:                   */ key_buffer,
-                                         /* uint32_t keyDataLength:               */ key_buffer_size)
-                                     );
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
+                                     mcuxClKey_init(session,
+                                                    (mcuxClKey_Handle_t) &operation->keyDesc,
+                                                    type, key_buffer, key_buffer_size));
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) ||
-        (MCUXCLKEY_STATUS_OK != ki_status)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLKEY_STATUS_OK != ki_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+    status = PSA_SUCCESS;
 
+cleanup:
     /**************************************************************************/
     /* Session clean-up                                                       */
     /**************************************************************************/
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
-        (MCUXCLSESSION_STATUS_OK != result)) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+    } else if (MCUXCLSESSION_STATUS_OK != result) {
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_GENERIC_ERROR;
+        }
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_SERVICE_FAILURE;
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_SERVICE_FAILURE;
+        }
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
 
 psa_status_t sgi_transparent_cipher_encrypt_setup(
@@ -517,13 +529,13 @@ psa_status_t sgi_transparent_cipher_decrypt_setup(
 {
     return cipher_common_setup(operation, attributes, key_buffer,
                                key_buffer_size, alg, PSA_CRYPTO_DRIVER_DECRYPT);
-
 }
 
 psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
                                            const uint8_t *iv,
                                            size_t iv_length)
 {
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
     /* If alg takes IV, then it must by equal to MCUXCLAES_BLOCK_SIZE */
     if (PSA_ALG_ECB_NO_PADDING != operation->alg &&
@@ -547,73 +559,88 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-
     mcuxClCipher_Context_t * const ctx = (mcuxClCipher_Context_t *) operation->ctx;
 
     /* Variable for the AES mode. */
     const mcuxClCipher_ModeDescriptor_t *mode = NULL;
     psa_cipher_to_sgi_alg(operation->alg, &mode);
     if (NULL == mode) {
-        return PSA_ERROR_NOT_SUPPORTED;
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto cleanup;
     }
 
     if (PSA_CRYPTO_DRIVER_ENCRYPT == operation->cipher_direction) {
 
-        MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ei_status, ei_token, mcuxClCipher_init_encrypt(
-                                             /* mcuxClSession_Handle_t session:         */ session,
-                                             /* mcuxClCipher_Context_t * const pContext:*/ ctx,
-                                             /* const mcuxClKey_Handle_t key:           */ (
-                                                 mcuxClKey_Handle_t) &operation->keyDesc,
-                                             /* mcuxClCipher_Mode_t mode:               */ mode,
-                                             /* mcuxCl_InputBuffer_t pIv:               */ iv,
-                                             /* uint32_t ivLength:                     */ iv_length)
-                                         );
+        MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ei_status, ei_token,
+                                         mcuxClCipher_init_encrypt(session,
+                                                                   ctx,
+                                                                   (mcuxClKey_Handle_t) &operation->
+                                                                   keyDesc,
+                                                                   mode,
+                                                                   iv,
+                                                                   iv_length));
 
-        if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_init_encrypt) != ei_token) ||
-            (MCUXCLCIPHER_STATUS_OK != ei_status)) {
-            return PSA_ERROR_INVALID_ARGUMENT;
+        if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_init_encrypt) != ei_token) {
+            status = PSA_ERROR_CORRUPTION_DETECTED;
+            goto cleanup;
+        }
+
+        if (MCUXCLCIPHER_STATUS_OK != ei_status) {
+            status = PSA_ERROR_HARDWARE_FAILURE;
+            goto cleanup;
         }
         MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-    } else { /* PSA_CRYPTO_DRIVER_DECRYPT */
+    } else {
 
-        MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(di_status, di_token, mcuxClCipher_init_decrypt(
-                                             /* mcuxClSession_Handle_t session:         */ session,
-                                             /* mcuxClCipher_Context_t * const pContext:*/ ctx,
-                                             /* const mcuxClKey_Handle_t key:           */ (
-                                                 mcuxClKey_Handle_t) &operation->keyDesc,
-                                             /* mcuxClCipher_Mode_t mode:               */ mode,
-                                             /* mcuxCl_InputBuffer_t pIv:               */ iv,
-                                             /* uint32_t ivLength:                     */ iv_length)
-                                         );
+        MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(di_status, di_token,
+                                         mcuxClCipher_init_decrypt(session,
+                                                                   ctx,
+                                                                   (mcuxClKey_Handle_t) &operation->
+                                                                   keyDesc,
+                                                                   mode,
+                                                                   iv,
+                                                                   iv_length));
 
-        if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_init_decrypt) != di_token) ||
-            (MCUXCLCIPHER_STATUS_OK != di_status)) {
-            return PSA_ERROR_INVALID_ARGUMENT;
+        if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_init_decrypt) != di_token) {
+            status = PSA_ERROR_CORRUPTION_DETECTED;
+            goto cleanup;
+        }
+
+        if (MCUXCLCIPHER_STATUS_OK != di_status) {
+            status = PSA_ERROR_HARDWARE_FAILURE;
+            goto cleanup;
         }
         MCUX_CSSL_FP_FUNCTION_CALL_END();
-
-
     }
 
+    status = PSA_SUCCESS;
+
+cleanup:
     /**************************************************************************/
     /* Session clean-up                                                       */
     /**************************************************************************/
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
-        (MCUXCLSESSION_STATUS_OK != result)) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+    } else if (MCUXCLSESSION_STATUS_OK != result) {
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_GENERIC_ERROR;
+        }
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_SERVICE_FAILURE;
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_SERVICE_FAILURE;
+        }
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
+
 psa_status_t sgi_transparent_cipher_update(sgi_cipher_operation_t *operation,
                                            const uint8_t *input,
                                            size_t input_length,
@@ -621,7 +648,7 @@ psa_status_t sgi_transparent_cipher_update(sgi_cipher_operation_t *operation,
                                            size_t output_size,
                                            size_t *output_length)
 {
-
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     size_t expected_output_size;
 
     expected_output_size = output_size == 0u ? output_size : input_length;
@@ -651,41 +678,48 @@ psa_status_t sgi_transparent_cipher_update(sgi_cipher_operation_t *operation,
 
     uint32_t output_length_tmp = 0u;
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ep1_status, ep1_token, mcuxClCipher_process(
-                                         /* mcuxClSession_Handle_t session:         */ session,
-                                         /* mcuxClCipher_Context_t * const pContext:*/ ctx,
-                                         /* mcuxCl_InputBuffer_t pIn:               */ input,
-                                         /* uint32_t inLength:                     */ input_length,
-                                         /* mcuxCl_Buffer_t pOut:                   */ output,
-                                         /* uint32_t * const outLength:            */ &
-                                         output_length_tmp)
-                                     );
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ep1_status, ep1_token,
+                                     mcuxClCipher_process(session, ctx, input, input_length,
+                                                          output, &output_length_tmp));
 
     *output_length = (size_t) output_length_tmp;
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_process) != ep1_token) ||
-        (MCUXCLCIPHER_STATUS_OK != ep1_status)) {
-        return PSA_ERROR_GENERIC_ERROR;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_process) != ep1_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLCIPHER_STATUS_OK != ep1_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+    status = PSA_SUCCESS;
+
+cleanup:
     /**************************************************************************/
     /* Session clean-up                                                       */
     /**************************************************************************/
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
-        (MCUXCLSESSION_STATUS_OK != result)) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+    } else if (MCUXCLSESSION_STATUS_OK != result) {
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_GENERIC_ERROR;
+        }
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_SERVICE_FAILURE;
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_SERVICE_FAILURE;
+        }
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
 
 psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
@@ -693,6 +727,10 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
                                            size_t output_size,
                                            size_t *output_length)
 {
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+    uint32_t output_length_tmp = 0u;
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -701,33 +739,29 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
     /* check for invalid input based upon following rule
        inLength needs to be a multiple of the granularity, if this is not the case, return an error. */
     mcuxClCipher_Context_t * const ctx = (mcuxClCipher_Context_t *) operation->ctx;
-
     mcuxClCipherModes_Context_Aes_Sgi_t * const pCtx = (mcuxClCipherModes_Context_Aes_Sgi_t *) ctx;
     mcuxClCipherModes_Algorithm_Aes_Sgi_t pAlgo =
         (mcuxClCipherModes_Algorithm_Aes_Sgi_t) (pCtx->common.pMode->pAlgorithm);
 
     /* Return INVALID_INPUT if totalInputLength doesn't meet the required granularity */
     if (0u != (pCtx->common.totalInputLength % pAlgo->granularityEnc)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
     }
 
     /* Check if output buffer is sufficient */
     if (PSA_CIPHER_FINISH_OUTPUT_SIZE((operation->key_type), (operation->alg)) > output_size) {
-        return PSA_ERROR_BUFFER_TOO_SMALL;
+        status = PSA_ERROR_BUFFER_TOO_SMALL;
+        goto exit;
     }
-    /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
-    mcuxClSession_Handle_t session = &sessionDesc;
 
-    /* Allocate and initialize session */
+    /* Initialize session */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
                                                   0u);
 
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
-
-    uint32_t output_length_tmp = 0u;
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(df_status, df_token, mcuxClCipher_finish(
                                          /* mcuxClSession_Handle_t session:         */ session,
@@ -737,56 +771,65 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
                                          output_length_tmp)
                                      );
 
-
-    *output_length = (size_t) output_length_tmp;
-
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_finish) != df_token) ||
         (MCUXCLCIPHER_STATUS_OK != df_status)) {
-        return PSA_ERROR_GENERIC_ERROR;
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto cleanup;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+    *output_length = (size_t) output_length_tmp;
+    status = PSA_SUCCESS;
 
+cleanup:
     /**************************************************************************/
     /* Session clean-up                                                       */
     /**************************************************************************/
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
-
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
         (MCUXCLSESSION_STATUS_OK != result)) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
+        status = PSA_ERROR_CORRUPTION_DETECTED;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+exit:
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
 
 psa_status_t sgi_transparent_cipher_abort(sgi_cipher_operation_t *operation)
 {
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
     /* Clear cipher ctx */
-    MCUX_CSSL_FP_FUNCTION_CALL_VOID_BEGIN(token, mcuxClMemory_clear((uint8_t *) operation,
-                                                                    sizeof(sgi_cipher_operation_t),
-                                                                    sizeof(sgi_cipher_operation_t)));
-
+    MCUX_CSSL_FP_FUNCTION_CALL_VOID_BEGIN(token,
+                                          mcuxClMemory_clear((uint8_t *) operation,
+                                                             sizeof(sgi_cipher_operation_t),
+                                                             sizeof(sgi_cipher_operation_t)));
 
     if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMemory_clear) != token) {
-        return PSA_ERROR_CORRUPTION_DETECTED;
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
     }
 
     MCUX_CSSL_FP_FUNCTION_CALL_VOID_END();
 
+    status = PSA_SUCCESS;
+
+cleanup:
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        return PSA_ERROR_SERVICE_FAILURE;
+        if (status == PSA_SUCCESS) {
+            status = PSA_ERROR_SERVICE_FAILURE;
+        }
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
