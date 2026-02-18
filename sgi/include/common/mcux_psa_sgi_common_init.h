@@ -16,6 +16,7 @@
  */
 
 #include "psa/crypto.h"
+#include "sgi.h"
 
 #include "fsl_common.h"
 #include "osal_mutex.h"

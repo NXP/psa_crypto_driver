@@ -35,11 +35,15 @@
 #endif
 #endif /* PSA_CRYPTO_DRIVER_SGI */
 
+
+#if !defined(__ZEPHYR__)
 /*
  * Location specific details go in this file which is also exposed to application writers
  * to include when using key from a particular location.
+ * Note: For Zephyr OS, we must define these in respectiv SoC defconf.
  */
 #include "mcux_psa_defines.h"
+#endif
 
 #include "sgi_crypto_primitives.h"
 #include "mcux_psa_sgi_cipher.h"
