@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -19,6 +19,8 @@
  */
 
 #include "mcux_psa_s2xx_common_compute.h"
+#include "mcux_psa_s2xx_key_locations.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /*  AEAD  */
 
@@ -349,10 +351,20 @@ int ele_s2xx_util_ct_memcmp(const void *a,
 #endif
 }
 
+size_t ele_s2xx_get_ecc_private_key_size(size_t key_bits)
+{
+    return (key_bits + 7u) >> 3u;
+}
+
+size_t ele_s2xx_get_ecc_public_key_size(size_t key_bits)
+{
+    return ((key_bits + 7u) >> 3u) << 1u;
+}
+
 size_t ele_s2xx_get_ecc_keypair_size(size_t key_bits)
 {
-    const size_t key_length_private = (key_bits + 7u) >> 3u;
-    const size_t key_length_public  = ((key_bits + 7u) >> 3u) << 1u;
+    const size_t key_length_private = ele_s2xx_get_ecc_private_key_size(key_bits);
+    const size_t key_length_public  = ele_s2xx_get_ecc_public_key_size(key_bits);
     return key_length_private + key_length_public;
 }
 
@@ -424,5 +436,73 @@ psa_status_t translate_psa_algorithm_to_ele_key_property(psa_algorithm_t alg,
         status = PSA_ERROR_NOT_SUPPORTED;
     }
 
+    return status;
+}
+
+psa_status_t ele_s2xx_get_algo_keyprop(const psa_key_attributes_t *attributes,
+                                       sss_sscp_key_property_t *s2xx_algo_prop,
+                                       sss_key_part_t *s2xx_key_part,
+                                       sss_cipher_type_t *s2xx_cipher_type,
+                                       size_t *allocation_size)
+{
+    psa_status_t status         = PSA_SUCCESS;
+    psa_key_type_t key_type     = psa_get_key_type(attributes);
+    size_t key_bits             = psa_get_key_bits(attributes);
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+
+    /* Wrapcheck for PSA_BITS_TO_BYTES(key_bits) */
+    if (true == mcux_psa_add_size_t_wrapcheck(key_bits, 7u))
+    {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
+    /* Deal with the key part */
+    if (true == PSA_KEY_TYPE_IS_ASYMMETRIC(key_type))
+    {
+        if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(key_type))
+        {
+            *s2xx_key_part   = kSSS_KeyPart_Public;
+            *allocation_size = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(key_bits);
+        }
+        else if (true == PSA_KEY_TYPE_IS_KEY_PAIR(key_type))
+        {
+            *s2xx_key_part   = kSSS_KeyPart_Pair;
+            *allocation_size = (PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(key_bits) + PSA_BITS_TO_BYTES(key_bits));
+        }
+        else
+        {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            goto exit;
+        }
+
+        status = translate_psa_ecc_family_to_ele_cipher_type(attributes,
+                                                             s2xx_cipher_type);
+        if (PSA_SUCCESS != status)
+        {
+            goto exit;
+        }
+    }
+    else
+    {
+        /* Symmetric is simple */
+        *s2xx_key_part    = kSSS_KeyPart_Default;
+        *s2xx_cipher_type = kSSS_CipherType_SYMMETRIC;
+        *allocation_size  = PSA_BITS_TO_BYTES(key_bits);
+    }
+
+    /* Translate and validate actual algorithm that is to be used.
+     * Add check for PSA_ALG_NONE, since it is ok for some EL2GO blobs.
+     */
+    status = translate_psa_algorithm_to_ele_key_property(psa_get_key_algorithm(attributes),
+                                                         s2xx_algo_prop);
+    if (PSA_ERROR_NOT_SUPPORTED == status &&
+        PSA_ALG_NONE == psa_get_key_algorithm(attributes) &&
+        true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
+    {
+        status = PSA_SUCCESS;
+    }
+
+exit:
     return status;
 }

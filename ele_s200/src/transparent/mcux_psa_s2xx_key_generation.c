@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -175,7 +175,7 @@ psa_status_t ele_s2xx_transparent_export_public_key(const psa_key_attributes_t *
      */
     status = ele_s2xx_get_ecc_public_key_from_private(&sssKey, (data + 1),
                                                       (data_size - 1u),
-                                                      data_length, &bits);
+                                                      data_length, NULL);
     if (PSA_SUCCESS != status)
     {
         goto exit;

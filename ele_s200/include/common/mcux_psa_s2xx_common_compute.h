@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -80,9 +80,18 @@ int ele_s2xx_util_ct_memcmp(const void *a,
                             const void *b,
                             size_t n);
 
-/**
- * Based on bit size of an ECC key, return the byte size of that key.
- * Deals with the SECP 521 bitsize.
+/*!
+ * Based on bit size of an ECC key, return the byte size of the private part.
+ */
+size_t ele_s2xx_get_ecc_private_key_size(size_t key_bits);
+
+/*!
+ * Based on bit size of an ECC key, return the byte size of the public part.
+ */
+size_t ele_s2xx_get_ecc_public_key_size(size_t key_bits);
+
+/*!
+ * Based on bit size of an ECC key, return the byte size of the full keypair.
  */
 size_t ele_s2xx_get_ecc_keypair_size(size_t key_bits);
 
@@ -91,6 +100,19 @@ psa_status_t translate_psa_ecc_family_to_ele_cipher_type(const psa_key_attribute
 
 psa_status_t translate_psa_algorithm_to_ele_key_property(psa_algorithm_t alg,
                                                          sss_sscp_key_property_t *prop);
+
+/*!
+ * An all-in-one translation function for S200.
+ *
+ * NOTE: May only be comfortably used for opaque key locations due to PSA's
+ *       handling of private ECC keys
+ *       (see static psa_status_t transform_plain_key_to_elke_blob()).
+ */
+psa_status_t ele_s2xx_get_algo_keyprop(const psa_key_attributes_t *attributes,
+                                       sss_sscp_key_property_t *s2xx_algo_prop,
+                                       sss_key_part_t *s2xx_key_part,
+                                       sss_cipher_type_t *s2xx_cipher_type,
+                                       size_t *allocation_size);
 
 #ifdef __cplusplus
 }

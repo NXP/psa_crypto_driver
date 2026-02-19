@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, 2025 NXP
+ * Copyright 2022-2023, 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -20,6 +20,201 @@
 #include "mcux_psa_s2xx_common_compute.h"
 #include "mcux_psa_util_wrapcheck_static_inline.h"
 
+/* For exporting public keys, we will directly use the internal export wrapper,
+ * so that we don't call the public psa_export_public_key() API.
+ */
+extern psa_status_t psa_export_public_key_internal(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer,
+    size_t key_buffer_size,
+    uint8_t *data,
+    size_t data_size,
+    size_t *data_length);
+
+static bool ele_s2xx_key_is_likely_non_el2go_blob(psa_key_type_t key_type,
+                                                  size_t key_bits,
+                                                  size_t data_length)
+{
+    /* IF ECC keypair, we need a different check */
+    return (true == PSA_KEY_TYPE_IS_ECC_KEY_PAIR(key_type) ?
+            ((ele_s2xx_get_ecc_keypair_size(key_bits) + S200_BLOB_OVERHEAD) == data_length) :
+            ((PSA_EXPORT_KEY_OUTPUT_SIZE(key_type, key_bits) + S200_BLOB_OVERHEAD) == data_length));
+}
+
+static bool ele_s2xx_key_is_likely_transparent(psa_key_type_t key_type,
+                                               size_t key_bits,
+                                               size_t data_length)
+{
+    return ((PSA_EXPORT_KEY_OUTPUT_SIZE(key_type, key_bits)) == data_length);
+}
+
+static psa_status_t transform_plain_key_to_elke_blob(const psa_key_attributes_t *attributes,
+                                                     const uint8_t *plain_data,
+                                                     size_t plain_data_length,
+                                                     uint8_t *opaque_key_buffer,
+                                                     size_t opaque_key_buffer_size,
+                                                     size_t *opaque_key_buffer_length,
+                                                     size_t *bits,
+                                                     sss_sscp_object_t *sssKey)
+{
+    psa_status_t status              = PSA_ERROR_CORRUPTION_DETECTED;
+    sss_sscp_key_property_t keyprops = {0};
+    sss_key_part_t key_part          = {0};
+    sss_cipher_type_t cipher_type    = {0};
+    size_t allocation_size           = 0u;
+    size_t key_bits                  = psa_get_key_bits(attributes);
+
+    /* Array large enough for a full SECP521 keypair with leading 0x04 Byte */
+    uint8_t keypair_data[199]       = {0u};
+    const size_t keypair_data_size  = sizeof(keypair_data);
+    size_t public_key_length        = 0u;
+    size_t public_key_size          = 0u;
+    size_t private_key_offset       = 0u;
+    size_t final_blob_size          = 0u;
+
+    (void)bits; /* Unused */
+
+    do
+    {
+        status = ele_s2xx_get_algo_keyprop(attributes, &keyprops,
+                                           &key_part, &cipher_type,
+                                           &allocation_size);
+        if (PSA_SUCCESS != status)
+        {
+            break;
+        }
+
+        if (kSSS_KeyPart_Pair == key_part)
+        {
+            /* Transparent PSA is giving us only the private part. But we want
+             * opaque ECC keypairs as _keypairs_, so we must extract the public
+             * key.
+             */
+
+            if (plain_data_length != PSA_BITS_TO_BYTES(key_bits))
+            {
+                status = PSA_ERROR_INVALID_ARGUMENT;
+                break;
+            }
+
+            public_key_size = keypair_data_size - plain_data_length;
+
+#if defined(ELE200_EXTENDED_FEATURES)
+            if (is_fw_loaded() == PSA_SUCCESS)
+            {
+                /* FW is loaded, so we have the accelerated pubkey export API */
+
+                private_key_offset = ele_s2xx_get_ecc_public_key_size(key_bits);
+                (void)memcpy(&keypair_data[private_key_offset], plain_data,
+                             plain_data_length);
+
+                /* Set only the private part */
+                status = ele_s2xx_set_key(sssKey, S200_KEY_ID_RANDOM,
+                                          &keypair_data[private_key_offset],
+                                          plain_data_length,
+                                          kSSS_KeyPart_Private, cipher_type,
+                                          keyprops, allocation_size, key_bits);
+                if (PSA_SUCCESS != status)
+                {
+                    break;
+                }
+
+                /* Utilize HW acceleration to retrieve public part */
+                status = ele_s2xx_get_ecc_public_key_from_private(sssKey,
+                                                                  keypair_data,
+                                                                  public_key_size,
+                                                                  &public_key_length,
+                                                                  NULL);
+                if (PSA_SUCCESS != status)
+                {
+                    break;
+                }
+
+                /* Scrap the private key and replace it with the full keypair */
+                (void)ele_s2xx_delete_key(sssKey);
+                status = ele_s2xx_set_key(sssKey, S200_KEY_ID_RANDOM, keypair_data,
+                                          ele_s2xx_get_ecc_keypair_size(key_bits),
+                                          key_part, cipher_type, keyprops,
+                                          allocation_size, key_bits);
+            }
+            else
+#endif
+            {
+                /* FW is not loaded, so we defer back to the SW implementation.
+                 *
+                 * Our goal is to arrange the full keypair as a continuous array
+                 * in the following format: [public_x, public_y, private],
+                 * so that we can set the pair in the S200 and export as a blob.
+                 */
+
+                private_key_offset = ele_s2xx_get_ecc_public_key_size(key_bits) + 1u; /* +1 for the leading 0x04 */
+
+                (void)memcpy(&keypair_data[private_key_offset], plain_data,
+                             PSA_BITS_TO_BYTES(key_bits));
+
+                status = psa_export_public_key_internal(attributes,
+                                                        plain_data,
+                                                        plain_data_length,
+                                                        keypair_data,
+                                                        public_key_size,
+                                                        &public_key_length);
+                if (PSA_SUCCESS != status)
+                {
+                    break;
+                }
+
+                status = ele_s2xx_set_key(sssKey, S200_KEY_ID_RANDOM,
+                                          keypair_data + 1u,
+                                          ele_s2xx_get_ecc_keypair_size(key_bits),
+                                          key_part, cipher_type, keyprops,
+                                          allocation_size, key_bits);
+            }
+
+            final_blob_size = ele_s2xx_get_ecc_keypair_size(key_bits) + S200_BLOB_OVERHEAD;
+        }
+        else
+        {
+            if (true == mcux_psa_add_size_t_wrapcheck(plain_data_length,
+                                                      S200_BLOB_OVERHEAD))
+            {
+                status = PSA_ERROR_INVALID_ARGUMENT;
+                break;
+            }
+
+            final_blob_size = plain_data_length + S200_BLOB_OVERHEAD;
+            status          = ele_s2xx_set_key(sssKey, S200_KEY_ID_RANDOM,
+                                               plain_data, plain_data_length,
+                                               key_part, cipher_type, keyprops,
+                                               allocation_size, key_bits);
+        }
+        if (PSA_SUCCESS != status)
+        {
+            break;
+        }
+
+        /* Prohibit plain R/W after plain-writing to the slot */
+        keyprops = kSSS_KeyProp_NoPlainRead | kSSS_KeyProp_NoPlainWrite;
+        if (sss_sscp_key_object_set_properties(sssKey, (uint32_t)keyprops) != kStatus_SSS_Success)
+        {
+            status = PSA_ERROR_HARDWARE_FAILURE;
+            break;
+        }
+
+        if (opaque_key_buffer_size < final_blob_size)
+        {
+            status = PSA_ERROR_BUFFER_TOO_SMALL;
+            break;
+        }
+
+        status = ele_s2xx_export_key(attributes, opaque_key_buffer,
+                                     opaque_key_buffer_size,
+                                     opaque_key_buffer_length, sssKey);
+    } while (false);
+
+    (void)memset(keypair_data, 0, sizeof(keypair_data));
+    return status;
+}
+
 psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     const uint8_t *data, size_t data_length, uint8_t *key_buffer,
     size_t key_buffer_size, size_t *key_buffer_length, size_t *bits)
@@ -29,77 +224,121 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     sss_sscp_tunnel_t tunnelCtx = {0};
     uint32_t resultState        = 0u;
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    size_t key_bits             = psa_get_key_bits(attributes);
+    psa_key_type_t key_type     = psa_get_key_type(attributes);
+
+    if (key_bits > 521u)
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    if (false == (MCUXCLPSADRIVER_IS_LOCAL_STORAGE(location)))
+
+    if (true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location)))
     {
-        if (true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location)) ||
-            true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location)))
+        /* Validate blob in software and import to let S200 validate too */
+        status = ele_s2xx_import_key(attributes, data, data_length, &sssKey);
+        if (PSA_SUCCESS != status)
         {
-            /* Validate blob in software and import to let S200 validate too */
-            status = ele_s2xx_import_key(attributes, data, data_length, &sssKey);
+            goto exit;
+        }
+
+        /* Store the blob as-is in the PSA keystore */
+        if (key_buffer_size < data_length)
+        {
+            status = PSA_ERROR_BUFFER_TOO_SMALL;
+            goto exit;
+        }
+
+        (void)memcpy(key_buffer, data, data_length);
+        *key_buffer_length = data_length;
+
+        status = PSA_SUCCESS;
+    }
+    else if (true == (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location)))
+    {
+        if (true == ele_s2xx_key_is_likely_non_el2go_blob(key_type, key_bits,
+                                                          data_length))
+        {
+            /* We likely received a blob; use the import API to validate
+             * the blob and enforce no plain read/write flags.
+             */
+            status = ele_s2xx_import_key(attributes, data, data_length,
+                                         &sssKey);
             if (PSA_SUCCESS != status)
             {
                 goto exit;
             }
 
-            /* Store the blob as-is in the PSA keystore */
             if (key_buffer_size < data_length)
             {
-                status = PSA_ERROR_INVALID_ARGUMENT;
+                status = PSA_ERROR_BUFFER_TOO_SMALL;
                 goto exit;
             }
 
-            (void)memcpy(key_buffer, data, data_length);
-            *key_buffer_length = data_length;
-
-            status = PSA_SUCCESS;
+            /* Export the blob to burn in the flags into the PSA-stored
+             * blob itself.
+             */
+            status = ele_s2xx_export_key(attributes, key_buffer,
+                                         key_buffer_size, key_buffer_length,
+                                         &sssKey);
         }
-        else if (true == (MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location)))
+        else if (true == ele_s2xx_key_is_likely_transparent(key_type, key_bits,
+                                                            data_length))
         {
-            /* Open the tunnel */
-            if (sss_sscp_tunnel_context_init(&tunnelCtx, &g_ele_ctx.sssSession, kSSS_tunnel_type_EL2GO_Data) != kStatus_SSS_Success)
-            {
-                status = PSA_ERROR_GENERIC_ERROR;
-                goto exit;
-            }
-
-            tunnelCtx.buffer     = key_buffer;
-            tunnelCtx.bufferSize = key_buffer_size;
-
-            /* Pass the blob */
-            if (sss_sscp_tunnel(&tunnelCtx, (uint8_t *)data, data_length, &resultState) !=
-                kStatus_SSS_Success)
-            {
-                (void)sss_sscp_tunnel_context_free(&tunnelCtx);
-                status = PSA_ERROR_GENERIC_ERROR;
-                goto exit;
-            }
-
-            /* Free the tunnel */
-            if (sss_sscp_tunnel_context_free(&tunnelCtx) != kStatus_SSS_Success)
-            {
-                status = PSA_ERROR_GENERIC_ERROR;
-                goto exit;
-            }
-
-            *key_buffer_length = tunnelCtx.bufferSize;
-
-            status = PSA_SUCCESS;
+            /* We likely received transparent key material, so set the
+             * key with relevant flags and export it to the PSA keystore.
+             */
+            status = transform_plain_key_to_elke_blob(attributes, data,
+                                                      data_length, key_buffer,
+                                                      key_buffer_size,
+                                                      key_buffer_length, bits,
+                                                      &sssKey);
         }
         else
         {
             status = PSA_ERROR_INVALID_ARGUMENT;
         }
     }
+    else if (true == (MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location)))
+    {
+        /* Open the tunnel */
+        if (sss_sscp_tunnel_context_init(&tunnelCtx, &g_ele_ctx.sssSession, kSSS_tunnel_type_EL2GO_Data) != kStatus_SSS_Success)
+        {
+            status = PSA_ERROR_GENERIC_ERROR;
+            goto exit;
+        }
+
+        tunnelCtx.buffer     = key_buffer;
+        tunnelCtx.bufferSize = key_buffer_size;
+
+        /* Pass the blob */
+        if (sss_sscp_tunnel(&tunnelCtx, (uint8_t *)data, data_length, &resultState) !=
+            kStatus_SSS_Success)
+        {
+            (void)sss_sscp_tunnel_context_free(&tunnelCtx);
+            status = PSA_ERROR_GENERIC_ERROR;
+            goto exit;
+        }
+
+        /* Free the tunnel */
+        if (sss_sscp_tunnel_context_free(&tunnelCtx) != kStatus_SSS_Success)
+        {
+            status = PSA_ERROR_GENERIC_ERROR;
+            goto exit;
+        }
+
+        *key_buffer_length = tunnelCtx.bufferSize;
+
+        status = PSA_SUCCESS;
+    }
     else
     {
-        /* Transparent key location case */
-        status = PSA_ERROR_NOT_SUPPORTED;
+        status = PSA_ERROR_INVALID_ARGUMENT;
     }
 
 exit:
@@ -159,6 +398,23 @@ psa_status_t ele_s2xx_opaque_export_key(const psa_key_attributes_t *attributes,
                 /* Nothing else supported */
                 status = PSA_ERROR_NOT_SUPPORTED;
             }
+        }
+        else if (MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location))
+        {
+            if (data_size < key_buffer_size)
+            {
+                status = PSA_ERROR_BUFFER_TOO_SMALL;
+                break;
+            }
+
+            /* The only export we support here is a direct blob export, so we
+             * just copy the blob. We can't allow exporting from opaque blobs
+             * to transparent key material, but we may enable opaqueA-to-opaqueB
+             * exports down the line.
+             */
+            (void)memcpy(data, key_buffer, key_buffer_size);
+            *data_length = key_buffer_size;
+            status       = PSA_SUCCESS;
         }
         else
         {
@@ -242,18 +498,56 @@ static psa_status_t ele_s2xx_get_key_buffer_size_from_key_data(const psa_key_att
                                                                size_t *key_buffer_length)
 {
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    size_t key_bits             = psa_get_key_bits(attributes);
+    psa_key_type_t key_type     = psa_get_key_type(attributes);
     psa_status_t status         = PSA_ERROR_CORRUPTION_DETECTED;
 
     if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location) ||
-        true == MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location) ||
-        true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location) )
+        true == MCUXCLPSADRIVER_IS_S200_DATA_STORAGE(location))
     {
+        /* If one wants to import EL2GO keys/data, they are already blobbed
+         * and cannot be transformed into EL2GO blobs from transparent material.
+         * So we get the input data (blob) length and return the same length.
+         */
         *key_buffer_length = data_length;
         status             = PSA_SUCCESS;
     }
+    else if (true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location))
+    {
+        /* Technically, we are able to infer whether the input is transparent
+         * key material or already blobbed key material.
+         * 1. If it's _likely_ already a blob, we do the same as above.
+         * 2. If it's _likely_ transparent key material, we take its length and
+         *    add the blob overhead.
+         * 3. Error if it's _most likely_ neither.
+         */
+        if (true == ele_s2xx_key_is_likely_non_el2go_blob(key_type, key_bits, data_length))
+        {
+            *key_buffer_length = data_length;
+            status             = PSA_SUCCESS;
+        }
+        else if (true == ele_s2xx_key_is_likely_transparent(key_type, key_bits, data_length))
+        {
+            if (true == PSA_KEY_TYPE_IS_ECC_KEY_PAIR(key_type))
+            {
+                /* Because in PSA ECC key pair == ECC private part, but we're
+                 * making opaque blobs work as proper keypairs.
+                 */
+                *key_buffer_length = ele_s2xx_get_ecc_keypair_size(key_bits) + S200_BLOB_OVERHEAD;
+            }
+            else
+            {
+                *key_buffer_length = data_length + S200_BLOB_OVERHEAD;
+            }
+            status = PSA_SUCCESS;
+        }
+        else
+        {
+            status = PSA_ERROR_NOT_SUPPORTED;
+        }
+    }
     else
     {
-        // TBD if other locations are supported, add them
         status = PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -264,20 +558,16 @@ size_t ele_s2xx_opaque_size_function(const psa_key_attributes_t *attributes,
                                      const uint8_t *data,
                                      size_t data_length)
 {
-    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(
-                                      psa_get_key_lifetime(attributes));
-    size_t key_buffer_size      = 0;
-    if (false == (MCUXCLPSADRIVER_IS_LOCAL_STORAGE(location)))
+    size_t key_buffer_size = 0u;
+    psa_status_t status    = ele_s2xx_get_key_buffer_size_from_key_data(attributes,
+                                                                        data,
+                                                                        data_length,
+                                                                        &key_buffer_size);
+    if (PSA_SUCCESS != status)
     {
-        psa_status_t status = ele_s2xx_get_key_buffer_size_from_key_data(attributes,
-                                                                         data,
-                                                                         data_length,
-                                                                         &key_buffer_size);
-        if (PSA_SUCCESS != status)
-        {
-            key_buffer_size = 0;
-        }
+        key_buffer_size = 0u;
     }
+
     return key_buffer_size;
 }
 

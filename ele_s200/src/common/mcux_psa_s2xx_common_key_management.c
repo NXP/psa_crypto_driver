@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -301,76 +301,6 @@ exit:
     return psa_status;
 }
 
-/* Translate the vendor-defined ALG_NXP_* values to s2xx kSSS_KeyProp_CryptoAlgo_* values */
-static psa_status_t ele_s2xx_get_algo_keyprop(const psa_key_attributes_t *attributes,
-                                              sss_sscp_key_property_t *s2xx_algo_prop,
-                                              sss_key_part_t *s2xx_key_part,
-                                              sss_cipher_type_t *s2xx_cipher_type,
-                                              size_t *allocation_size)
-{
-    psa_status_t status         = PSA_SUCCESS;
-    psa_key_type_t key_type     = psa_get_key_type(attributes);
-    size_t key_bits             = psa_get_key_bits(attributes);
-    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
-
-    /* Wrapcheck for PSA_BITS_TO_BYTES(key_bits) */
-    if (true == mcux_psa_add_size_t_wrapcheck(key_bits, 7u))
-    {
-        status = PSA_ERROR_INVALID_ARGUMENT;
-        goto exit;
-    }
-
-    /* Deal with the key part */
-    if (true == PSA_KEY_TYPE_IS_ASYMMETRIC(key_type))
-    {
-        if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(key_type))
-        {
-            *s2xx_key_part   = kSSS_KeyPart_Public;
-            *allocation_size = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(key_bits);
-        }
-        else if (true == PSA_KEY_TYPE_IS_KEY_PAIR(key_type))
-        {
-            *s2xx_key_part   = kSSS_KeyPart_Pair;
-            *allocation_size = (PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(key_bits) + PSA_BITS_TO_BYTES(key_bits));
-        }
-        else
-        {
-            status = PSA_ERROR_INVALID_ARGUMENT;
-            goto exit;
-        }
-
-        status = translate_psa_ecc_family_to_ele_cipher_type(attributes,
-                                                             s2xx_cipher_type);
-        if (PSA_SUCCESS != status)
-        {
-            goto exit;
-        }
-    }
-    else
-    {
-        /* Symmetric is simple */
-        *s2xx_key_part    = kSSS_KeyPart_Default;
-        *s2xx_cipher_type = kSSS_CipherType_SYMMETRIC;
-        *allocation_size  = PSA_BITS_TO_BYTES(key_bits);
-    }
-
-    /* Translate and validate actual algorithm that is to be used.
-     * Add check for PSA_ALG_NONE, since it is ok for some EL2GO blobs.
-     */
-    status = translate_psa_algorithm_to_ele_key_property(psa_get_key_algorithm(attributes),
-                                                         s2xx_algo_prop);
-    if (PSA_ERROR_NOT_SUPPORTED == status &&
-        PSA_ALG_NONE == psa_get_key_algorithm(attributes) &&
-        true == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE(location))
-    {
-        status = PSA_SUCCESS;
-    }
-
-exit:
-    return status;
-}
-
-
 static psa_status_t ele_s2xx_import_key_blob(const psa_key_attributes_t *attributes,
                                              const uint8_t *blob,
                                              size_t blob_size,
@@ -516,13 +446,20 @@ psa_status_t ele_s2xx_get_key(sss_sscp_object_t *sssKey,
                               sss_key_part_t key_part,
                               size_t *key_bitlen)
 {
-    psa_status_t status = PSA_SUCCESS;
+    psa_status_t status        = PSA_SUCCESS;
+    size_t key_bitlen_internal = 0u;
 
     *key_buffer_length = key_buffer_size;
     if ((sss_sscp_key_store_get_key(&g_ele_ctx.keyStore, sssKey, key_buffer,
-                                    key_buffer_length, key_bitlen, key_part)) != kStatus_SSS_Success)
+                                    key_buffer_length, &key_bitlen_internal,
+                                    key_part)) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    if (NULL != key_bitlen)
+    {
+        *key_bitlen = key_bitlen_internal;
     }
 
     return status;
@@ -534,13 +471,20 @@ psa_status_t ele_s2xx_get_ecc_public_key_from_private(sss_sscp_object_t *sssKey,
                                                       size_t *data_length,
                                                       size_t *key_bitlen)
 {
-    psa_status_t status = PSA_SUCCESS;
+    psa_status_t status        = PSA_SUCCESS;
+    size_t key_bitlen_internal = 0u;
 
     *data_length = data_size;
-    if (sss_sscp_key_store_get_key(&g_ele_ctx.keyStore, sssKey, data, data_length,
-                                   key_bitlen, kSSS_KeyPart_Public) != kStatus_SSS_Success)
+    if (sss_sscp_key_store_get_key(&g_ele_ctx.keyStore, sssKey, data,
+                                   data_length, &key_bitlen_internal,
+                                   kSSS_KeyPart_Public) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    if (NULL != key_bitlen)
+    {
+        *key_bitlen = key_bitlen_internal;
     }
 
     return status;
@@ -672,4 +616,46 @@ psa_status_t ele_s2xx_import_key(const psa_key_attributes_t *attributes,
     psa_status = ele_s2xx_import_key_blob(attributes, key_buffer,
                                           key_buffer_size, sssKey);
     return psa_status;
+}
+
+
+psa_status_t ele_s2xx_export_key(const psa_key_attributes_t *attributes,
+                                 uint8_t *data,
+                                 size_t data_size,
+                                 size_t *data_length,
+                                 sss_sscp_object_t *sssKey)
+{
+    psa_status_t status            = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_location_t location    = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    sss_sscp_blob_type_t blob_type = {0};
+
+    do
+    {
+        /* Check for a valid key object */
+        if (NULL == sssKey->keyStore)
+        {
+            status = PSA_ERROR_DOES_NOT_EXIST;
+            break;
+        }
+
+        /* We may add other locations (blob types) later. For now, only ELKE. */
+        if (false == MCUXCLPSADRIVER_IS_S200_KEY_STORAGE_NON_EL2GO(location))
+        {
+            status = PSA_ERROR_NOT_SUPPORTED;
+            break;
+        }
+
+        blob_type    = kSSS_blobType_ELKE_blob;
+        *data_length = data_size;
+        if (sss_sscp_key_store_export_key(&g_ele_ctx.keyStore, sssKey, data, data_length, blob_type) != kStatus_SSS_Success)
+        {
+            *data_length = 0u;
+            status       = PSA_ERROR_HARDWARE_FAILURE;
+            break;
+        }
+
+        status = PSA_SUCCESS;
+    } while (false);
+
+    return status;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -26,7 +26,7 @@
 #include "mcux_psa_s2xx_common_init.h"
 
 /*! Size of the S200 die-unique key blob overhead added to the actual key. */
-#define S200_BLOB_OVERHEAD (24u)
+#define S200_BLOB_OVERHEAD (PSA_S200_NON_EL2GO_BLOB_OVERHEAD)
 
 /*! A new S200 key object may use a random key ID. */
 #define S200_KEY_ID_RANDOM (0u)
@@ -82,6 +82,12 @@ psa_status_t ele_s2xx_get_ecc_public_key_from_private(sss_sscp_object_t *sssKey,
  * @retval PSA_ERROR_HARDWARE_FAILURE if key object free fails.
  */
 psa_status_t ele_s2xx_delete_key(sss_sscp_object_t *sssKey);
+
+psa_status_t ele_s2xx_export_key(const psa_key_attributes_t *attributes,
+                                 uint8_t *data,
+                                 size_t data_size,
+                                 size_t *data_length,
+                                 sss_sscp_object_t *sssKey);
 
 #ifdef __cplusplus
 }

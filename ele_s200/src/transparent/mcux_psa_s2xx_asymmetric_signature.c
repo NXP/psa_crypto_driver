@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * All rights reserved.
  *
  *
@@ -308,7 +308,6 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
     sss_sscp_object_t sssKey                 = {0};
     sss_sscp_object_t sssKey_public_exported = {0};
     sss_algorithm_t ele_alg                  = {0};
-    size_t bits                              = psa_get_key_bits(attributes);
     psa_ecc_family_t family                  = PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(attributes));
 
     /* For exporting the public part of the key in case of ECC keypair */
@@ -370,6 +369,7 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
          * separately.
          */
 
+#if defined(ELE200_EXTENDED_FEATURES)
         if (is_fw_loaded() == PSA_SUCCESS)
         {
             /* FW is loaded, so we have the accelerated pubkey export API */
@@ -377,7 +377,7 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
                                                               (public_key_data + 1),
                                                               (public_key_data_size - 1u),
                                                               &public_key_data_length,
-                                                              &bits);
+                                                              NULL);
             if (PSA_SUCCESS != status)
             {
                 goto exit;
@@ -386,6 +386,7 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
             public_key_data_length += 1u;
         }
         else
+#endif
         {
             /* FW is not loaded, so we defer back to the SW implementation */
             status = psa_export_public_key_internal(attributes,
