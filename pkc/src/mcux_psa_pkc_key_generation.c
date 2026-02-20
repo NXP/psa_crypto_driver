@@ -21,6 +21,7 @@
 #define ECC_POINT_FORMAT_COMPRESSED_EVEN 0x02u
 #define ECC_POINT_FORMAT_COMPRESSED_ODD 0x03u
 
+#if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
 static const uint8_t pubExp[RSA_PUBLIC_EXP_BYTE_LENGTH] __attribute__((aligned(4))) = {
     0x01u, 0x00u, 0x01u
 };
@@ -327,6 +328,7 @@ exit:
 
     return status;
 }
+#endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE */
 
 static psa_status_t pkc_internal_generate_ecp_key(const psa_key_attributes_t *attributes,
                                                   uint8_t *key_buffer,
@@ -488,6 +490,7 @@ psa_status_t pkc_generate_key(const psa_key_attributes_t *attributes,
             goto exit;
         }
         *key_buffer_length = mcuxClKey_getLoadedKeyLength(&key);
+#if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
     } else if (type == PSA_KEY_TYPE_RSA_KEY_PAIR) {
         status = pkc_internal_generate_rsa_key(attributes,
                                                mcuxClKey_getLoadedKeyData(&key),
@@ -496,6 +499,7 @@ psa_status_t pkc_generate_key(const psa_key_attributes_t *attributes,
         if (status != PSA_SUCCESS) {
             goto exit;
         }
+#endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE */
     } else if (PSA_KEY_TYPE_IS_ECC(type) && PSA_KEY_TYPE_IS_KEY_PAIR(type)) {
         status = pkc_internal_generate_ecp_key(attributes,
                                                mcuxClKey_getLoadedKeyData(&key),
@@ -509,8 +513,6 @@ psa_status_t pkc_generate_key(const psa_key_attributes_t *attributes,
         status = PSA_ERROR_NOT_SUPPORTED;
         goto exit;
     }
-
-    status = PSA_SUCCESS;
 
 exit:
     if (mcux_mutex_unlock(&pkc_hwcrypto_mutex) != 0) {
