@@ -25,10 +25,11 @@
 
 #include "mcux_psa_s2xx_common_init.h"
 
-/**
- * Size of the S200 die-unique key blob overhead added to the actual key.
- */
+/*! Size of the S200 die-unique key blob overhead added to the actual key. */
 #define S200_BLOB_OVERHEAD (24u)
+
+/*! A new S200 key object may use a random key ID. */
+#define S200_KEY_ID_RANDOM (0u)
 
 #ifdef __cplusplus
 extern "C" {

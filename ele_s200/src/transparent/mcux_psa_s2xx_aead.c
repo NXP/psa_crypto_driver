@@ -136,11 +136,14 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
         return status;
     }
 
-    /* S200 doesn't support plaintext length 0 */
-    if (plaintext_length == 0u)
+#if !defined(ELE200_EXTENDED_FEATURES)
+    /* KW45 S200 doesn't support plaintext length 0 CCM */
+    if ((0u == plaintext_length) &&
+        (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg) == PSA_ALG_CCM))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
+#endif
 
     /* Get the TAG length encoded in the algorithm */
     tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
@@ -191,7 +194,7 @@ psa_status_t ele_s2xx_transparent_aead_encrypt(const psa_key_attributes_t *attri
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    status = ele_s2xx_set_key(&sssKey, 0u, /* key ID */
+    status = ele_s2xx_set_key(&sssKey, S200_KEY_ID_RANDOM,
                               key_buffer, key_buffer_size, kSSS_KeyPart_Default,
                               kSSS_CipherType_AES, kSSS_KeyProp_CryptoAlgo_AEAD,
                               key_buffer_size, key_bits);
@@ -290,11 +293,14 @@ psa_status_t ele_s2xx_transparent_aead_decrypt(const psa_key_attributes_t *attri
     /* Ciphertext has cipher + tag */
     cipher_length = ciphertext_length - tag_length;
 
-    /* S200 doesn't support cipher length 0 */
-    if (cipher_length == 0U)
+#if !defined(ELE200_EXTENDED_FEATURES)
+    /* KW45 S200 doesn't support cipher length 0 CCM */
+    if ((0u == cipher_length) &&
+        (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg) == PSA_ALG_CCM))
     {
         return PSA_ERROR_NOT_SUPPORTED;
     }
+#endif
 
     if (plaintext_size < cipher_length)
     {
@@ -311,7 +317,7 @@ psa_status_t ele_s2xx_transparent_aead_decrypt(const psa_key_attributes_t *attri
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    status = ele_s2xx_set_key(&sssKey, 0u, /* key ID */
+    status = ele_s2xx_set_key(&sssKey, S200_KEY_ID_RANDOM,
                               key_buffer, key_buffer_size, kSSS_KeyPart_Default,
                               kSSS_CipherType_AES, kSSS_KeyProp_CryptoAlgo_AEAD,
                               key_buffer_size, key_bits);
