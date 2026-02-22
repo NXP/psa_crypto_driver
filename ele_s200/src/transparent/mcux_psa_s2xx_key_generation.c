@@ -18,37 +18,6 @@
 #include "mcux_psa_s2xx_common_compute.h"
 #include "mcux_psa_s2xx_key_generation.h"
 
-/** Translate psa_key_type_t type to sss_cipher_type_t.
- *  Caller must make sure that psa_type is an ECC key type.
- */
-static psa_status_t translate_psa_ecc_family_to_ele_ecc_family(psa_key_type_t psa_type,
-                                                               sss_cipher_type_t *ele_type)
-{
-    psa_status_t status = PSA_SUCCESS;
-    switch (PSA_KEY_TYPE_ECC_GET_FAMILY(psa_type))
-    {
-        case PSA_ECC_FAMILY_SECP_R1:
-            *ele_type = kSSS_CipherType_EC_NIST_P;
-            break;
-#if defined(ELE200_EXTENDED_FEATURES)
-        case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
-            *ele_type = kSSS_CipherType_EC_BRAINPOOL_R1;
-            break;
-#endif /* ELE200_EXTENDED_FEATURES */
-        case PSA_ECC_FAMILY_MONTGOMERY:
-            *ele_type = kSSS_CipherType_EC_MONTGOMERY;
-            break;
-        case PSA_ECC_FAMILY_TWISTED_EDWARDS:
-            *ele_type = kSSS_CipherType_EC_TWISTED_ED;
-            break;
-        default:
-            *ele_type = (sss_cipher_type_t){0u};
-            status = PSA_ERROR_NOT_SUPPORTED;
-            break;
-    }
-    return status;
-}
-
 psa_status_t ele_s2xx_transparent_generate_key(const psa_key_attributes_t *attributes,
                                                uint8_t *key_buffer, size_t key_buffer_size,
                                                size_t *key_buffer_length)
@@ -76,6 +45,13 @@ psa_status_t ele_s2xx_transparent_generate_key(const psa_key_attributes_t *attri
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
+    status = translate_psa_ecc_family_to_ele_cipher_type(attributes,
+                                                         &cipher_type);
+    if (PSA_SUCCESS != status)
+    {
+        return status;
+    }
+
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -84,13 +60,6 @@ psa_status_t ele_s2xx_transparent_generate_key(const psa_key_attributes_t *attri
     if ((sss_sscp_key_object_init(&sssKey, &g_ele_ctx.keyStore)) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_GENERIC_ERROR;
-        goto exit;
-    }
-
-    /* Set up handle based on key type */
-    status = translate_psa_ecc_family_to_ele_ecc_family(type, &cipher_type);
-    if (PSA_SUCCESS != status)
-    {
         goto exit;
     }
 
