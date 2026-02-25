@@ -227,11 +227,6 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
     size_t key_bits             = psa_get_key_bits(attributes);
     psa_key_type_t key_type     = psa_get_key_type(attributes);
 
-    if (key_bits > 521u)
-    {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
