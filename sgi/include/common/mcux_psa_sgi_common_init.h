@@ -29,6 +29,8 @@
 #include <mcuxClCore_Examples.h>
 #include <mcuxClExample_RNG_Helper.h>
 
+#include "mcux_sgi.h"
+
 
 /* MUTEX FOR HW Modules */
 extern mcux_mutex_t sgi_hwcrypto_mutex;

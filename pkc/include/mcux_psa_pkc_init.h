@@ -24,6 +24,7 @@
 #include <mcuxClCore_Examples.h>
 #include <mcuxClExample_RNG_Helper.h>
 
+#include "mcux_pkc.h"
 
 /* MUTEX FOR HW Modules*/
 extern mcux_mutex_t pkc_hwcrypto_mutex;

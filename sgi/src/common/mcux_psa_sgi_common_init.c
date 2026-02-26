@@ -42,24 +42,20 @@ status_t CRYPTO_InitHardware(void)
     }
 
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
-        if (mcux_mutex_free(&sgi_hwcrypto_mutex) != 0) {
-            /* Mutex free failed, but we're already in error path */
-        }
         return kStatus_Fail;
     }
 
-    do {
-        result = kStatus_Success;
-        g_isCryptoHWInitialized = true;
+    /* Enable SGI and related HW */
+    result = SGI_PowerDownWakeupInit(SGI0);
+    if (result != kStatus_Success) {
+        goto exit;
+    }
 
-    } while (0);
+    g_isCryptoHWInitialized = true;
 
+exit:
     if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
-        g_isCryptoHWInitialized = false;
-        if (mcux_mutex_free(&sgi_hwcrypto_mutex) != 0) {
-            /* Mutex free failed, but we're already in error path */
-        }
-        return kStatus_Fail;
+        result = kStatus_Fail;
     }
 
     return result;

@@ -49,38 +49,15 @@ status_t psa_pkc_init(void)
         return kStatus_Fail;
     }
 
-    do {
-        RESET_ReleasePeripheralReset(kPKC0_RST_SHIFT_RSTn);
+    /* Enable PKC and related HW */
+    status = PKC_PowerDownWakeupInit(PKC0);
+    if (status != kStatus_Success) {
+        goto exit;
+    }
 
-        RESET_ReleasePeripheralReset(kTRNG0_RST_SHIFT_RSTn);
+    g_isPkcHWInitialized = true;
 
-        CLOCK_EnableClock(kCLOCK_GateSGI0);
-
-        CLOCK_EnableClock(kCLOCK_GateTRNG0);
-
-        CLOCK_EnableClock(kCLOCK_GatePKC0);
-
-        trng_config_t trngcon;
-        status = TRNG_GetDefaultConfig(&trngcon);
-        if (kStatus_Success != status) {
-            break;
-        }
-        trngcon.oscillatorMode = kTRNG_DualOscillatorMode;
-
-        status = TRNG_Init(TRNG0, &trngcon);
-        if (kStatus_Success != status) {
-            break;
-        }
-
-        CRC_Type *base = CRC0;
-        crc_config_t config;
-        CRC_GetDefaultConfig(&config);
-        CRC_Init(base, &config);
-
-        status = kStatus_Success;
-        g_isPkcHWInitialized = true;
-    } while (false);
-
+exit:
     if (mcux_mutex_unlock(&pkc_hwcrypto_mutex) != 0) {
         return kStatus_Fail;
     }
