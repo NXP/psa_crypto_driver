@@ -104,7 +104,6 @@ static status_t ele_close_handles(void)
 status_t CRYPTO_InitHardware(void)
 {
     status_t result     = kStatus_Fail;
-    sss_sscp_rng_t rctx = {0u};
 
     if (true == g_isCryptoHWInitialized)
     {
@@ -120,6 +119,41 @@ status_t CRYPTO_InitHardware(void)
     if ((result = mcux_mutex_lock(&ele_hwcrypto_mutex)) != 0)
     {
         return kStatus_Fail;
+    }
+
+    if ((result = CRYPTO_InitHardwareUnsafe()) != kStatus_Success)
+    {
+        (void)ele_close_handles();
+    }
+
+    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
+    {
+        return kStatus_Fail;
+    }
+
+    return result;
+}
+
+
+/*!
+ * @brief Application init for Crypto blocks.
+ *
+ * Unsafe version of CRYPTO_InitHardware that does not take mutexs.
+ *
+ * @warning This function does not acquire any mutex locks and is not thread-safe.
+ *          If called incorrectly by an application (e.g., from multiple threads
+ *          concurrently or without proper external synchronization), this may
+ *          cause race conditions, undefined behavior, or hardware access issues.
+ *          Use CRYPTO_InitHardware() for thread-safe initialization.
+ */
+status_t CRYPTO_InitHardwareUnsafe(void)
+{
+    status_t result     = kStatus_Fail;
+    sss_sscp_rng_t rctx = {0u};
+
+    if (true == g_isCryptoHWInitialized)
+    {
+        return kStatus_Success;
     }
 
     do
@@ -185,18 +219,9 @@ status_t CRYPTO_InitHardware(void)
         g_isCryptoHWInitialized = true;
     } while (false);
 
-    if (result != kStatus_Success)
-    {
-        (void)ele_close_handles();
-    }
-
-    if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
-    {
-        return kStatus_Fail;
-    }
-
     return result;
 }
+
 
 /*!
  * @brief Application Deinit for Crypto blocks.
@@ -237,6 +262,29 @@ status_t CRYPTO_DeinitHardware(void)
     return result;
 }
 
+/*!
+ * @brief Application Deinit for Crypto blocks.
+ *
+ * Unsafe version of CRYPTO_DeinitHardware that does not take mutexs and do not close handles.
+ *
+ * @warning This function does not acquire any mutex locks and is not thread-safe.
+ *          If called incorrectly by an application (e.g., from multiple threads
+ *          concurrently or without proper external synchronization), this may
+ *          cause race conditions, undefined behavior, or hardware access issues.
+ *          Use CRYPTO_InitHardware() for thread-safe initialization.
+ */
+status_t CRYPTO_DeinitHardwareUnsafe(void)
+{
+    if (g_isCryptoHWInitialized == false)
+    {
+        return 0;
+    }
+
+    g_isCryptoHWInitialized = false;
+
+    (void)ELEMU_LP_WakeupPathInit(ELEMUA);
+    return kStatus_Success;
+}
 
 /*!
  * @brief Application reset for Crypto blocks.
