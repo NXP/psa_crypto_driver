@@ -60,12 +60,26 @@ extern "C" {
 status_t CRYPTO_InitHardware(void);
 
 /*!
+ * @brief Application init for Crypto blocks.
+ *
+ * Unsafe version of CRYPTO_InitHardware that does not take mutexs.
+ */
+status_t CRYPTO_InitHardwareUnsafe(void);
+
+/*!
  * @brief Application Deinit for Crypto blocks.
  *
  * This function is provided to be called by MCUXpresso SDK applications.
  * It calls basic deinit for Crypto Hw acceleration and Hw entropy modules.
  */
 status_t CRYPTO_DeinitHardware(void);
+
+/*!
+ * @brief Application Deinit for Crypto blocks.
+ *
+ * Unsafe version of CRYPTO_DeinitHardware that does not take mutexs and do not close handles.
+ */
+status_t CRYPTO_DeinitHardwareUnsafe(void);
 
 /*!
  * @brief Application reset for Crypto blocks.
