@@ -417,7 +417,7 @@ psa_status_t translate_psa_algorithm_to_ele_key_property(psa_algorithm_t alg,
     {
         *prop |= kSSS_KeyProp_CryptoAlgo_AES;
     }
-    else if (PSA_ALG_CCM == alg || PSA_ALG_GCM == alg ||
+    else if (PSA_ALG_CCM == PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg) || PSA_ALG_GCM == PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg) ||
              ALG_NXP_ALL_AEAD == alg)
     {
         *prop |= kSSS_KeyProp_CryptoAlgo_AEAD;
