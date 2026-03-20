@@ -101,6 +101,15 @@ psa_status_t ele_s2xx_transparent_hash_compute(psa_algorithm_t alg,
                                                uint8_t *hash,
                                                size_t hash_size,
                                                size_t *hash_length);
+
+/*!
+ * \brief Marks all monitored hash operations for reinitialization.
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
+psa_status_t ele_s2xx_reinit_all_hash_ops(void);
+
 #ifdef __cplusplus
 }
 #endif

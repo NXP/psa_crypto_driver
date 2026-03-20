@@ -24,6 +24,22 @@
 #define SHA384_DIGEST_SIZE_IN_BYTES (384u / 8u)
 #define SHA512_DIGEST_SIZE_IN_BYTES (512u / 8u)
 
+#define HASH_OPS_METADATA_MAX 16
+
+typedef struct hash_op_metadata {
+    ele_s2xx_hash_operation_t *op;
+    psa_algorithm_t alg;
+    int initialized;
+} hash_op_metadata_t;
+
+/* Hash operation monitoring for low-power */
+static hash_op_metadata_t hash_op[HASH_OPS_METADATA_MAX];
+static uint8_t hash_op_count = 0;
+
+static psa_status_t register_hash_operation(ele_s2xx_hash_operation_t *operation, psa_algorithm_t alg);
+static psa_status_t unregister_hash_operation(ele_s2xx_hash_operation_t *operation);
+static hash_op_metadata_t *get_hash_op_metadata(ele_s2xx_hash_operation_t *operation);
+
 static psa_status_t translate_psa_hash_to_ele_hash(psa_algorithm_t alg, sss_algorithm_t *mode)
 {
     psa_status_t status = PSA_SUCCESS;
@@ -189,6 +205,18 @@ psa_status_t ele_s2xx_transparent_hash_setup(ele_s2xx_hash_operation_t *operatio
     }
 
 exit:
+    if (status == PSA_SUCCESS) {
+        hash_op_metadata_t *metadata;
+
+        /* Register hash operation for monitoring and mark it as "initialized" */
+        register_hash_operation(operation, alg);
+        metadata = get_hash_op_metadata(operation);
+        if (metadata != NULL)
+        {
+            metadata->initialized = 1;
+        }
+    }
+
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -232,6 +260,18 @@ psa_status_t ele_s2xx_transparent_hash_clone(const ele_s2xx_hash_operation_t *so
     }
 
 exit:
+    if (status == PSA_SUCCESS) {
+        hash_op_metadata_t *metadata;
+
+        /* Register hash operation for monitoring and mark it as "initialized" */
+        register_hash_operation(target_operation, alg);
+        metadata = get_hash_op_metadata(target_operation);
+        if (metadata != NULL)
+        {
+            metadata->initialized = 1;
+        }
+    }
+
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -250,6 +290,7 @@ psa_status_t ele_s2xx_transparent_hash_update(ele_s2xx_hash_operation_t *operati
                                               size_t input_length)
 {
     psa_status_t status = PSA_SUCCESS;
+    hash_op_metadata_t *metadata;
 
     if (NULL == operation)
     {
@@ -268,6 +309,13 @@ psa_status_t ele_s2xx_transparent_hash_update(ele_s2xx_hash_operation_t *operati
     if (NULL == input)
     {
         return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* If the hash operation has lost context, re-initialize it */
+    metadata = get_hash_op_metadata(operation);
+    if (metadata->initialized != 1)
+    {
+        ele_s2xx_transparent_hash_setup(operation, metadata->alg);
     }
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
@@ -347,6 +395,9 @@ psa_status_t ele_s2xx_transparent_hash_abort(ele_s2xx_hash_operation_t *operatio
     /* Zeroize the context */
     (void)memset(operation, 0, sizeof(ele_s2xx_hash_operation_t));
 
+    /* Remove the hash operation from the monitoring table */
+    unregister_hash_operation(operation);
+
     return PSA_SUCCESS;
 }
 
@@ -416,4 +467,90 @@ exit:
 
     return status;
 }
+
+/* Register a hash operation for monitoring */
+static psa_status_t register_hash_operation(ele_s2xx_hash_operation_t *operation, psa_algorithm_t alg)
+{
+    hash_op_metadata_t *metadata;
+
+    metadata = get_hash_op_metadata(operation);
+    if (metadata != NULL)
+    {
+        /* Hash op is already monitored */
+        return PSA_SUCCESS;
+    }
+
+    if (hash_op_count >= HASH_OPS_METADATA_MAX)
+    {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+    memset(&hash_op[hash_op_count], 0, sizeof(hash_op_metadata_t));
+    hash_op[hash_op_count].op = operation;
+    hash_op[hash_op_count].alg = alg;
+
+    hash_op_count++;
+
+    return PSA_SUCCESS;
+}
+
+/* Remove a hash operation from the monitoring table */
+static psa_status_t unregister_hash_operation(ele_s2xx_hash_operation_t *operation)
+{
+    int i = 0;
+
+    while ((i < hash_op_count) && (hash_op[i].op != operation))
+    {
+        i++;
+    }
+
+    if (i >= hash_op_count)
+    {
+        /* Couldn't find the hash op */
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+    /* Shift back all remaining hash ops, if any */
+    while (i < hash_op_count - 1)
+    {
+        memcpy(&hash_op[i], &hash_op[i + 1], sizeof(hash_op_metadata_t));
+        i++;
+    }
+    hash_op_count--;
+
+    return PSA_SUCCESS;
+}
+
+/* Get the monitoring metadata for a specific hash op */
+static hash_op_metadata_t *get_hash_op_metadata(ele_s2xx_hash_operation_t *operation)
+{
+    int i = 0;
+
+    while ((i < hash_op_count) && (hash_op[i].op != operation))
+    {
+        i++;
+    }
+
+    if (i >= hash_op_count)
+    {
+        /* Couldn't find the hash op */
+        return NULL;
+    }
+
+    return &hash_op[i];
+}
+
+/* Mark all monitored hash ops for reinitialization */
+psa_status_t ele_s2xx_reinit_all_hash_ops(void)
+{
+    int i = 0;
+
+    while (i < hash_op_count)
+    {
+        hash_op[i++].initialized = 0;
+    }
+
+    return PSA_SUCCESS;
+}
+
 /** @} */ // end of psa_hash
