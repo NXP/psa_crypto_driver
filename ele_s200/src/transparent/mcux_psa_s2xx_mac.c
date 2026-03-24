@@ -27,6 +27,11 @@ static psa_status_t translate_psa_mac_to_ele_mac(psa_algorithm_t alg, sss_algori
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
+    if (PSA_MAC_TRUNCATED_LENGTH(alg) != 0u)
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
 #if defined(PSA_WANT_ALG_CMAC)
     if (PSA_ALG_FULL_LENGTH_MAC(alg) == PSA_ALG_CMAC)
     {
