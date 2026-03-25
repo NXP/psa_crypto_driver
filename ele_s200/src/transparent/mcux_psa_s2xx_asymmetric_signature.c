@@ -388,6 +388,10 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
         else
 #endif
         {
+            if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
+            {
+                return PSA_ERROR_SERVICE_FAILURE;
+            }
             /* FW is not loaded, so we defer back to the SW implementation */
             status = psa_export_public_key_internal(attributes,
                                                     key_buffer,
@@ -395,6 +399,11 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
                                                     public_key_data,
                                                     public_key_data_size,
                                                     &public_key_data_length);
+            if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
+            {
+                return PSA_ERROR_SERVICE_FAILURE;
+            }
+
             if (PSA_SUCCESS != status)
             {
                 goto exit;

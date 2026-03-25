@@ -152,12 +152,21 @@ static psa_status_t transform_plain_key_to_elke_blob(const psa_key_attributes_t 
                 (void)memcpy(&keypair_data[private_key_offset], plain_data,
                              PSA_BITS_TO_BYTES(key_bits));
 
+                if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
+                {
+                    return PSA_ERROR_SERVICE_FAILURE;
+                }
                 status = psa_export_public_key_internal(attributes,
                                                         plain_data,
                                                         plain_data_length,
                                                         keypair_data,
                                                         public_key_size,
                                                         &public_key_length);
+                if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
+                {
+                    return PSA_ERROR_SERVICE_FAILURE;
+                }
+
                 if (PSA_SUCCESS != status)
                 {
                     break;
