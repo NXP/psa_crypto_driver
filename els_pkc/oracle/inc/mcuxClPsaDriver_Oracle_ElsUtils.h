@@ -11,7 +11,7 @@
 #ifndef _MCUXCLPSADRIVER_ORACLE_ELSUTILS_
 #define _MCUXCLPSADRIVER_ORACLE_ELSUTILS_
 
-#include <common.h>
+//#include <common.h>
 #include <mcuxClEls.h>
 #include <stdbool.h>
 #include <string.h>

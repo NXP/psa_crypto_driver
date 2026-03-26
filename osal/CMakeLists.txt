@@ -24,26 +24,6 @@ target_sources(
 )
 endif() #CONFIG_PSA_CRYPTO_DRIVER_DCP
 
-if(CONFIG_PSA_CRYPTO_DRIVER_ELS_PKC)
-target_include_directories(
-    McuxPsaCryptoDriverElsPkc
-    PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/.
-        #baremetal
-        #frtos
-        zephyr/.
-)
-
-target_sources(
-    McuxPsaCryptoDriverElsPkc
-    PRIVATE
-        #baremetal/osal_mutex.c
-        #frtos/osal_mutex.c
-        zephyr/osal_mutex.c
-        zephyr/threading_alt.c
-)
-endif() # CONFIG_PSA_CRYPTO_DRIVER_ELS_PKC
-
 if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 target_include_directories(
     McuxPsaCryptoDriverEleS4xx
@@ -64,7 +44,7 @@ target_sources(
 )
 endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx
 
-if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
+if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC OR CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 zephyr_library_include_directories(
         ${CMAKE_CURRENT_LIST_DIR}/.
         zephyr/.
@@ -73,4 +53,4 @@ zephyr_library_include_directories(
 zephyr_library_sources(
         zephyr/osal_mutex.c
 )
-endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx
+endif() # CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC

@@ -29,4 +29,6 @@ endif()
 
 if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ psa_crypto_driver)
+    target_link_libraries(app PUBLIC McuxPsaCryptoDriverSgiPkc)
+    zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverSgiPkc,INTERFACE_INCLUDE_DIRECTORIES>")
 endif()

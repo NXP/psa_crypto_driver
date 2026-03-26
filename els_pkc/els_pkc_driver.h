@@ -37,13 +37,6 @@
 #define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
 #endif
 
-#ifndef PSA_CRYPTO_ELS_PKC_TRANSPARENT_DRIVER_ID
-    #define PSA_CRYPTO_ELS_PKC_TRANSPARENT_DRIVER_ID (9)          /* Chosen a device id that doesn't clash with extra drivers in TFM */
-#endif
-#ifndef PSA_CRYPTO_ELS_PKC_OPAQUE_DRIVER_ID
-    #define PSA_CRYPTO_ELS_PKC_OPAQUE_DRIVER_ID (10)              /* Chosen a device id that doesn't clash with extra drivers in TFM */
-#endif
-
 #include "mcuxClPsaDriver_Oracle_Interface_key_locations.h"
 
 #define PSA_CRYPTO_ELS_PKC_LOCATION_S50_ENC_STORAGE_KEY   PSA_KEY_LOCATION_S50_ENC_STORAGE_KEY

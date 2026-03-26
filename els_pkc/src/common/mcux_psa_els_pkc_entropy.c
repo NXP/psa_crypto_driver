@@ -14,7 +14,7 @@
  */
 
 #include "mbedtls/build_info.h"
-#include "entropy_poll.h"
+//#include "entropy_poll.h"
 
 #if defined(MBEDTLS_MCUX_ENTROPY) && (MBEDTLS_MCUX_ENTROPY == 1)
 

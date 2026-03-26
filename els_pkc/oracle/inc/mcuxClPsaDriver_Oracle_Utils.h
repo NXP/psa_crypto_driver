@@ -11,7 +11,7 @@
 #ifndef _MCUXCLPSADRIVER_ORACLE_UTILS_
 #define _MCUXCLPSADRIVER_ORACLE_UTILS_
 
-#include <common.h>
+//#include <common.h>
 #include <psa/crypto.h>
 
 #include <stdint.h>
