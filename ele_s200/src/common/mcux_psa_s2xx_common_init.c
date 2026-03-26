@@ -103,7 +103,18 @@ static status_t ele_close_handles(void)
  */
 status_t CRYPTO_InitHardware(void)
 {
-    status_t result     = kStatus_Fail;
+    status_t result = kStatus_Fail;
+
+#if defined(ELE200_EXTENDED_FEATURES) && \
+    (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
+    /* Firmware is loadable only on A2.1 revision of KW47 and MCXW72. Add check
+     * to prevent loading failure on other revisions with an early exit.
+     */
+    if (false == IS_CHIP_REVISION_A2_1())
+    {
+        return kStatus_Fail;
+    }
+#endif
 
     if (true == g_isCryptoHWInitialized)
     {
