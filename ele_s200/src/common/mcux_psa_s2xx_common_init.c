@@ -123,7 +123,7 @@ status_t CRYPTO_InitHardware(void)
 
  do {
     // CRYPTO_InitHardwareUnsafe will try to load firmware which is only supported on A2.1
-#if (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
+#if defined(ELE200_EXTENDED_FEATURES) && (defined(ELEMU_HAS_LOADABLE_FW) && ELEMU_HAS_LOADABLE_FW)
     if (!IS_CHIP_REVISION_A2_1())
     {
         result = kStatus_Fail;
@@ -135,7 +135,7 @@ status_t CRYPTO_InitHardware(void)
     {
         (void)ele_close_handles();
     }
-} while(false);
+} while (false);
 
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
