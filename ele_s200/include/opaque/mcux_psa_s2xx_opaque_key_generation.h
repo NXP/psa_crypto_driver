@@ -180,6 +180,32 @@ psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes
                                           size_t key_buffer_size,
                                           size_t *key_buffer_length);
 
+/*!
+ * \brief Create a copy of an opaque key
+ *
+ * \note The PSA Core layer does not yet support location changes via the
+ *       psa_copy_key() API. Until the PSA Core mechanisms for copying keys
+ *       are finalized, this driver wrapper is provided only for making key
+ *       copies within the same opaque key location - this operation is
+ *       therefore a 1:1 copy of the opaque blob to a new buffer.
+ *
+ * \param[in]  attributes               Attributes of the new key
+ * \param[in]  source_key               Buffer with the source key
+ * \param[in]  source_key_length        Length in bytes of the source key
+ * \param[out] target_key_buffer        Buffer to hold the copied key
+ * \param[in]  target_key_buffer_size   Size on bytes of the taget key buffer
+ * \param[out] target_key_buffer_length Length in bytes of the copied key
+ *
+ * \retval PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *         failure
+ */
+psa_status_t ele_s2xx_opaque_copy_key(psa_key_attributes_t *attributes,
+                                      const uint8_t *source_key,
+                                      size_t source_key_length,
+                                      uint8_t *target_key_buffer,
+                                      size_t target_key_buffer_size,
+                                      size_t *target_key_buffer_length);
+
 #ifdef __cplusplus
 }
 #endif
