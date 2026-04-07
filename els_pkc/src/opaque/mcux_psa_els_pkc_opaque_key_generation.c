@@ -337,4 +337,37 @@ psa_status_t els_pkc_opaque_key_agreement( const psa_key_attributes_t *attribute
 
     return status;
 }
+
+psa_status_t els_pkc_opaque_copy_key(psa_key_attributes_t *attributes,
+                                     const uint8_t *source_key,
+                                     size_t source_key_length,
+                                     uint8_t *target_key_buffer,
+                                     size_t target_key_buffer_size,
+                                     size_t *target_key_buffer_length)
+{
+    /* NOTE: Once the driver API for copy_key is updated to be able to receive
+     *       both the source AND target key's attributes, then the below code
+     *       will apply ONLY to the case of source_location == target_location.
+     *       Copy is supported only for RFC3394 blob
+     */
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+    if (false == MCUXCLPSADRIVER_IS_S50_RFC3394_STORAGE(location))
+    {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (target_key_buffer_size < source_key_length)
+    {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    /* For same-location opaque copies, we just copy the blobs */
+    (void)memcpy(target_key_buffer, source_key, source_key_length);
+    *target_key_buffer_length = source_key_length;
+    status = PSA_SUCCESS;
+
+    return status;
+}
+
 /** @} */ // end of psa_key_generation
