@@ -324,32 +324,34 @@ if(CONFIG_PSA_CRYPTO_DRIVER_DCP)
 endif() # CONFIG_PSA_CRYPTO_DRIVER_DCP #
 
 if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
-    message ("psa-crypto-driver-els module is included.")
+	message ("psa-crypto-driver-els module is included.")
 
+if( CONFIG_BUILD_WITH_TFM)
+	include(${CMAKE_CURRENT_LIST_DIR}/cmake/tfm.cmake)
+else()
 	zephyr_library_named(McuxPsaCryptoDriverElsPkc)
-
-
 	set(NXP_MODULE_CRYPTO_PATH ${ZEPHYR_MBEDTLS_MODULE_DIR}/../)
 	set(NXP_MODULE_ELS_PKC_PATH ${ZEPHYR_ELS_PKC_MODULE_DIR})
+	
+	zephyr_compile_definitions(
+		# MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED
+		PSA_CRYPTO_DRIVER_ELS_PKC
+		PSA_CRYPTO_DRIVER_THREAD_EN
+	)
+endif()
 
 	if (CONFIG_MCUX_PSA_CRYPTO_DRIVER_USE_ELS_PKC_SHA1)
-	target_compile_definitions(
-		McuxPsaCryptoDriverElsPkc
-		PRIVATE
-		MCUX_PSA_CRYPTO_DRIVER_USE_ELS_PKC_SHA1
-	)
+		target_compile_definitions(
+			McuxPsaCryptoDriverElsPkc
+			PRIVATE
+			MCUX_PSA_CRYPTO_DRIVER_USE_ELS_PKC_SHA1
+		)
 	endif()
 
 	target_compile_definitions(
 		McuxPsaCryptoDriverElsPkc
 		PRIVATE
 		MBEDTLS_MCUX_ENTROPY
-	)
-
-	zephyr_compile_definitions(
-		# MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED
-		PSA_CRYPTO_DRIVER_ELS_PKC
-		PSA_CRYPTO_DRIVER_THREAD_EN
 	)
 
 	target_include_directories(McuxPsaCryptoDriverElsPkc
@@ -374,14 +376,22 @@ if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 	target_include_directories(McuxPsaCryptoDriverElsPkc
 		PRIVATE
 		# psa/crypto.h and psa/crypto_types.h
-		${NXP_MODULE_CRYPTO_PATH}/mbedtls/include
-		${NXP_MODULE_CRYPTO_PATH}/mbedtls/include/psa
-		# for psa driver wrapper
-		${NXP_MODULE_CRYPTO_PATH}/mbedtls/library
-		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/core
-		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
-		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
-		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
+		if(CONFIG_ZEPHYR_MBEDTLS_3_6_MODULE)
+			${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/include
+			${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/include/psa
+			# for psa driver wrapper
+			${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/library
+		else()
+			${NXP_MODULE_CRYPTO_PATH}/mbedtls/include
+			${NXP_MODULE_CRYPTO_PATH}/mbedtls/include/psa
+			# for psa driver wrapper
+			${NXP_MODULE_CRYPTO_PATH}/mbedtls/library
+			${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/core
+			${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
+			${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
+			${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
+		endif()
+
 		# cmsis required to build els_pkc
 		${NXP_MODULE_ELS_PKC_PATH}/src/platforms/rw61x/cmsis_cortex_m_5_5_1/inc
 	)
@@ -423,10 +433,11 @@ if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 		${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/src/mcuxClPsaDriver_generate_ecp_key.c
 	)
 
-	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
-
 	#link McuxElsPkc lib as psa-crypto-driver functions eventually calls els_pkc functions.
 	target_link_libraries(McuxPsaCryptoDriverElsPkc PUBLIC McuxElsPkc)
+if( NOT CONFIG_BUILD_WITH_TFM)
+	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
 	target_link_libraries(McuxPsaCryptoDriverElsPkc PUBLIC zephyr_interface)
+endif()
 
 endif()
