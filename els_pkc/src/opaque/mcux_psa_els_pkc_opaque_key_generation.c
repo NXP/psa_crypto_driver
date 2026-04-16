@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2023, 2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -17,6 +17,7 @@
 #include "mcux_psa_els_pkc_opaque_key_generation.h"
 #include "mcuxClPsaDriver_Oracle.h"
 #include "mcuxClPsaDriver_Oracle_Interface_key_locations.h"
+#include <string.h>
 
 #if defined(PSA_CRYPTO_DRIVER_THREAD_EN)
 #include "mcux_psa_els_pkc_common_init.h"
