@@ -373,28 +373,33 @@ endif()
 		"$<TARGET_PROPERTY:McuxElsPkc,INTERFACE_INCLUDE_DIRECTORIES>"
 	)
 
+if(CONFIG_BUILD_WITH_TFM)
 	target_include_directories(McuxPsaCryptoDriverElsPkc
 		PRIVATE
 		# psa/crypto.h and psa/crypto_types.h
-		if(CONFIG_ZEPHYR_MBEDTLS_3_6_MODULE)
-			${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/include
-			${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/include/psa
-			# for psa driver wrapper
-			${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/library
-		else()
-			${NXP_MODULE_CRYPTO_PATH}/mbedtls/include
-			${NXP_MODULE_CRYPTO_PATH}/mbedtls/include/psa
-			# for psa driver wrapper
-			${NXP_MODULE_CRYPTO_PATH}/mbedtls/library
-			${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/core
-			${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
-			${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
-			${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
-		endif()
-
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/include
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/include/psa
+		# for psa driver wrapper
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/library
 		# cmsis required to build els_pkc
 		${NXP_MODULE_ELS_PKC_PATH}/src/platforms/rw61x/cmsis_cortex_m_5_5_1/inc
 	)
+else()
+	target_include_directories(McuxPsaCryptoDriverElsPkc
+		PRIVATE
+		# psa/crypto.h and psa/crypto_types.h
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls/include
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls/include/psa
+		# for psa driver wrapper
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls/library
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/core
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
+		# cmsis required to build els_pkc
+		${NXP_MODULE_ELS_PKC_PATH}/src/platforms/rw61x/cmsis_cortex_m_5_5_1/inc
+	)
+endif()
 
 	target_sources(
 		McuxPsaCryptoDriverElsPkc
