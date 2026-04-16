@@ -16,6 +16,7 @@
 #include "mcuxClPsaDriver_Functions.h"
 #include "mcux_psa_els_pkc_opaque_key_generation.h"
 #include "mcuxClPsaDriver_Oracle.h"
+#include "mcuxClPsaDriver_Oracle_Interface_key_locations.h"
 
 #if defined(PSA_CRYPTO_DRIVER_THREAD_EN)
 #include "mcux_psa_els_pkc_common_init.h"
