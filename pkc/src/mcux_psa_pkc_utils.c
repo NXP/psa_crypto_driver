@@ -90,6 +90,7 @@ psa_status_t psa_to_pkc_asym_alg_priv(
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
+#if defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES)
     } else if (PSA_ECC_FAMILY_SECP_K1 == ecc_family) {
         switch (key_bits) {
 #if defined(PSA_WANT_ECC_SECP_K1_192)
@@ -106,6 +107,7 @@ psa_status_t psa_to_pkc_asym_alg_priv(
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
+#endif /* defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES) */
     } else {
         status = PSA_ERROR_NOT_SUPPORTED;
     }
@@ -192,6 +194,7 @@ psa_status_t psa_to_pkc_asym_alg_pub(
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
+#if defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES)
     } else if (PSA_ECC_FAMILY_SECP_K1 == ecc_family) {
         switch (key_bits) {
 #if defined(PSA_WANT_ECC_SECP_K1_192)
@@ -208,6 +211,7 @@ psa_status_t psa_to_pkc_asym_alg_pub(
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
+#endif /* defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES) */
     } else {
         status = PSA_ERROR_NOT_SUPPORTED;
     }
@@ -303,6 +307,7 @@ psa_status_t get_ecc_key_sizes(const psa_key_attributes_t *attributes,
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
+#if defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES)
     } else if (PSA_ECC_FAMILY_SECP_K1 == ecc_family) {
         switch (key_bits) {
 #if defined(PSA_WANT_ECC_SECP_K1_192)
@@ -321,6 +326,7 @@ psa_status_t get_ecc_key_sizes(const psa_key_attributes_t *attributes,
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
+#endif /* defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES) */
     } else {
         status = PSA_ERROR_NOT_SUPPORTED;
     }
@@ -415,6 +421,7 @@ psa_status_t psa_to_pkc_asym_shared_secret_size(const psa_key_attributes_t *attr
             }
             break;
 
+#if defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES)
         case PSA_ECC_FAMILY_SECP_K1:
             switch (key_bits) {
 #if defined(PSA_WANT_ECC_SECP_K1_192)
@@ -434,6 +441,7 @@ psa_status_t psa_to_pkc_asym_shared_secret_size(const psa_key_attributes_t *attr
                     break;
             }
             break;
+#endif /* defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES) */
 
         default:
             status = PSA_ERROR_NOT_SUPPORTED;

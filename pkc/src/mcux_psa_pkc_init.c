@@ -84,8 +84,13 @@ status_t psa_pkc_deinit(void)
     }
 
     do {
+#if defined(kPKC0_RST_SHIFT_RSTn)
         RESET_SetPeripheralReset(kPKC0_RST_SHIFT_RSTn);
+#endif
+
+#if defined(kCLOCK_GatePKC0)
         CLOCK_DisableClock(kCLOCK_GatePKC0);
+#endif
 
         result = kStatus_Success;
         g_isPkcHWInitialized = false;
