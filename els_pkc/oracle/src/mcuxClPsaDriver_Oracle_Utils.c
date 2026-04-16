@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, 2025 NXP
+ * Copyright 2022-2023, 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -976,7 +976,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(
 
     psa_status =  mcuxClPsaDriver_Oracle_ElsUtils_EccKeyGen(KeyGenOptions, ecc_key1_index, keyProp, public_key2);
     // Public Key 2 not needed
-    free(public_key2);
+    mbedtls_free(public_key2);
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in generating second key pair in ELS");
 
     keyProp.word.value       = 0;
@@ -1006,7 +1006,7 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Deletion in ELS");
 
 exit:
-    free(public_key1);
+    mbedtls_free(public_key1);
 
     return psa_status;
 }
