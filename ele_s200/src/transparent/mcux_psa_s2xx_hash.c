@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -83,69 +83,91 @@ static psa_status_t translate_psa_hash_to_ele_hash(psa_algorithm_t alg, sss_algo
     return status;
 }
 
-#if defined(ELE_FEATURE_DIGEST_CLONE) && (ELE_FEATURE_DIGEST_CLONE == 1)
-/**
- * @brief Inverse to translate_psa_hash_to_ele_hash()
+#if defined(CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT)
+#if defined(ELE_FEATURE_DIGEST_IMPORT)
+/** \brief Initialize a digest context and import a context blob into it
+ *
+ * \param[in,out] operation Pointer to the hash operation structure containing
+ *                          the context blob and the digest context to initialize.
+ *
+ * \retval PSA_SUCCESS The context was successfully imported and initialized.
+ * \retval PSA_ERROR_GENERIC_ERROR An error occurred during context import or
+ *         initialization.
  */
-static psa_status_t translate_ele_hash_to_psa_hash(sss_algorithm_t mode, psa_algorithm_t *alg)
+static psa_status_t ele_s2xx_import_digest_context(ele_s2xx_hash_operation_t *operation)
 {
-    psa_status_t status = PSA_SUCCESS;
-    switch (mode)
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    do
     {
-#if defined(PSA_WANT_ALG_SHA_224)
-        case kAlgorithm_SSS_SHA224:
-            *alg = PSA_ALG_SHA_224;
+        if (sss_sscp_digest_context_init(&operation->ctx, &g_ele_ctx.sssSession,
+                                         operation->ctx.algorithm,
+                                         kMode_SSS_Digest) != kStatus_SSS_Success)
+        {
+            status = PSA_ERROR_GENERIC_ERROR;
             break;
-#endif /* PSA_WANT_ALG_SHA_224 */
-#if defined(PSA_WANT_ALG_SHA_256)
-        case kAlgorithm_SSS_SHA256:
-            *alg = PSA_ALG_SHA_256;
+        }
+
+        if (sss_sscp_digest_import(&operation->ctx, operation->context_blob,
+                                   ELE_S2XX_MULTIPART_HASH_BLOB_SIZE) != kStatus_SSS_Success)
+        {
+            status = PSA_ERROR_GENERIC_ERROR;
             break;
-#endif /* PSA_WANT_ALG_SHA_256 */
-#if defined(PSA_WANT_ALG_SHA_384)
-        case kAlgorithm_SSS_SHA384:
-            *alg = PSA_ALG_SHA_384;
-            break;
-#endif /* PSA_WANT_ALG_SHA_384 */
-#if defined(PSA_WANT_ALG_SHA_512)
-        case kAlgorithm_SSS_SHA512:
-            *alg = PSA_ALG_SHA_512;
-            break;
-#endif /* PSA_WANT_ALG_SHA_512 */
-#if defined(ELE_HAVE_SHA3)
-#if defined(PSA_WANT_ALG_SHA3_224)
-        case kAlgorithm_SSS_SHA3_224:
-            *alg = PSA_ALG_SHA3_224;
-            break;
-#endif /* PSA_WANT_ALG_SHA3_224 */
-#if defined(PSA_WANT_ALG_SHA3_256)
-        case kAlgorithm_SSS_SHA3_256:
-            *alg = PSA_ALG_SHA3_256;
-            break;
-#endif /* PSA_WANT_ALG_SHA3_256 */
-#if defined(PSA_WANT_ALG_SHA3_384)
-        case kAlgorithm_SSS_SHA3_384:
-            *alg = PSA_ALG_SHA3_384;
-            break;
-#endif /* PSA_WANT_ALG_SHA3_384 */
-#if defined(PSA_WANT_ALG_SHA3_512)
-        case kAlgorithm_SSS_SHA3_512:
-            *alg = PSA_ALG_SHA3_512;
-            break;
-#endif /* PSA_WANT_ALG_SHA3_512 */
-#endif /* ELE_HAVE_SHA3 */
-#if defined(PSA_WANT_ALG_SHA_1)
-        case kAlgorithm_SSS_SHA1:
-            *alg = PSA_ALG_SHA_1;
-            break;
-#endif /* PSA_WANT_ALG_SHA_1 */
-        default:
-            status = PSA_ERROR_NOT_SUPPORTED;
-            break;
-    }
+        }
+
+        status = PSA_SUCCESS;
+    } while (false);
+
     return status;
 }
-#endif /* ELE_FEATURE_DIGEST_CLONE */
+#endif /* ELE_FEATURE_DIGEST_IMPORT */
+
+#if defined(ELE_FEATURE_DIGEST_EXPORT)
+/** \brief Export a digest context blob and free the digest context
+ *
+ * Take the hash operation provided by PSA, which holds an active S200 context,
+ * and export the context blob from it. After export, the context is freed.
+ *
+ * \param[in,out] operation Pointer to the hash operation structure containing
+ *                          the in-progress hash context and the blob buffer.
+ *
+ * \retval PSA_SUCCESS The context was successfully exported and freed.
+ * \retval PSA_ERROR_GENERIC_ERROR An error occurred during context export or
+ *         free operation.
+ */
+static psa_status_t ele_s2xx_export_digest_context(ele_s2xx_hash_operation_t *operation)
+{
+    psa_status_t status      = PSA_ERROR_CORRUPTION_DETECTED;
+    size_t context_blob_size = ELE_S2XX_MULTIPART_HASH_BLOB_SIZE;
+
+    do
+    {
+        if (sss_sscp_digest_export(&operation->ctx, operation->context_blob,
+                                   &context_blob_size) != kStatus_SSS_Success)
+        {
+            status = PSA_ERROR_GENERIC_ERROR;
+            /* Don't break, we want to free the context regardless of failure */
+        }
+
+        if (sss_sscp_digest_context_free(&operation->ctx) != kStatus_SSS_Success)
+        {
+            status = PSA_ERROR_GENERIC_ERROR;
+            break;
+        }
+
+        if (PSA_ERROR_GENERIC_ERROR == status)
+        {
+            /* Something went wrong, we already cleaned up, exit with error */
+            break;
+        }
+
+        status = PSA_SUCCESS;
+    } while (false);
+
+    return status;
+}
+#endif /* ELE_FEATURE_DIGEST_EXPORT */
+#endif /* CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT */
 
 /** \defgroup psa_hash PSA driver entry points for hashing
  *
@@ -188,6 +210,10 @@ psa_status_t ele_s2xx_transparent_hash_setup(ele_s2xx_hash_operation_t *operatio
         goto exit;
     }
 
+#if defined(ELE_FEATURE_DIGEST_EXPORT) && defined(CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT)
+    status = ele_s2xx_export_digest_context(operation);
+#endif
+
 exit:
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
     {
@@ -202,27 +228,32 @@ psa_status_t ele_s2xx_transparent_hash_clone(const ele_s2xx_hash_operation_t *so
 {
 #if defined(ELE_FEATURE_DIGEST_CLONE) && (ELE_FEATURE_DIGEST_CLONE == 1)
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-    psa_algorithm_t alg = PSA_ALG_NONE;
 
-    if (source_operation == NULL || target_operation == NULL) {
+    if (source_operation == NULL || target_operation == NULL)
+    {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Initialize target to same algorithm as source */
-    if ((status = translate_ele_hash_to_psa_hash(source_operation->ctx.algorithm, &alg)) != PSA_SUCCESS)
-    {
-        return status;
-    }
+    (void)memset(target_operation, 0, sizeof(ele_s2xx_hash_operation_t));
 
-    if ((status = ele_s2xx_transparent_hash_setup(target_operation, alg)) != PSA_SUCCESS)
-    {
-        return status;
-    }
-
-    /* Clone */
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)
     {
         return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+#if defined(ELE_FEATURE_DIGEST_IMPORT) && defined(CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT)
+    status = ele_s2xx_import_digest_context((ele_s2xx_hash_operation_t *)source_operation);
+    if (PSA_SUCCESS != status)
+    {
+        goto exit;
+    }
+#endif
+
+    if (sss_sscp_digest_context_init(&target_operation->ctx, &g_ele_ctx.sssSession, source_operation->ctx.algorithm,
+                                     kMode_SSS_Digest) != kStatus_SSS_Success)
+    {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
     }
 
     if (sss_sscp_digest_clone((sss_sscp_digest_t *)&source_operation->ctx, &target_operation->ctx) != kStatus_SSS_Success)
@@ -230,6 +261,27 @@ psa_status_t ele_s2xx_transparent_hash_clone(const ele_s2xx_hash_operation_t *so
         status = PSA_ERROR_GENERIC_ERROR;
         goto exit;
     }
+
+#if defined(ELE_FEATURE_DIGEST_EXPORT) && defined(CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT)
+    status = ele_s2xx_export_digest_context((ele_s2xx_hash_operation_t *)source_operation);
+    if (PSA_SUCCESS != status)
+    {
+        /* On cloning failure, PSA aborts only the target op, so we need to
+         * make sure we free the source op context.
+         */
+        (void)sss_sscp_digest_context_free((sss_sscp_digest_t *)&source_operation->ctx);
+        goto exit;
+    }
+
+    /* We export twice, because we have two output contexts */
+    status = ele_s2xx_export_digest_context(target_operation);
+    if (PSA_SUCCESS != status)
+    {
+        goto exit;
+    }
+#endif
+
+    status = PSA_SUCCESS;
 
 exit:
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
@@ -275,11 +327,27 @@ psa_status_t ele_s2xx_transparent_hash_update(ele_s2xx_hash_operation_t *operati
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
+#if defined(ELE_FEATURE_DIGEST_IMPORT) && defined(CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT)
+    status = ele_s2xx_import_digest_context(operation);
+    if (PSA_SUCCESS != status)
+    {
+        goto exit;
+    }
+#endif
+
     if (sss_sscp_digest_update(&operation->ctx, (uint8_t *)(uintptr_t)input, input_length) != kStatus_SSS_Success)
     {
         status = PSA_ERROR_GENERIC_ERROR;
         goto exit;
     }
+
+#if defined(ELE_FEATURE_DIGEST_EXPORT) && defined(CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT)
+    status = ele_s2xx_export_digest_context(operation);
+    if (PSA_SUCCESS != status)
+    {
+        goto exit;
+    }
+#endif
 
 exit:
     if (mcux_mutex_unlock(&ele_hwcrypto_mutex) != 0)
@@ -312,6 +380,14 @@ psa_status_t ele_s2xx_transparent_hash_finish(ele_s2xx_hash_operation_t *operati
     {
         return PSA_ERROR_SERVICE_FAILURE;
     }
+
+#if defined(ELE_FEATURE_DIGEST_IMPORT) && defined(CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT)
+    status = ele_s2xx_import_digest_context(operation);
+    if (PSA_SUCCESS != status)
+    {
+        goto exit;
+    }
+#endif
 
     if (sss_sscp_digest_finish(&operation->ctx, hash, &hash_size) != kStatus_SSS_Success)
     {
@@ -359,8 +435,8 @@ psa_status_t ele_s2xx_transparent_hash_compute(psa_algorithm_t alg,
 {
     psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
     size_t actual_hash_length = PSA_HASH_LENGTH(alg);
-    sss_sscp_digest_t ctx;
-    sss_algorithm_t mode = 0;
+    sss_sscp_digest_t ctx     = {0};
+    sss_algorithm_t mode      = {0};
 
     if ((status = translate_psa_hash_to_ele_hash(alg, &mode)) != PSA_SUCCESS)
     {

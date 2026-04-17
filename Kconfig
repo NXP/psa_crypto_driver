@@ -201,6 +201,16 @@ menu "PSA Crypto Driver"
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.opaque
         bool "ELE S200 Opaque"
 
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.feature.hash_context_persistence
+        bool "ELE S200 Hash Context Persistence"
+        depends on MCUX_HW_SOC_SERIES_KW47 || MCUX_HW_SOC_SERIES_MCXW72
+        default false
+        help
+            Enables multipart hash context persistence across sleep/wake cycles
+            when the ELE S200 subsystem loses internal contexts, but the application
+            RAM does not.
+            Supported only on KW47 and MCXW72 series.
+
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
         bool "ELE S200"
         select MCUX_COMPONENT_component.psa_crypto_driver
@@ -262,8 +272,8 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.sgi_pkc.ecc
         select MCUX_COMPONENT_component.sgi_pkc.signature
         select MCUX_COMPONENT_component.sgi_pkc.rsa
-		
-		# We provide option to have SGI-only, or SGI+PKC, but PKC-only is not available.
+
+        # We provide option to have SGI-only, or SGI+PKC, but PKC-only is not available.
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi
 
     config USING_TF_PSA_CRYPTO
@@ -288,6 +298,18 @@ menu "PSA Crypto Driver"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
         bool
+
+    ##################################################################
+    #                            Features                            #
+    #                                                                #
+    # Options without menu entries, translated from the above        #
+    # user-facing MCUX_COMPONENT_component.psa_crypto_driver symbols #
+    # to be used in-code.                                            #
+    ##################################################################
+
+    config ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT
+        bool
+        default y if MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.feature.hash_context_persistence
 
     ##################################################################
     #                           MbedTLS                              #

@@ -64,6 +64,17 @@ EdgeLock2Go data storage. The data is unwrapped from the EL2GO blob and placed
 into the PSA keystore in plaintext when imported with `psa_import_key()`.
 The plaintext data may be retrieved by calling `psa_export_key()`.
 
+# Additional optional features
+The ELE S200 PSA driver supports the following additional optional features with
+their respective Kconfig options:
+
+* Hash context persistence across power cycles. Lowpower modes that preserve RAM
+  will maintain hash operation state. This feature is enabled through the
+  `MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.feature.hash_context_persistence`
+  config option.
+  On legacy SDK packages, please define the `CONFIG_ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT`
+  macro when building your application.
+
 # Cryptographic Support for Given Key Locations
 
 * Keyless algorithms

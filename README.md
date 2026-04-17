@@ -27,7 +27,7 @@ locations will be documented in their respective port layer readmes.
 # Port Layers
 Below is a list of supported port layers with links to their respective readmes.
 
-* [ELE_S200](/ele_s200/ele_s200_readme.md)
+* [ELE_S200](ele_s200/ele_s200_readme.md)
 * CAAM (to be added)
 * Casper / Hashcrypt (to be added)
 * DCP (to be added)
