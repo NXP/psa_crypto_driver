@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 #
 #-------------------------------------------------------------------------------
@@ -27,8 +27,17 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
     zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverEleS4xx,INTERFACE_INCLUDE_DIRECTORIES>")
 endif()
 
-if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ psa_crypto_driver)
-    target_link_libraries(app PUBLIC McuxPsaCryptoDriverSgiPkc)
-    zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverSgiPkc,INTERFACE_INCLUDE_DIRECTORIES>")
+if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC )
+
+    # if the build is for tfm, then, pass HW accelration presense config to tfm build system
+    if(CONFIG_BUILD_WITH_TFM)
+        set_property(TARGET zephyr_property_target
+            APPEND PROPERTY TFM_CMAKE_OPTIONS
+            -DCRYPTO_HW_ACCELERATOR=ON
+        )
+    else()
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ psa_crypto_driver)
+        target_link_libraries(app PUBLIC McuxPsaCryptoDriverSgiPkc)
+        zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverSgiPkc,INTERFACE_INCLUDE_DIRECTORIES>")
+    endif()
 endif()
