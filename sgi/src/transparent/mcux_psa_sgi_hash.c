@@ -16,9 +16,16 @@
 #include "mcux_psa_sgi_init.h"
 #include "mcux_psa_sgi_hash.h"
 
-/* To be able to include the PSA style configuration */
-#include "mbedtls/build_info.h"
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
 #include "tf-psa-crypto/build_info.h"
+#else
+/* This is for backwards compatibility with MbedTLS 3.x. Post-MbedTLS 3.x this
+ * include would only work iff we forced MbedTLS to be built with TF PSA Crypto,
+ * which is not a given, since PSA core (TF PSA Crypto) no longer has a hard
+ * dependency on MbedTLS >= 4.
+ */
+#include "mbedtls/build_info.h"
+#endif
 
 #include <mcuxClHash.h>
 #include <mcuxClHashModes.h>

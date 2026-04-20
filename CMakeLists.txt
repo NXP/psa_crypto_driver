@@ -5,14 +5,19 @@
 #-------------------------------------------------------------------------------
 
 if(NOT CONFIG_BUILD_WITH_TFM)
-    find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+	find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 endif()
 
 if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
 	message ("psa-crypto-driver-sgi_pkc module is included.")
 
-	# Creating new library
+if( CONFIG_BUILD_WITH_TFM)
+	include(${CMAKE_CURRENT_LIST_DIR}/cmake/tfm.cmake)
+else()
 	zephyr_library_named(McuxPsaCryptoDriverSgiPkc)
+	set(NXP_MODULE_CRYPTO_PATH ${ZEPHYR_MBEDTLS_MODULE_DIR}/../)
+	set(NXP_MODULE_SGI_PKC_PATH ${ZEPHYR_SGI_PKC_MODULE_DIR})
+	set(NXP_MODULE_PSA_CRYPTO_DRIVER_PATH ${ZEPHYR_PSA_CRYPTO_DRIVER_MODULE_DIR})
 
 	# This ensures that even zephyr part will see these defines (e.g. MbedTLS module)
 	zephyr_compile_definitions(
@@ -22,79 +27,6 @@ if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
 		MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED
 	)
 
-	### MbedTLS ###
-	target_include_directories(
-		McuxPsaCryptoDriverSgiPkc
-		PUBLIC
-		# PSA crypto headers
-		${ZEPHYR_BASE}/modules/mbedtls/configs
-		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include
-		${ZEPHYR_BASE}/../modules/crypto/mbedtls/library
-		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/psa
-		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/mbedtls
-		${ZEPHYR_BASE}/../modules/crypto/sgi_pkc/src/platforms/mcxa/
-	)
-
-	### PSA Crypto Driver ###
-	
-	# SGI PSA driver inlclude paths
-	target_include_directories(
-		McuxPsaCryptoDriverSgiPkc
-		PUBLIC
-		${PSA_CRYPTO_DRIVER_PATH}/sgi/
-		${PSA_CRYPTO_DRIVER_PATH}/sgi/include/
-		${PSA_CRYPTO_DRIVER_PATH}/sgi/include/common
-		${PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent
-		${PSA_CRYPTO_DRIVER_PATH}/osal/
-		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
-	)
-
-	# SGI PSA driver implementation
-	target_sources(
-		McuxPsaCryptoDriverSgiPkc
-		PRIVATE
-		# Source
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/src/common/mcux_psa_sgi_common_init.c
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/src/common/mcux_psa_sgi_entropy.c
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_aead.c
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_cipher.c
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_hash.c
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_init.c
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_mac.c
-        # Include
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/include/common/mcux_psa_sgi_common_init.h
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/include/common/mcux_psa_sgi_entropy.h
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_cipher.h
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_aead.h
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_hash.h
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_init.h
-        ${PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_mac.h
-	)
-
-	# PKC PSA driver inlclude paths
-	target_include_directories(
-		McuxPsaCryptoDriverSgiPkc
-		PUBLIC
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/include
-	)
-
-	# PKC PSA driver implementation
-	target_sources(
-		McuxPsaCryptoDriverSgiPkc
-		PRIVATE
-		# Source
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/src/mcux_psa_pkc_asymmetric_signature.c
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/src/mcux_psa_pkc_init.c
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/src/mcux_psa_pkc_utils.c
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/src/mcux_psa_pkc_key_generation.c
-        # Include
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/pkc.h
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/include/mcux_psa_pkc_asymmetric_signature.h
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/include/mcux_psa_pkc_init.h
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/include/mcux_psa_pkc_utils.h
-		${PSA_CRYPTO_DRIVER_PATH}/pkc/include/mcux_psa_pkc_key_generation.h
-	)
 
 	# HW drivers (dependency for Crypto IP/Clib)
 	target_include_directories(
@@ -113,13 +45,96 @@ if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/crc/fsl_crc.c
 	)
 
+	target_include_directories(McuxPsaCryptoDriverSgiPkc
+		PRIVATE
+		# psa/crypto.h and psa/crypto_types.h
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls/include
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls/include/psa
+		# for psa driver wrapper
+		${NXP_MODULE_CRYPTO_PATH}/mbedtls/library
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/core
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
+	)
+
+endif()
+
+	### PSA Crypto Driver ###
+
+	# SGI PSA driver inlclude paths
+	target_include_directories(
+		McuxPsaCryptoDriverSgiPkc
+		PUBLIC
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/common
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/osal/
+		"$<TARGET_PROPERTY:McuxSgiPkc,INTERFACE_INCLUDE_DIRECTORIES>"
+	)
+
+	# SGI PSA driver implementation
+	target_sources(
+		McuxPsaCryptoDriverSgiPkc
+		PRIVATE
+		# Source
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/common/mcux_psa_sgi_common_init.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/common/mcux_psa_sgi_entropy.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_aead.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_cipher.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_hash.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_init.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_mac.c
+		# Include
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/common/mcux_psa_sgi_common_init.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/common/mcux_psa_sgi_entropy.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_cipher.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_aead.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_hash.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_init.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_mac.h
+	)
+
+	# PKC PSA driver inlclude paths
+	target_include_directories(
+		McuxPsaCryptoDriverSgiPkc
+		PUBLIC
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/include
+	)
+
+	# PKC PSA driver implementation
+	target_sources(
+		McuxPsaCryptoDriverSgiPkc
+		PRIVATE
+		# Source
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/src/mcux_psa_pkc_asymmetric_signature.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/src/mcux_psa_pkc_init.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/src/mcux_psa_pkc_utils.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/src/mcux_psa_pkc_key_generation.c
+		# Include
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/pkc.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/include/mcux_psa_pkc_asymmetric_signature.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/include/mcux_psa_pkc_init.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/include/mcux_psa_pkc_utils.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/include/mcux_psa_pkc_key_generation.h
+	)
+
+	#link with McuxSgiPkc library
+	target_link_libraries(McuxPsaCryptoDriverSgiPkc PUBLIC McuxSgiPkc)
+
 	# Adding OSAL for Zephyr Mutexes
 	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
+	
+if( NOT CONFIG_BUILD_WITH_TFM)
 
 	# We must ensure we link this library into zephyr_interface, 
 	# otherwise we won't get compile options defined in Zephyr
 	target_link_libraries(McuxPsaCryptoDriverSgiPkc PUBLIC zephyr_interface)
-	target_link_libraries(McuxPsaCryptoDriverSgiPkc PUBLIC McuxSgiPkc)	
+endif()
+
 
 endif() # CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC #
 
