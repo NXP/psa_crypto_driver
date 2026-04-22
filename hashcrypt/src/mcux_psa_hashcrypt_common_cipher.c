@@ -147,6 +147,11 @@ psa_status_t hashcrypt_cipher_encrypt(const psa_key_attributes_t *attributes,
     /* Set key */
     status = HASHCRYPT_AES_SetKey(PSA_HASHCRYPT, &m_handle, key_buffer, key_buffer_size);
     if (status != kStatus_Success) {
+#if defined(PSA_WANT_ALG_CBC_PKCS7)
+        if (NULL != _input) {
+            mbedtls_free(_input);
+        }
+#endif
         return hashcrypt_to_psa_status(status);
     }
 
@@ -241,7 +246,7 @@ psa_status_t hashcrypt_cipher_encrypt(const psa_key_attributes_t *attributes,
         }
     }
 #if defined(PSA_WANT_ALG_CBC_PKCS7)
-    if (_input == NULL) {
+    if (_input != NULL) {
         mbedtls_free(_input);
     }
 #endif
