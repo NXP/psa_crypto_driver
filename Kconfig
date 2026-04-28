@@ -256,6 +256,14 @@ menu "PSA Crypto Driver"
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
         bool "SGI Transparent"
 
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.feature.double_cipher_enable
+        bool "SGI Double cipher enable"
+        default false
+        help
+            Enable double encryption/decryption with CMAC verification.
+            When enabled, cipher operations are performed twice and verified
+            using AES-128-CMAC to detect potential faults.
+			
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi
         bool "SGI"
         select MCUX_COMPONENT_component.psa_crypto_driver
@@ -310,6 +318,10 @@ menu "PSA Crypto Driver"
     config ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT
         bool
         default y if MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.feature.hash_context_persistence
+
+    config MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE
+        bool
+        default y if MCUX_COMPONENT_component.psa_crypto_driver.sgi.feature.double_cipher_enable
 
     ##################################################################
     #                           MbedTLS                              #

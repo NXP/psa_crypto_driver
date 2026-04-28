@@ -82,6 +82,57 @@ static inline mcuxClKey_Type_t get_sgi_keytype(const psa_key_attributes_t *attri
     return type;
 }
 
+/**
+ * \def CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE 
+ *
+ * Enable double encryption/decryption with CMAC verification.
+ * When enabled, cipher operations are performed twice and verified
+ * using AES-128-CMAC to detect potential faults.
+ *
+ */
+
+#ifdef CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE 
+
+#include <mcuxClRandom.h>
+#include <mcuxClMac.h>
+#include <mcuxClMacModes.h>
+#include <mcuxClKey.h>
+#include <mcuxClMemory.h>
+#include <mcuxCsslMemory_Constants.h>
+#include <mcuxCsslMemory_SecureCompare.h>
+
+#define CMAC_KEY_SIZE_BYTES     16u
+#define CMAC_OUTPUT_SIZE_BYTES  16u
+
+/**
+ * @brief Overwrite buffer with random data
+ *
+ * @param session   Session handle
+ * @param buffer    Buffer to overwrite
+ * @param length    Length of buffer
+ * @return psa_status_t PSA status code
+ */
+static psa_status_t overwrite_with_random(mcuxClSession_Handle_t session,
+                                          uint8_t *buffer,
+                                          size_t length)
+{
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(rng_status, rng_token,
+                                     mcuxClRandom_generate(session, buffer, length));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_generate) != rng_token) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+
+    if (MCUXCLRANDOM_STATUS_OK != rng_status) {
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    return PSA_SUCCESS;
+}
+
+#endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
+
 psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attributes,
                                             const uint8_t *key_buffer,
                                             size_t key_buffer_size,
@@ -159,6 +210,10 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
     mcuxClKey_Type_t type = get_sgi_keytype(attributes);
 
     if (type == NULL) {
@@ -169,14 +224,18 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
     mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
 
-    /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
-    mcuxClSession_Handle_t session = &sessionDesc;
 
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+    /* Allocate larger work area for CMAC and RANDOM operations */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLRANDOMMODES_MAX_CPU_WA_BUFFER_SIZE,
+                                                  0u);
+#else /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
     /* Allocate and initialize session */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
                                                   0u);
+#endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
 
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
@@ -196,7 +255,6 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-
     /* Initializing the output length with zero */
     uint32_t output_length_tmp = 0u;
 
@@ -208,6 +266,54 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
         goto cleanup;
     }
 
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+    /* Buffers for CMAC verification */
+    uint8_t cmac_key[CMAC_KEY_SIZE_BYTES];
+    uint8_t cmac_output_1[CMAC_OUTPUT_SIZE_BYTES];
+    uint8_t cmac_output_2[CMAC_OUTPUT_SIZE_BYTES];
+
+
+    /* Generate random CMAC key */
+    /* Initialize the RNG context  */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
+                                              MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
+                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(retRandGen, tokenRandGen, mcuxClRandom_generate(session,
+                                                                                     cmac_key,
+                                                                                     CMAC_KEY_SIZE_BYTES));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_generate) != tokenRandGen) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLRANDOM_STATUS_OK != retRandGen) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Initialize CMAC key descriptor */
+    uint32_t cmacKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
+    mcuxClKey_Handle_t cmacKey = (mcuxClKey_Handle_t) &cmacKeyDesc;
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
+                                     mcuxClKey_init(session, cmacKey, mcuxClKey_Type_Aes128,
+                                                    cmac_key, CMAC_KEY_SIZE_BYTES));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLKEY_STATUS_OK != ki_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* First encryption */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(e_status, e_token,
                                      mcuxClCipher_encrypt(session, key, mode, iv, iv_length,
                                                           input, input_length, output,
@@ -226,9 +332,139 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+    /* Compute CMAC of first encryption output */
+    uint32_t cmac1_length = 0u;
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mac_status, mac_token,
+                                     mcuxClMac_compute(session,
+                                                       cmacKey,
+                                                       mcuxClMac_Mode_CMAC,
+                                                       output,
+                                                       *output_length,
+                                                       cmac_output_1,
+                                                       &cmac1_length));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMac_compute) != mac_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if ((MCUXCLMAC_STATUS_OK != mac_status) || (cmac1_length != CMAC_OUTPUT_SIZE_BYTES)) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Second encryption */
+    output_length_tmp = 0u;
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(e2_status, e2_token,
+                                     mcuxClCipher_encrypt(session, key, mode, iv, iv_length,
+                                                          input, input_length, output,
+                                                          &output_length_tmp));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_encrypt) != e2_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLCIPHER_STATUS_OK != e2_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Verify output length is consistent */
+    if (*output_length != (size_t) output_length_tmp) {
+        /* Length mismatch - overwrite output with random data and fail */
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+
+    /* Compute CMAC of second encryption output using same key */
+    uint32_t cmac2_length = 0u;
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mac2_status, mac2_token,
+                                     mcuxClMac_compute(session,
+                                                       cmacKey,
+                                                       mcuxClMac_Mode_CMAC,
+                                                       output,
+                                                       *output_length,
+                                                       cmac_output_2,
+                                                       &cmac2_length));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMac_compute) != mac2_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if ((MCUXCLMAC_STATUS_OK != mac2_status) || (cmac2_length != CMAC_OUTPUT_SIZE_BYTES)) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Compare CMAC results */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(secureCompareResult, secureCompareToken,
+                                     mcuxCsslMemory_SecureCompare(
+                                         /* mcuxCsslParamIntegrity_Checksum_t chk */
+                                         MCUX_CSSL_PI_PROTECT(cmac_output_1,
+                                                              cmac_output_2,
+                                                              CMAC_OUTPUT_SIZE_BYTES),
+                                         /* void const * lhs                      */ cmac_output_1,
+                                         /* void const * rhs                      */ cmac_output_2,
+                                         /* uint32_t length                       */
+                                         CMAC_OUTPUT_SIZE_BYTES
+                                         ));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxCsslMemory_SecureCompare) != secureCompareToken) ||
+        (MCUXCSSLMEMORY_STATUS_EQUAL != secureCompareResult)) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+
+    /* Clear sensitive data from stack */
+    MCUX_CSSL_FP_FUNCTION_CALL_VOID_BEGIN(clear_token,
+                                          mcuxClMemory_clear(cmac_key, CMAC_KEY_SIZE_BYTES,
+                                                             CMAC_KEY_SIZE_BYTES));
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMemory_clear) != clear_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_VOID_END();
+
+#else
+    /* Standard single encryption */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(e_status, e_token,
+                                     mcuxClCipher_encrypt(session, key, mode, iv, iv_length,
+                                                          input, input_length, output,
+                                                          &output_length_tmp));
+
+    *output_length = (size_t) output_length_tmp;
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_encrypt) != e_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLCIPHER_STATUS_OK != e_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+#endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
+
     status = PSA_SUCCESS;
 
 cleanup:
+
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  )
+    if (status != PSA_SUCCESS) {
+        if (overwrite_with_random(session, output, output_size) != 0) {
+            status = PSA_ERROR_CORRUPTION_DETECTED;
+        }
+    }
+#endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
+
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
@@ -326,6 +562,10 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
+    /* Initialize session */
+    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Handle_t session = &sessionDesc;
+
     mcuxClKey_Type_t type = get_sgi_keytype(attributes);
 
     if (type == NULL) {
@@ -336,14 +576,17 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
     mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
 
-    /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
-    mcuxClSession_Handle_t session = &sessionDesc;
-
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+    /* Allocate larger work area for CMAC and RANDOM operations */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLRANDOMMODES_MAX_CPU_WA_BUFFER_SIZE,
+                                                  0u);
+#else /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
     /* Allocate and initialize session */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
                                                   0u);
+#endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
 
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
@@ -371,6 +614,53 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
         goto cleanup;
     }
 
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+    /* Buffers for CMAC verification */
+    uint8_t cmac_key[CMAC_KEY_SIZE_BYTES];
+    uint8_t cmac_output_1[CMAC_OUTPUT_SIZE_BYTES];
+    uint8_t cmac_output_2[CMAC_OUTPUT_SIZE_BYTES];
+
+
+    /* Generate random CMAC key */
+    /* Initialize the RNG context  */
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
+                                              MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
+                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(retRandGen, tokenRandGen, mcuxClRandom_generate(session,
+                                                                                     cmac_key,
+                                                                                     CMAC_KEY_SIZE_BYTES));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClRandom_generate) != tokenRandGen) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLRANDOM_STATUS_OK != retRandGen) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Initialize CMAC key descriptor */
+    uint32_t cmacKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
+    mcuxClKey_Handle_t cmacKey = (mcuxClKey_Handle_t) &cmacKeyDesc;
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
+                                     mcuxClKey_init(session, cmacKey, mcuxClKey_Type_Aes128,
+                                                    cmac_key, CMAC_KEY_SIZE_BYTES));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLKEY_STATUS_OK != ki_status) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d_status, d_token,
                                      mcuxClCipher_decrypt(session, key, mode, input, iv_length,
                                                           (mcuxCl_Buffer_t) (input + iv_length),
@@ -385,16 +675,159 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     }
 
     if (MCUXCLCIPHER_STATUS_OK == d_status) {
-        status = PSA_SUCCESS;
+        /* Assign PSA_SUCCESS at end of function before cleanup */
     } else if (MCUXCLPADDING_STATUS_ERROR == d_status) {
         status = PSA_ERROR_INVALID_PADDING;
+        goto cleanup;
     } else {
         status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
     }
 
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
+    /* Compute CMAC of first decryption output */
+    uint32_t cmac1_length = 0u;
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mac_status, mac_token,
+                                     mcuxClMac_compute(session,
+                                                       cmacKey,
+                                                       mcuxClMac_Mode_CMAC,
+                                                       output,
+                                                       *output_length,
+                                                       cmac_output_1,
+                                                       &cmac1_length));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMac_compute) != mac_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if ((MCUXCLMAC_STATUS_OK != mac_status) || (cmac1_length != CMAC_OUTPUT_SIZE_BYTES)) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Second decryption */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d2_status, d2_token,
+                                     mcuxClCipher_decrypt(session, key, mode, input, iv_length,
+                                                          (mcuxCl_Buffer_t) (input + iv_length),
+                                                          input_length - iv_length, output,
+                                                          &expected_op_length));
+
+    *output_length = (size_t) expected_op_length;
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_decrypt) != d2_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLCIPHER_STATUS_OK == d2_status) {
+        /* Assign PSA_SUCCESS at end of function before cleanup */
+    } else if (MCUXCLPADDING_STATUS_ERROR == d2_status) {
+        status = PSA_ERROR_INVALID_PADDING;
+        goto cleanup;
+    } else {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Compute CMAC of second decryption output using same key */
+    uint32_t cmac2_length = 0u;
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mac2_status, mac2_token,
+                                     mcuxClMac_compute(session,
+                                                       cmacKey,
+                                                       mcuxClMac_Mode_CMAC,
+                                                       output,
+                                                       *output_length,
+                                                       cmac_output_2,
+                                                       &cmac2_length));
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMac_compute) != mac2_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if ((MCUXCLMAC_STATUS_OK != mac2_status) || (cmac2_length != CMAC_OUTPUT_SIZE_BYTES)) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    /* Compare CMAC results */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(secureCompareResult, secureCompareToken,
+                                     mcuxCsslMemory_SecureCompare(
+                                         /* mcuxCsslParamIntegrity_Checksum_t chk */
+                                         MCUX_CSSL_PI_PROTECT(cmac_output_1,
+                                                              cmac_output_2,
+                                                              CMAC_OUTPUT_SIZE_BYTES),
+                                         /* void const * lhs                      */ cmac_output_1,
+                                         /* void const * rhs                      */ cmac_output_2,
+                                         /* uint32_t length                       */
+                                         CMAC_OUTPUT_SIZE_BYTES
+                                         ));
+
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxCsslMemory_SecureCompare) != secureCompareToken) ||
+        (MCUXCSSLMEMORY_STATUS_EQUAL != secureCompareResult)) {
+        /* Mismatch detected or flow protection error */
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+
+    /* Clear sensitive data from stack */
+    MCUX_CSSL_FP_FUNCTION_CALL_VOID_BEGIN(clear_token,
+                                          mcuxClMemory_clear(cmac_key, CMAC_KEY_SIZE_BYTES,
+                                                             CMAC_KEY_SIZE_BYTES));
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMemory_clear) != clear_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_VOID_END();
+
+#else
+    /* Standard single decryption */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d_status, d_token,
+                                     mcuxClCipher_decrypt(session, key, mode, input, iv_length,
+                                                          (mcuxCl_Buffer_t) (input + iv_length),
+                                                          input_length - iv_length, output,
+                                                          &expected_op_length));
+
+    *output_length = (size_t) expected_op_length;
+
+    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_decrypt) != d_token) {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto cleanup;
+    }
+
+    if (MCUXCLCIPHER_STATUS_OK == d_status) {
+        /* Assign PSA_SUCCESS at end of function before cleanup */
+    } else if (MCUXCLPADDING_STATUS_ERROR == d_status) {
+        status = PSA_ERROR_INVALID_PADDING;
+        goto cleanup;
+    } else {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+#endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
+
+    status = PSA_SUCCESS;
+
 cleanup:
+
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+    if (status != PSA_SUCCESS) {
+        if (overwrite_with_random(session, output, output_size) != 0) {
+            status = PSA_ERROR_CORRUPTION_DETECTED;
+        }
+    }
+#endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
+
     /* Destroy the session */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
 
@@ -415,6 +848,7 @@ cleanup:
 
     return status;
 }
+
 
 static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
                                         const psa_key_attributes_t *attributes,
