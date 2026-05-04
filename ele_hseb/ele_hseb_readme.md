@@ -9,15 +9,45 @@ be found in the HSE API reference manual.
 
 MbedTLS3.x / PSA examples provided in the SDK are using the default key
 catalogs, which can be found in the underlying `ele_hseb` component.
+By default, key catalog initialization based on the configurations provided as
+part of `ele_hseb` is done during the first call to `psa_crypto_init()`.
+Please refer to the [Additional optional features](#additional-optional-features)
+section and the ELE HSEB component documentation for more details on manual
+catalog initialization and configuration customization.
 
-Key catalog initialization must therefore be done by the user by utilizing
-the `FormatKeyCatalogs()` and `HKF_Init()` functions before using any of the
-PSA APIs. During a call to `psa_crypto_init()` it is checked whether key
-catalogs have been formatted.
+# Additional optional features
+The ELE HSEB PSA driver supports the following optional features
+that can be configured with their respective Kconfig options:
 
-## Supported Algorithms
-Below is a list of algorithms supported by the current version of the ELE
-HSEB port. Key types and sizes are also specified where relevant.
+* `MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb.feature.autoformat_key_catalogs`
+
+  *Enabled by default*. When disabled, this option removes automatic key catalog
+  formatting during `psa_crypto_init()`. Users must manually format their key
+  catalogs by calling `FormatKeyCatalogs()` and `HKF_Init()` before using PSA
+  crypto operations.
+
+  **NOTE**: If users pre-format their key catalogs when this option is enabled,
+  the `psa_crypto_init()` function will reformat the key catalogs, removing all
+  any previously stored keys.
+
+* `MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb.feature.use_custom_config_header`
+
+  *Disabled by default*. When enabled, this option allows users to provide
+  custom key catalog configurations tailored to their specific application use-
+  cases. The provided PSA feature set may not be fully supported with
+  custom configurations. Please refer to the default configuration for reference
+  on how to configure your device.
+  The custom configuration header file name is to be configured via the
+  `CONFIG_ELE_HSEB_CUSTOM_CONFIG_HEADER` symbol and **MUST** be a quoted string.
+  The provided custom Key Catalog initializer lists **MUST** be named
+  `HSE_NVM_KEY_CATALOG_CFG` and `HSE_RAM_KEY_CATALOG_CFG`.
+  The header file **SHOULD** be placed in the application's include path and
+  will be automatically included by the ELE HSEB PSA driver during compilation.
+  Otherwise the application include paths need to be updated by the user.
+
+# Supported Algorithms
+Below is a list of algorithms supported by the current version of the ELE HSEB
+port. Key types and sizes are also specified where relevant.
 
 * Transparent
     * Cipher

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -7,6 +7,15 @@
 
 #include "mcux_psa_ele_hseb_common_init.h"
 #include "hse_mu.h"
+#include "hse_interface.h"
+#include "hse_host_format_key_catalogs.h"
+#include "hse_keys_allocator.h"
+
+#if defined(CONFIG_ELE_HSEB_CUSTOM_CONFIG_HEADER)
+#include CONFIG_ELE_HSEB_CUSTOM_CONFIG_HEADER
+#else
+#include "hse_default_config.h"
+#endif
 
 /******************************************************************************/
 /*************************** Mutex ********************************************/
@@ -30,8 +39,12 @@ static bool is_hse_ready(void)
     return CHECK_HSE_STATUS(HSE_STATUS_INIT_OK);
 }
 
-
 bool g_isCryptoHWInitialized = false;
+
+#if defined(CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS)
+static const hseKeyGroupCfgEntry_t nvmKeyCatalog[] = {HSE_NVM_KEY_CATALOG_CFG};
+static const hseKeyGroupCfgEntry_t ramKeyCatalog[] = {HSE_RAM_KEY_CATALOG_CFG};
+#endif
 
 /*!
  * @brief Application init for Crypto blocks.
@@ -42,6 +55,10 @@ bool g_isCryptoHWInitialized = false;
 status_t CRYPTO_InitHardware(void)
 {
     status_t result = kStatus_Fail;
+#if defined(CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS)
+    hseSrvResponse_t result_fmt = HSE_SRV_RSP_GENERAL_ERROR;
+    hseSrvResponse_t result_hkf = HSE_SRV_RSP_GENERAL_ERROR;
+#endif
 
     if (true == g_isCryptoHWInitialized) {
         return kStatus_Success;
@@ -62,10 +79,19 @@ status_t CRYPTO_InitHardware(void)
             break;
         }
 
-        /* Key catalogs MUST be formatted by the user. Formatting deletes keys,
-         * so it cannot be done during PSA init to prevent possibly losing
-         * keys set previously.
+        /* Key catalogs MUST be formatted prior to using cryptography features.
+         * Formatting deletes keys, so we do it only if configured to do so.
+         * Otherwise we just check if formatting was done by the user.
          */
+#if defined(CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS)
+        result_fmt = FormatKeyCatalogs(nvmKeyCatalog, ramKeyCatalog);
+        result_hkf = HKF_Init(nvmKeyCatalog, ramKeyCatalog);
+        if (HSE_SRV_RSP_OK != result_fmt ||
+            HSE_SRV_RSP_OK != result_hkf) {
+            result = kStatus_Fail;
+            break;
+        }
+#endif
         if (is_key_catalog_formatted() == false) {
             result = kStatus_Fail;
             break;
@@ -73,7 +99,7 @@ status_t CRYPTO_InitHardware(void)
 
         result = kStatus_Success;
         g_isCryptoHWInitialized = true;
-    } while (0);
+    } while (false);
 
     if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
         return kStatus_Fail;
@@ -110,7 +136,9 @@ status_t CRYPTO_DeinitHardware(void)
  */
 status_t CRYPTO_ReinitHardware(void)
 {
-    /* Reset the init state so the hardware will be reinitialized at the next cryptographic HW acceleration operation */
+    /* Reset the init state so the hardware will be reinitialized at the next
+     * cryptographic HW acceleration operation.
+     */
     g_isCryptoHWInitialized = false;
 
     return kStatus_Success;

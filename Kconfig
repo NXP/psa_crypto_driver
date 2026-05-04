@@ -245,10 +245,9 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.ela_csec
 
-    config MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
-        bool "ELE HSEB"
-        select MCUX_COMPONENT_component.psa_crypto_driver
-        select MCUX_COMPONENT_component.ele_hseb
+    # MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
+    # has been moved to its own Kconfig file.
+    rsource "./ele_hseb/Kconfig.ele_hseb"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
         bool "SGI Common"

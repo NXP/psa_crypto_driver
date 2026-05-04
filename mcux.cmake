@@ -522,6 +522,7 @@ endif()
 if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb)
     mcux_add_source(
         SOURCES ele_hseb/ele_hseb_readme.md
+                ele_hseb/Kconfig.ele_hseb
                 ele_hseb/ele_hseb.h
                 ele_hseb/ele_hseb_crypto_primitives.h
                 ele_hseb/ele_hseb_crypto_composites.h

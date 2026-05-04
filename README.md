@@ -32,7 +32,7 @@ Below is a list of supported port layers with links to their respective readmes.
 * Casper / Hashcrypt (to be added)
 * DCP (to be added)
 * ELA_CSEC (to be added)
-* ELE_HSEB (to be added)
+* [ELE_HSEB](ele_hseb/ele_hseb_readme.md)
 * ELE_S4XX (to be added)
 * SGI (to be added)
 * ELS_PKC (to be added)
