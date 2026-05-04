@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -247,6 +247,42 @@ exit:
     return status;
 }
 
+static psa_status_t cipher_start_stream_internal(ele_hseb_transparent_cipher_operation_t *operation,
+                                                 const uint8_t *iv)
+{
+    psa_status_t status          = PSA_ERROR_CORRUPTION_DETECTED;
+    hseSrvResponse_t hseb_status = HSE_SRV_RSP_GENERAL_ERROR;
+    hseKeyHandle_t key_handle    = 0u;
+
+    hseb_status = LoadAesKey(&key_handle,
+                             false,
+                             (uint16_t) PSA_BITS_TO_BYTES(operation->key_bits),
+                             operation->key);
+    status = ele_hseb_to_psa_status(hseb_status);
+    if (PSA_SUCCESS != status) {
+        goto exit;
+    }
+
+    if (HSE_CIPHER_DIR_ENCRYPT == operation->cipher_direction) {
+        hseb_status = AesStartStreamEncrypt(key_handle,
+                                            operation->cipher_mode,
+                                            iv,
+                                            0u, NULL, NULL,
+                                            HSE_SGT_OPTION_NONE);
+    } else { /* HSE_CIPHER_DIR_DECRYPT */
+        hseb_status = AesStartStreamDecrypt(key_handle,
+                                            operation->cipher_mode,
+                                            iv,
+                                            0u, NULL, NULL,
+                                            HSE_SGT_OPTION_NONE);
+    }
+    status = ele_hseb_to_psa_status(hseb_status);
+
+exit:
+    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
+
+    return status;
+}
 
 static psa_status_t cipher_common_setup(ele_hseb_transparent_cipher_operation_t *operation,
                                         const psa_key_attributes_t *attributes,
@@ -257,6 +293,7 @@ static psa_status_t cipher_common_setup(ele_hseb_transparent_cipher_operation_t 
 {
     psa_key_type_t key_type = psa_get_key_type(attributes);
     size_t key_bits         = psa_get_key_bits(attributes);
+    psa_status_t status     = PSA_ERROR_CORRUPTION_DETECTED;
 
     /* Here we only set up the internal cipher driver context.
      * Because HSEB streaming mode requires the IV data in the START step,
@@ -280,12 +317,31 @@ static psa_status_t cipher_common_setup(ele_hseb_transparent_cipher_operation_t 
     operation->key_bits = key_bits;
     (void) memcpy(operation->key, key_buffer, key_buffer_size);
 
+    if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    if (PSA_ALG_ECB_NO_PADDING == alg) {
+        /* ECB does not take IV, so we mustn't defer the operation start call
+         * to ele_hseb_transparent_cipher_set_iv(), since that will never
+         * be called.
+         */
+        status = cipher_start_stream_internal(operation, NULL);
+    }
+    else {
+        status = PSA_SUCCESS;
+    }
+
+    if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
     /* If non-blocksize input is not supported, we need to manage our chunk */
     if (false == is_input_length_correct(1u, alg, key_type)) {
         operation->need_full_block = true;
     }
 
-    return PSA_SUCCESS;
+    return status;
 }
 
 psa_status_t ele_hseb_transparent_cipher_encrypt_setup(
@@ -314,9 +370,7 @@ psa_status_t ele_hseb_transparent_cipher_set_iv(ele_hseb_transparent_cipher_oper
                                                 const uint8_t *iv,
                                                 size_t iv_length)
 {
-    psa_status_t status          = PSA_ERROR_CORRUPTION_DETECTED;
-    hseSrvResponse_t hseb_status = HSE_SRV_RSP_GENERAL_ERROR;
-    hseKeyHandle_t key_handle    = 0u;
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
     /* If alg takes IV, then it must by equal to AES_BLOCK_LENGTH */
     if (HSE_CIPHER_BLOCK_MODE_ECB != operation->cipher_mode &&
@@ -328,35 +382,13 @@ psa_status_t ele_hseb_transparent_cipher_set_iv(ele_hseb_transparent_cipher_oper
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    hseb_status = LoadAesKey(&key_handle,
-                             false,
-                             (uint16_t) PSA_BITS_TO_BYTES(operation->key_bits),
-                             operation->key);
-    status = ele_hseb_to_psa_status(hseb_status);
-    if (PSA_SUCCESS != status) {
-        goto exit;
-    }
-
     /* This is where we actually start the streaming operation, since PSA just
      * now provided the IV, which is required by the HSEB START request.
+     *
+     * Not applicable to ECB, since it takes no IV. ECB was started during setup
+     * call.
      */
-    if (HSE_CIPHER_DIR_ENCRYPT == operation->cipher_direction) {
-        hseb_status = AesStartStreamEncrypt(key_handle,
-                                            operation->cipher_mode,
-                                            iv,
-                                            0u, NULL, NULL,
-                                            HSE_SGT_OPTION_NONE);
-    } else { /* HSE_CIPHER_DIR_DECRYPT */
-        hseb_status = AesStartStreamDecrypt(key_handle,
-                                            operation->cipher_mode,
-                                            iv,
-                                            0u, NULL, NULL,
-                                            HSE_SGT_OPTION_NONE);
-    }
-    status = ele_hseb_to_psa_status(hseb_status);
-
-exit:
-    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
+    status = cipher_start_stream_internal(operation, iv);
 
     if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
