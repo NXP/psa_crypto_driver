@@ -278,7 +278,7 @@ psa_status_t ele_internal_gen_keypair(const psa_key_attributes_t *attributes,
         return status;
     }
 
-    NISTkeyGenParam.key_lifecycle = ELE_KEY_LIFECYCLE;         /* TBD -> how to fill this ??? - May be get current lifecycle */
+    NISTkeyGenParam.key_lifecycle = ELE_KEY_LIFECYCLE;
     NISTkeyGenParam.key_size      = key_bits;
 
     /* We are not exporting key here */

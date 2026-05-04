@@ -47,7 +47,6 @@
 #include "mcux_psa_s4xx_hash.h"
 #include "mcux_psa_s4xx_asymmetric_encryption.h"
 #include "mcux_psa_s4xx_asymmetric_signature.h"
-#include "mcux_psa_s4xx_key_generation.h"
 
 #include "mcux_psa_s4xx_opaque_init.h"
 #include "mcux_psa_s4xx_opaque_key_generation.h"

@@ -148,7 +148,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 	zephyr_compile_definitions(
 		PSA_CRYPTO_DRIVER_ELE_S4XX
 		PSA_CRYPTO_DRIVER_THREAD_EN
-        MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
+		ELE_CACHE_HANDLING
 	)
 
 	### ELE Crypto ###
@@ -180,6 +180,9 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 		${ZEPHYR_BASE}/../modules/crypto/mbedtls/library
 		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/psa
 		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/mbedtls
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
 	)
 
 
@@ -210,7 +213,6 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_signature.c
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_init.c
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_aead.c
-        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_key_generation.c
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_hash.c
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_cipher.c
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_encryption.c
@@ -228,7 +230,6 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/common/mcux_psa_s4xx_entropy.h
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/common/mcux_psa_s4xx_sdmmc_nvm_manager.h
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_init.h
-        ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_key_generation.h
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_hash.h
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_aead.h
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/transparent/mcux_psa_s4xx_cipher.h

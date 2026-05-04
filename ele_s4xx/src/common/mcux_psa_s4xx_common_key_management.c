@@ -118,51 +118,6 @@ cleanup:
     return (int) len;
 }
 
-static int mcux_write_rsa_keypair_in_asn(psa_key_type_t key_type,
-                                         struct rsa_keypair rsa_key,
-                                         const uint8_t *key_buffer, size_t key_buffer_size,
-                                         size_t *key_buffer_length)
-{
-    mbedtls_rsa_context rsa;
-    uint32_t exponent;
-    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-
-    mbedtls_rsa_init(&rsa);
-
-    mbedtls_mpi_init(&rsa.private_N);
-    mbedtls_mpi_init(&rsa.private_D);
-
-    if (sizeof(exponent) < rsa_key.pub_exp_len) {
-        return PSA_ERROR_BAD_STATE;
-    }
-
-    memcpy(&exponent, rsa_key.pub_exp, rsa_key.pub_exp_len);
-    mbedtls_mpi_lset(&rsa.private_E, exponent);
-
-    /* Read modulo in MPI */
-    mbedtls_mpi_read_binary(&rsa.private_N,
-                            (const unsigned char *) rsa_key.modulus,
-                            rsa_key.modulus_len);
-
-    /* Read private exponent in MPI */
-    mbedtls_mpi_read_binary(&rsa.private_D,
-                            (const unsigned char *) rsa_key.priv_exp,
-                            rsa_key.priv_exp_len);
-
-    /* Set Ctx length */
-    rsa.private_len = mbedtls_mpi_size(&rsa.private_N);
-
-    /* Compute P and Q in CTX. */
-    /* Needed as key buffer needs to be in PKCS1 format*/
-    mbedtls_rsa_complete(&rsa);
-
-    status = mbedtls_psa_rsa_export_key(key_type,
-                                        &rsa, (uint8_t *) key_buffer, key_buffer_size,
-                                        key_buffer_length);
-    mbedtls_rsa_free(&rsa);
-
-    return status;
-}
 
 /* Currently we are using mbedtls API's for translation. We can have our own asn implementation and replace this */
 static psa_status_t mcux_write_rsa_keypair_from_asn(psa_key_type_t key_type,
@@ -287,13 +242,6 @@ psa_status_t mcux_key_buf_to_raw_rsa(
                                            is_public, rsa_key);
 }
 
-psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type, struct rsa_keypair rsa_key,
-                                     const uint8_t *key_buffer, size_t key_buffer_size,
-                                     size_t *key_buffer_length)
-{
-    return mcux_write_rsa_keypair_in_asn(key_type, rsa_key, key_buffer,
-                                         key_buffer_size, key_buffer_length);
-}
 
 psa_status_t mcux_alloc_raw_rsa(struct rsa_keypair *rsa_key, size_t key_bytes)
 {

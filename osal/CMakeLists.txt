@@ -44,7 +44,40 @@ target_sources(
 )
 endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx
 
-if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC OR CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
+if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
+
+# There should be option to choode baremetal in cmake. 
+#At the moment, using only the TFM config as it 
+#requires baremetal build
+if(CONFIG_BUILD_WITH_TFM)
+target_include_directories(
+    McuxPsaCryptoDriverElsPkc
+    PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/baremetal
+)
+target_sources(
+    McuxPsaCryptoDriverElsPkc
+    PRIVATE
+        baremetal/osal_mutex.c
+        baremetal/threading_alt.c
+)
+else()
+target_include_directories(
+    McuxPsaCryptoDriverElsPkc
+    PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/.
+        zephyr/.
+)
+target_sources(
+    McuxPsaCryptoDriverElsPkc
+    PRIVATE
+        zephyr/osal_mutex.c
+)
+endif() # CONFIG_BUILD_WITH_TFM
+endif() # CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC OR CONFIG_PSA_CRYPTO_DRIVER_ELS_PKC
+
+if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
 
 # There should be option to choode baremetal in cmake. 
 #At the moment, using only the TFM config as it 

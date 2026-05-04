@@ -224,8 +224,6 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent)
         SOURCES ele_s4xx/ele_s4xx_crypto_primitives.h
                 ele_s4xx/src/transparent/mcux_psa_s4xx_init.c
                 ele_s4xx/include/transparent/mcux_psa_s4xx_init.h
-                ele_s4xx/src/transparent/mcux_psa_s4xx_key_generation.c
-                ele_s4xx/include/transparent/mcux_psa_s4xx_key_generation.h
                 ele_s4xx/src/transparent/mcux_psa_s4xx_hash.c
                 ele_s4xx/include/transparent/mcux_psa_s4xx_hash.h
                 ele_s4xx/src/common/mcux_psa_s4xx_common_key_management.c

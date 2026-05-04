@@ -27,7 +27,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
     zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverEleS4xx,INTERFACE_INCLUDE_DIRECTORIES>")
 endif()
 
-if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC )
+if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
 
     # if the build is for tfm, then, pass HW accelration presense config to tfm build system
     if(CONFIG_BUILD_WITH_TFM)
