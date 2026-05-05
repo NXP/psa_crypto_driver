@@ -106,12 +106,6 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
                     ? HSE_KEY_TYPE_HMAC
                     : HSE_KEY_TYPE_AES;
 
-    // TODO HMAC should also be supported; currently running into issues with
-    //      importing HMAC keys
-    if (HSE_KEY_TYPE_AES != hse_key_type) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
     /* Check MAC output buffer size */
     if (mac_size < PSA_MAC_LENGTH(key_type, key_bits, alg)) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
@@ -121,22 +115,28 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    hseb_status = LoadSymKey(&key_handle,
-                             false,
-                             hse_key_type,
-                             (uint16_t) (PSA_BITS_TO_BYTES(key_bits)),
-                             key_buffer);
-    if (HSE_SRV_RSP_OK != hseb_status) {
-        status = ele_hseb_to_psa_status(hseb_status);
-        goto exit;
-    }
-
     *mac_length = mac_size;
 
     if (HSE_MAC_ALGO_CMAC == hseb_mac_scheme.macAlgo) {
+        hseb_status = LoadAesKey(&key_handle, false,
+                                 (uint16_t) (PSA_BITS_TO_BYTES(key_bits)),
+                                 key_buffer);
+        if (HSE_SRV_RSP_OK != hseb_status) {
+            status = ele_hseb_to_psa_status(hseb_status);
+            goto exit;
+        }
+
         hseb_status = AesCmacGenerate(key_handle, input_length, input,
                                       (uint32_t *) mac_length, mac, HSE_SGT_OPTION_NONE);
     } else { /* HSE_MAC_ALGO_HMAC */
+        hseb_status = LoadHmacKey(&key_handle, false,
+                                  (uint16_t) (PSA_BITS_TO_BYTES(key_bits)),
+                                  key_buffer);
+        if (HSE_SRV_RSP_OK != hseb_status) {
+            status = ele_hseb_to_psa_status(hseb_status);
+            goto exit;
+        }
+
         const hseHashAlgo_t hash_alg = hseb_mac_scheme.sch.hmac.hashAlgo;
         hseb_status = HmacGenerate(key_handle, hash_alg, input_length, input,
                                    (uint32_t *) mac_length, mac, HSE_SGT_OPTION_NONE);

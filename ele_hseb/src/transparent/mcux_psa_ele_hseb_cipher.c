@@ -327,8 +327,7 @@ static psa_status_t cipher_common_setup(ele_hseb_transparent_cipher_operation_t 
          * be called.
          */
         status = cipher_start_stream_internal(operation, NULL);
-    }
-    else {
+    } else {
         status = PSA_SUCCESS;
     }
 

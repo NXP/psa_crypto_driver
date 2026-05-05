@@ -90,7 +90,14 @@ port. Key types and sizes are also specified where relevant.
             * PSA_ALG_SHA3_512
     * MAC
         * One-Go
-            * CMAC
+            * PSA_ALG_CMAC
+            * PSA_ALG_HMAC(PSA_ALG_SHA_1)
+            * PSA_ALG_HMAC(PSA_ALG_SHA_224)
+            * PSA_ALG_HMAC(PSA_ALG_SHA_256)
+            * PSA_ALG_HMAC(PSA_ALG_SHA_384)
+            * PSA_ALG_HMAC(PSA_ALG_SHA_512)
+            * PSA_ALG_HMAC(PSA_ALG_SHA_512_224)
+            * PSA_ALG_HMAC(PSA_ALG_SHA_512_256)
     * Asymmetric Signature
         * RSA
             * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_1)
