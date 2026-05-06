@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -130,6 +130,54 @@ psa_status_t ele_hseb_to_psa_hash(hseHashAlgo_t hseb_hash,
             break;
         case HSE_HASH_ALGO_SHA3_512:
             *alg = PSA_ALG_SHA3_512;
+            break;
+        default:
+            status = PSA_ERROR_NOT_SUPPORTED;
+            break;
+    }
+
+    return status;
+}
+
+psa_status_t psa_to_hseb_mac_scheme(psa_algorithm_t alg,
+                                    hseMacScheme_t *hseb_mac_scheme)
+{
+    psa_status_t status      = PSA_SUCCESS;
+    psa_algorithm_t alg_full = PSA_ALG_FULL_LENGTH_MAC(alg);
+
+    /* SHA3 unsupported for HMAC */
+    switch (alg_full) {
+        case PSA_ALG_CMAC:
+            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_CMAC;
+            hseb_mac_scheme->sch.cmac.cipherAlgo = HSE_CIPHER_ALGO_AES;
+            break;
+        case PSA_ALG_HMAC(PSA_ALG_SHA_1):
+            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
+            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA_1;
+            break;
+        case PSA_ALG_HMAC(PSA_ALG_SHA_224):
+            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
+            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_224;
+            break;
+        case PSA_ALG_HMAC(PSA_ALG_SHA_256):
+            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
+            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_256;
+            break;
+        case PSA_ALG_HMAC(PSA_ALG_SHA_384):
+            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
+            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_384;
+            break;
+        case PSA_ALG_HMAC(PSA_ALG_SHA_512):
+            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
+            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_512;
+            break;
+        case PSA_ALG_HMAC(PSA_ALG_SHA_512_224):
+            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
+            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_512_224;
+            break;
+        case PSA_ALG_HMAC(PSA_ALG_SHA_512_256):
+            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
+            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_512_256;
             break;
         default:
             status = PSA_ERROR_NOT_SUPPORTED;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -22,6 +22,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+#include "psa/crypto.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +72,23 @@ size_t ele_hseb_manage_chunk(uint8_t *chunk,
                              size_t input_length,
                              bool *is_chunk_full,
                              size_t *overflow);
+
+/**
+ * \brief Validate if MAC length is supported for a given key and algorithm
+ *
+ * Takes into account truncation and the key type to determine if the MAC
+ * length is directly supported by HSEB for the given algorithm.
+ *
+ * \note This function expects that the algorithm support itself was already
+ * validated.
+ *
+ * \param[in] attributes Key attributes
+ * \param[in] alg        MAC algorithm
+ *
+ * \retval true if the MAC length is supported, false otherwise
+ */
+bool is_mac_length_supported(const psa_key_attributes_t *attributes,
+                             psa_algorithm_t alg);
 
 #ifdef __cplusplus
 }

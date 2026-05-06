@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -49,4 +49,37 @@ size_t ele_hseb_manage_chunk(uint8_t *chunk,
     }
 
     return copy_length_without_overflow;
+}
+
+bool is_mac_length_supported(const psa_key_attributes_t *attributes,
+                             psa_algorithm_t alg)
+{
+    psa_key_type_t key_type = psa_get_key_type(attributes);
+    size_t key_bits         = psa_get_key_bits(attributes);
+    size_t mac_length       = PSA_MAC_LENGTH(key_type, key_bits, alg);
+
+    /* Defensive: unknown/invalid derived length */
+    if (mac_length == 0u) {
+        return false;
+    }
+
+    /* Full length MAC always supported */
+    if (PSA_ALG_FULL_LENGTH_MAC(alg) == alg) {
+        return true;
+    }
+
+    /* HSEB requires tags >= 8 bytes */
+    if (mac_length < 8u) {
+        return false;
+    }
+
+    if (true == PSA_ALG_IS_HMAC(alg)) {
+        return mac_length <= PSA_HASH_LENGTH(alg);
+    }
+
+    if (true == PSA_ALG_IS_BLOCK_CIPHER_MAC(alg)) {
+        return mac_length <= PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type);
+    }
+
+    return false;
 }

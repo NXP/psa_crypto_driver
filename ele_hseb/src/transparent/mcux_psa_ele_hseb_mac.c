@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -17,56 +17,10 @@
 #include "mcux_psa_ele_hseb_mac.h"
 #include "mcux_psa_ele_hseb_translate.h"
 #include "mcux_psa_ele_hseb_key_management.h"
+#include "mcux_psa_ele_hseb_utils.h"
 
 #include "hse_host_mac.h"
 #include "hse_host_import_key.h"
-
-static psa_status_t psa_to_hseb_mac_scheme(psa_algorithm_t alg,
-                                           hseMacScheme_t *hseb_mac_scheme)
-{
-    psa_status_t status = PSA_SUCCESS;
-
-    /* SHA3 unsupported for HMAC */
-    switch (alg) {
-        case PSA_ALG_CMAC:
-            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_CMAC;
-            hseb_mac_scheme->sch.cmac.cipherAlgo = HSE_CIPHER_ALGO_AES;
-            break;
-        case PSA_ALG_HMAC(PSA_ALG_SHA_1):
-            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
-            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA_1;
-            break;
-        case PSA_ALG_HMAC(PSA_ALG_SHA_224):
-            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
-            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_224;
-            break;
-        case PSA_ALG_HMAC(PSA_ALG_SHA_256):
-            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
-            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_256;
-            break;
-        case PSA_ALG_HMAC(PSA_ALG_SHA_384):
-            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
-            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_384;
-            break;
-        case PSA_ALG_HMAC(PSA_ALG_SHA_512):
-            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
-            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_512;
-            break;
-        case PSA_ALG_HMAC(PSA_ALG_SHA_512_224):
-            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
-            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_512_224;
-            break;
-        case PSA_ALG_HMAC(PSA_ALG_SHA_512_256):
-            hseb_mac_scheme->macAlgo = HSE_MAC_ALGO_HMAC;
-            hseb_mac_scheme->sch.hmac.hashAlgo = HSE_HASH_ALGO_SHA2_512_256;
-            break;
-        default:
-            status = PSA_ERROR_NOT_SUPPORTED;
-            break;
-    }
-
-    return status;
-}
 
 psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attributes,
                                               const uint8_t *key_buffer,
@@ -111,11 +65,16 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    if (false == is_mac_length_supported(attributes, alg)) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    *mac_length = mac_size;
+    /* Set the MAC length that is requested */
+    *mac_length = PSA_MAC_LENGTH(key_type, key_bits, alg);
 
     if (HSE_MAC_ALGO_CMAC == hseb_mac_scheme.macAlgo) {
         hseb_status = LoadAesKey(&key_handle, false,
@@ -148,9 +107,7 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
         goto exit;
     }
 
-    /* All went well, set retvals */
-    *mac_length = PSA_MAC_LENGTH(key_type, key_bits, alg);
-    status      = PSA_SUCCESS;
+    status = PSA_SUCCESS;
 
 exit:
 

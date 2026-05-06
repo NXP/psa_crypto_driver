@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -16,7 +16,6 @@
  *
  * \note This header should not be included by ele_hseb.h, as it is internal
  *       only.
- *
  */
 
 #include "psa/crypto.h"
@@ -57,6 +56,21 @@ psa_status_t ele_hseb_to_psa_hash(hseHashAlgo_t hseb_hash,
  */
 psa_status_t psa_to_ele_hseb_hash(psa_algorithm_t alg,
                                   hseHashAlgo_t *hseb_hash);
+
+/**
+ * \brief Translate PSA MAC algorithm to ELE_HSEB MAC scheme
+ *
+ * If a truncated MAC algorithm is provided, the truncation flags and length are
+ * ignored and the algorithm is translated as if it were a full length MAC.
+ *
+ * \param[in]  alg             PSA algorithm to be translated
+ * \param[out] hseb_mac_scheme Translated ELE HSEB MAC scheme
+ *
+ * \retval PSA_SUCCESS on success or PSA_ERROR_NOT_SUPPORTED in case
+ *         no translation can be made
+ */
+psa_status_t psa_to_hseb_mac_scheme(psa_algorithm_t alg,
+                                    hseMacScheme_t *hseb_mac_scheme);
 
 #ifdef __cplusplus
 }
