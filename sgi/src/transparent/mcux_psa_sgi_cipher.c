@@ -83,7 +83,7 @@ static inline mcuxClKey_Type_t get_sgi_keytype(const psa_key_attributes_t *attri
 }
 
 /**
- * \def CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE 
+ * \def CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE
  *
  * Enable double encryption/decryption with CMAC verification.
  * When enabled, cipher operations are performed twice and verified
@@ -91,7 +91,7 @@ static inline mcuxClKey_Type_t get_sgi_keytype(const psa_key_attributes_t *attri
  *
  */
 
-#ifdef CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE 
+#ifdef CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE
 
 #include <mcuxClRandom.h>
 #include <mcuxClMac.h>
@@ -225,7 +225,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
 
 
-#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLRANDOMMODES_MAX_CPU_WA_BUFFER_SIZE,
@@ -266,7 +266,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
         goto cleanup;
     }
 
-#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Buffers for CMAC verification */
     uint8_t cmac_key[CMAC_KEY_SIZE_BYTES];
     uint8_t cmac_output_1[CMAC_OUTPUT_SIZE_BYTES];
@@ -457,7 +457,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
 
 cleanup:
 
-#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  )
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     if (status != PSA_SUCCESS) {
         if (overwrite_with_random(session, output, output_size) != 0) {
             status = PSA_ERROR_CORRUPTION_DETECTED;
@@ -576,7 +576,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
     mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
 
-#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLRANDOMMODES_MAX_CPU_WA_BUFFER_SIZE,
@@ -614,7 +614,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
         goto cleanup;
     }
 
-#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Buffers for CMAC verification */
     uint8_t cmac_key[CMAC_KEY_SIZE_BYTES];
     uint8_t cmac_output_1[CMAC_OUTPUT_SIZE_BYTES];
@@ -820,7 +820,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
 
 cleanup:
 
-#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE )
+#if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     if (status != PSA_SUCCESS) {
         if (overwrite_with_random(session, output, output_size) != 0) {
             status = PSA_ERROR_CORRUPTION_DETECTED;

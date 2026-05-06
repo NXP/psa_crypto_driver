@@ -56,6 +56,24 @@ static const mcuxClHash_AlgorithmDescriptor_t *psa_hash_alg_to_sgi_hash_alg(psa_
         case PSA_ALG_SHA_512:
             return mcuxClHash_Algorithm_Sha512;
 #endif /* PSA_WANT_ALG_SHA_512 */
+#if defined(MCUXCL_FEATURE_HASH_C_SHA3)
+#if defined(PSA_WANT_ALG_SHA3_224)
+        case PSA_ALG_SHA3_224:
+            return mcuxClHash_Algorithm_Sha3_224;
+#endif /* PSA_WANT_ALG_SHA3_224 */
+#if defined(PSA_WANT_ALG_SHA3_256)
+        case PSA_ALG_SHA3_256:
+            return mcuxClHash_Algorithm_Sha3_256;
+#endif /* PSA_WANT_ALG_SHA3_256 */
+#if defined(PSA_WANT_ALG_SHA3_384)
+        case PSA_ALG_SHA3_384:
+            return mcuxClHash_Algorithm_Sha3_384;
+#endif /* PSA_WANT_ALG_SHA3_384 */
+#if defined(PSA_WANT_ALG_SHA3_512)
+        case PSA_ALG_SHA3_512:
+            return mcuxClHash_Algorithm_Sha3_512;
+#endif /* PSA_WANT_ALG_SHA3_512 */
+#endif /* MCUXCL_FEATURE_HASH_C_SHA3 */
         default:
             return NULL;
     }
@@ -374,8 +392,8 @@ psa_status_t sgi_hash_abort(mcux_sgi_hash_operation_t *operation)
 
     MCUX_CSSL_FP_FUNCTION_CALL_VOID_BEGIN(token,
                                           mcuxClMemory_clear((uint8_t *) operation->ctx,
-                                                             MCUXCLHASH_CONTEXT_SIZE_SHA2_512_IN_WORDS,
-                                                             MCUXCLHASH_CONTEXT_SIZE_SHA2_512_IN_WORDS));
+                                                             sizeof(operation->ctx),
+                                                             sizeof(operation->ctx)));
 
     if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMemory_clear) != token) {
         return PSA_ERROR_CORRUPTION_DETECTED;

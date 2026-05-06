@@ -26,8 +26,18 @@
 
 #include <mcuxClAeadModes.h>
 
+/* Determine the maximum hash context size needed.
+ * SHA3-224 has the largest context (376 bytes on platforms with SHA3 support),
+ * which is bigger than SHA2-512 (224 bytes). Use SHA3-224 size when SHA3 is
+ * available, otherwise fall back to SHA2-512. */
+#if defined(MCUXCL_FEATURE_HASH_C_SHA3)
+#define MCUX_SGI_HASH_CTX_SIZE_IN_WORDS  MCUXCLHASH_CONTEXT_SIZE_SHA3_224_IN_WORDS
+#else
+#define MCUX_SGI_HASH_CTX_SIZE_IN_WORDS  MCUXCLHASH_CONTEXT_SIZE_SHA2_512_IN_WORDS
+#endif /* MCUXCL_FEATURE_HASH_C_SHA3 */
+
 typedef struct {
-    uint32_t ctx[MCUXCLHASH_CONTEXT_SIZE_SHA2_512_IN_WORDS];
+    uint32_t ctx[MCUX_SGI_HASH_CTX_SIZE_IN_WORDS];
 } mcux_sgi_hash_operation_t;
 
 
