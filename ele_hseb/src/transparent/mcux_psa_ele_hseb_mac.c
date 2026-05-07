@@ -38,7 +38,6 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
     size_t key_bits                = psa_get_key_bits(attributes);
     hseMacScheme_t hseb_mac_scheme = { 0 };
     hseKeyHandle_t key_handle      = { 0 };
-    hseKeyType_t hse_key_type      = { 0 };
 
     /* Key buffer or size or mac buffer or mac length can't be NULL */
     if (NULL == key_buffer || 0u == key_buffer_size ||
@@ -55,10 +54,6 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
     if (PSA_SUCCESS != status) {
         return status;
     }
-
-    hse_key_type = HSE_MAC_ALGO_HMAC == hseb_mac_scheme.macAlgo
-                    ? HSE_KEY_TYPE_HMAC
-                    : HSE_KEY_TYPE_AES;
 
     /* Check MAC output buffer size */
     if (mac_size < PSA_MAC_LENGTH(key_type, key_bits, alg)) {
