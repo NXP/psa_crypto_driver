@@ -32,20 +32,31 @@ size_t ele_hseb_manage_chunk(uint8_t *chunk,
                              bool *is_chunk_full,
                              size_t *overflow)
 {
-    *overflow = ele_hseb_get_chunk_overflow(chunk_size,
-                                            *chunk_length,
-                                            input_length);
+    bool is_chunk_full_internal = false;
+    size_t overflow_internal    = 0u;
 
-    const size_t copy_length_without_overflow = input_length - *overflow;
+    overflow_internal = ele_hseb_get_chunk_overflow(chunk_size,
+                                                    *chunk_length,
+                                                    input_length);
+
+    const size_t copy_length_without_overflow = input_length - overflow_internal;
     (void) memcpy((chunk + *chunk_length),
                   input,
                   copy_length_without_overflow);
 
     *chunk_length += copy_length_without_overflow;
     if (*chunk_length >= chunk_size) {
-        *is_chunk_full = true;
+        is_chunk_full_internal = true;
     } else {
-        *is_chunk_full = false;
+        is_chunk_full_internal = false;
+    }
+
+    if (is_chunk_full != NULL) {
+        *is_chunk_full = is_chunk_full_internal;
+    }
+
+    if (overflow != NULL) {
+        *overflow = overflow_internal;
     }
 
     return copy_length_without_overflow;
