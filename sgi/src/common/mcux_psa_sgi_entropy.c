@@ -229,6 +229,7 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
 }
 
 #if defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+#if !defined(CONFIG_PSA_NO_EXTERNAL_RNG_IN_DRIVER)
 psa_status_t mbedtls_psa_external_get_random(mbedtls_psa_external_random_context_t *context,
                                              uint8_t *output,
                                              size_t output_size,
@@ -246,5 +247,6 @@ psa_status_t mbedtls_psa_external_get_random(mbedtls_psa_external_random_context
 
     return status;
 }
+#endif /* CONFIG_PSA_SGI_CRYPTO_EXTERNAL_RNG */
 #endif /* MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG */
 /** @} */ // end of psa_entropy
