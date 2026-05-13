@@ -8,6 +8,107 @@ if(NOT CONFIG_BUILD_WITH_TFM)
 	find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 endif()
 
+if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
+	message ("psa-crypto-driver-casper_hashcrypt module is included.")
+
+	# Creating new library
+	zephyr_library_named(McuxPsaCryptoDriverCasperHashcrypt)
+
+	# This ensures that even zephyr part will see these defines (e.g. MbedTLS module)
+	zephyr_compile_definitions(
+		PSA_CRYPTO_DRIVER_CASPER
+		PSA_CRYPTO_DRIVER_HASHCRYPT
+		PSA_CRYPTO_DRIVER_THREAD_EN
+	)
+
+	### IP Drivers ###
+	target_include_directories(
+		McuxPsaCryptoDriverCasperHashcrypt
+		PUBLIC
+		# Hashcrypt and CASPER drivers
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/casper
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/hashcrypt
+	)
+
+
+	target_sources(
+		McuxPsaCryptoDriverCasperHashcrypt
+		PRIVATE
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/casper/fsl_casper.c
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/hashcrypt/fsl_hashcrypt.c
+	)
+
+
+	### MbedTLS ###
+	target_include_directories(
+		McuxPsaCryptoDriverCasperHashcrypt
+		PUBLIC
+		# PSA crypto headers
+		${ZEPHYR_BASE}/modules/mbedtls/configs
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/library
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/psa
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/mbedtls
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
+		# tf-psa-crypto core headers (e.g. psa_crypto_random_impl.h)
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/core
+		# Private MbedTLS headers required by casper driver sources that use
+		# bare includes (e.g. #include "ecp.h", #include "ecdsa.h",
+		# #include "hmac_drbg.h"). These live under the tf-psa-crypto private
+		# directory. Also add the mbedtls/ parent so that bare includes like
+		# #include "private_access.h" (which sits directly in mbedtls/) resolve.
+		# Added here per-target to avoid enabling the global
+		# CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS option.
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/include/mbedtls
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/include/mbedtls/private
+	)
+
+
+	### PSA Crypto Driver ###
+	
+	# PSA driver include paths
+	target_include_directories(
+		McuxPsaCryptoDriverCasperHashcrypt
+		PUBLIC
+		${PSA_CRYPTO_DRIVER_PATH}/casper/
+		${PSA_CRYPTO_DRIVER_PATH}/casper/include
+		${PSA_CRYPTO_DRIVER_PATH}/casper/common/include
+		${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/
+		${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/include
+		${PSA_CRYPTO_DRIVER_PATH}/osal/
+		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
+	)
+
+	# PSA driver implementation
+	target_sources(
+		McuxPsaCryptoDriverCasperHashcrypt
+		PRIVATE
+		# Source
+        ${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_common_asymmetric_signature.c
+		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_common_init.c
+		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_ecdsa_port.c
+		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_ecp_port.c
+		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_init.c
+		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_key_generation_port.c
+        ${PSA_CRYPTO_DRIVER_PATH}/casper/common/src/mcux_psa_common_key_management.c
+        ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_common_cipher.c
+        ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_common_init.c
+        ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_entropy.c
+        ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_hash.c
+        ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_init.c	)
+
+	# Adding OSAL for Zephyr Mutexes
+	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
+
+	# We must ensure we link this library into zephyr_interface, 
+	# otherwise we won't get compile options defined in Zephyr
+	target_link_libraries(McuxPsaCryptoDriverCasperHashcrypt PUBLIC zephyr_interface)
+	target_link_libraries(McuxPsaCryptoDriverCasperHashcrypt INTERFACE mbedTLS)
+
+
+endif() # CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT #
 if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
 	message ("psa-crypto-driver-sgi_pkc module is included.")
 
@@ -62,7 +163,7 @@ endif()
 
 	### PSA Crypto Driver ###
 
-	# SGI PSA driver inlclude paths
+	# SGI PSA driver include paths
 	target_include_directories(
 		McuxPsaCryptoDriverSgiPkc
 		PUBLIC
@@ -97,7 +198,7 @@ endif()
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_mac.h
 	)
 
-	# PKC PSA driver inlclude paths
+	# PKC PSA driver include paths
 	target_include_directories(
 		McuxPsaCryptoDriverSgiPkc
 		PUBLIC
@@ -188,7 +289,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 
 	### PSA Crypto Driver ###
 	
-	# PSA driver inlclude paths
+	# PSA driver include paths
 	target_include_directories(
 		McuxPsaCryptoDriverEleS4xx
 		PUBLIC
@@ -461,4 +562,4 @@ if( NOT CONFIG_BUILD_WITH_TFM)
 	target_link_libraries(McuxPsaCryptoDriverElsPkc PUBLIC zephyr_interface)
 endif()
 
-endif()
+endif() # CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC #

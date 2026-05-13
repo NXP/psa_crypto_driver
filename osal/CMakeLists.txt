@@ -77,6 +77,21 @@ target_sources(
 endif() # CONFIG_BUILD_WITH_TFM
 endif() # CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC OR CONFIG_PSA_CRYPTO_DRIVER_ELS_PKC
 
+if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
+target_include_directories(
+    McuxPsaCryptoDriverCasperHashcrypt
+    PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/.
+        zephyr/.
+)
+
+target_sources(
+    McuxPsaCryptoDriverCasperHashcrypt
+    PRIVATE
+        zephyr/osal_mutex.c
+)
+endif() # CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT
+
 if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)
 
 # There should be option to choode baremetal in cmake. 

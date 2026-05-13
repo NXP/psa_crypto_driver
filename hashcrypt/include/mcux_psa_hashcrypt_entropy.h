@@ -17,7 +17,7 @@
  */
 
 #include "psa/crypto.h"
-#include "fsl_adapter_rng.h"
+#include "fsl_trng.h"
 #include "osal_mutex.h"
 
 #ifdef __cplusplus

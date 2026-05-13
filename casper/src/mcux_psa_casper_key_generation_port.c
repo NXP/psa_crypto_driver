@@ -6,15 +6,17 @@
 
 #include "mcux_psa_casper_key_generation_port.h"
 
-#include "ecp.h"
-#include "psa_util_internal.h"
+#include "mbedtls/ecp.h"
 #include "mbedtls/error.h"
 #include "mbedtls/private_access.h"
 #include "mbedtls/psa_util.h"
 
 #include <psa/crypto.h>
-#include "psa_crypto_random_impl.h"
 #include "psa_crypto_core.h"
+
+/* Forward declaration for PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY-gated function.
+ * mbedtls_ecp_group_id is available from mbedtls/ecp.h above. */
+mbedtls_ecp_group_id mbedtls_ecc_group_from_psa(psa_ecc_family_t family, size_t bits);
 
 #include "mcux_psa_casper_ecp_port.h"
 

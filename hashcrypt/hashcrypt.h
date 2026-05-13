@@ -34,11 +34,14 @@
 #endif
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
 
+#if !defined(__ZEPHYR__)
 /*
  * Location specific details go in this file which is also exposed to application writers
- * to iunclude when using key from a particular location.
+ * to include when using key from a particular location.
+ * Note: For Zephyr OS, we must define these in respective SoC defconf.
  */
 #include "mcux_psa_defines.h"
+#endif
 
 #include "hashcrypt_crypto_primitives.h"
 #include "mcux_psa_hashcrypt_common_cipher.h"

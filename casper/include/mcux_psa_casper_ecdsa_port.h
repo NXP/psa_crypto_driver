@@ -22,7 +22,7 @@
 
 #include "mbedtls/build_info.h"
 
-#include "ecp.h"
+#include "mbedtls/ecp.h"
 #include "mbedtls/md.h"
 
 /**

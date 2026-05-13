@@ -15,17 +15,19 @@
 #include "mcux_psa_casper_ecdsa_port.h"
 #include "mcux_psa_casper_ecp_port.h"
 
-#include "private_access.h"
-#include "ecdsa.h"
-#include "ecp.h"
+#include "mbedtls/private_access.h"
+#include "mbedtls/ecdsa.h"
+#include "mbedtls/ecp.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/error.h"
-#include "hmac_drbg.h"
 
-#if defined (CONFIG_USING_MBEDTLS_3X)
-#include "mbedtls/bignum.h"
-#else  // CONFIG_USING_TF_PSA_CRYPTO as default
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "mbedtls/private/hmac_drbg.h"
 #include "mbedtls/private/bignum.h"
+#else
+/* This is for backwards compatibility with MbedTLS 3.x */
+#include "mbedtls/bignum.h"
+#include "mbedtls/hmac_drbg.h"
 #endif
 
 /*

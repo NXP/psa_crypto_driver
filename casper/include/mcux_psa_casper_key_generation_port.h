@@ -18,7 +18,6 @@
 
 #include <psa/crypto.h>
 #include "mbedtls/psa_util.h"
-#include "psa_crypto_random_impl.h"
 
 #include "mcux_psa_casper_ecp_port.h"
 

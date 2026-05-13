@@ -24,14 +24,18 @@
 #include <psa/crypto.h>
 #include "psa_crypto_core.h"
 #include "psa_crypto_ecp.h"
-#include "psa_crypto_random_impl.h"
 #include "mbedtls/psa_util.h"
 
 #include "mbedtls/build_info.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/error.h"
 
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "mbedtls/private/crypto_builtin_composites.h"
+#else
+/* This is for backwards compatibility with MbedTLS 3.x */
 #include "psa/crypto_builtin_composites.h"
+#endif /* (MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
 
 /** \defgroup psa_asym_sign PSA driver entry points for rsa sign/verify
  *
