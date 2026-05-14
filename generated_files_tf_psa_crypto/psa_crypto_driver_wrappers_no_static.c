@@ -40,6 +40,11 @@
 #include "casper.h"
 
 #endif
+/* Headers for dcp transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_DCP)
+#include "dcp.h"
+
+#endif
 
 /* END-driver headers */
 
@@ -51,6 +56,7 @@
 #define P256_TRANSPARENT_DRIVER_ID (2)
 #define HASHCRYPT_TRANSPARENT_DRIVER_ID (3)
 #define CASPER_TRANSPARENT_DRIVER_ID (4)
+#define DCP_TRANSPARENT_DRIVER_ID (5)
 
 /* END-driver id */
 
@@ -140,6 +146,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+
 
 
 

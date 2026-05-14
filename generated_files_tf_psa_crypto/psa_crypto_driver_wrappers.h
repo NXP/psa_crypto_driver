@@ -41,6 +41,11 @@
 #include "casper.h"
 
 #endif
+/* Headers for dcp transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_DCP)
+#include "dcp.h"
+
+#endif
 
 /* END-driver headers */
 
@@ -52,6 +57,7 @@
 #define P256_TRANSPARENT_DRIVER_ID (2)
 #define HASHCRYPT_TRANSPARENT_DRIVER_ID (3)
 #define CASPER_TRANSPARENT_DRIVER_ID (4)
+#define DCP_TRANSPARENT_DRIVER_ID (5)
 
 /* END-driver id */
 
@@ -84,6 +90,13 @@ static inline psa_status_t psa_driver_wrapper_init( void )
     if (status != PSA_SUCCESS)
         return ( status );
 #endif /* PSA_CRYPTO_DRIVER_CASPER */
+
+#if defined(PSA_CRYPTO_DRIVER_DCP)
+    status = dcp_common_init();
+    if (status != PSA_SUCCESS)
+        return ( status );
+#endif /* PSA_CRYPTO_DRIVER_DCP */
+
     (void) status;
     return( PSA_SUCCESS );
 }
@@ -101,6 +114,10 @@ static inline void psa_driver_wrapper_free( void )
 #if defined(PSA_CRYPTO_DRIVER_CASPER)
     (void)casper_common_free();
 #endif /* PSA_CRYPTO_DRIVER_CASPER */
+
+#if defined(PSA_CRYPTO_DRIVER_DCP)
+    (void)dcp_common_free();
+#endif /* PSA_CRYPTO_DRIVER_DCP */
 }
 
 /* Start delegation functions */
@@ -874,6 +891,7 @@ static inline psa_status_t psa_driver_wrapper_import_key(
 
 
 
+
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -1013,6 +1031,22 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
+#if defined(PSA_CRYPTO_DRIVER_DCP)
+            status = dcp_cipher_encrypt( attributes,
+                                        key_buffer,
+                                        key_buffer_size,
+                                        alg,
+                                        iv,
+                                        iv_length,
+                                        input,
+                                        input_length,
+                                        output,
+                                        output_size,
+                                        output_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_DCP */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
@@ -1115,6 +1149,20 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
+#if defined(PSA_CRYPTO_DRIVER_DCP)
+            status = dcp_cipher_decrypt( attributes,
+                                        key_buffer,
+                                        key_buffer_size,
+                                        alg,
+                                        input,
+                                        input_length,
+                                        output,
+                                        output_size,
+                                        output_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_DCP */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
@@ -1490,6 +1538,12 @@ static inline psa_status_t psa_driver_wrapper_hash_compute(
     if( status != PSA_ERROR_NOT_SUPPORTED )
         return( status );
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
+#if defined(PSA_CRYPTO_DRIVER_DCP) && defined(PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH)
+    status = dcp_hash_compute(alg, input, input_length, hash, hash_size,
+                        hash_length);
+    if ( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_DCP && PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH */
 
     /* If software fallback is compiled in, try fallback */
 #if defined(MBEDTLS_PSA_BUILTIN_HASH)
@@ -1533,6 +1587,14 @@ static inline psa_status_t psa_driver_wrapper_hash_setup(
     if( status != PSA_ERROR_NOT_SUPPORTED )
         return( status );
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
+#if defined(PSA_CRYPTO_DRIVER_DCP) && defined(PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH)
+    status = dcp_hash_setup( &operation->ctx.dcp_driver_ctx, alg );
+    if( status == PSA_SUCCESS )
+        operation->id = DCP_TRANSPARENT_DRIVER_ID;
+
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_DCP && PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH */
 
     /* If software fallback is compiled in, try fallback */
 #if defined(MBEDTLS_PSA_BUILTIN_HASH)
@@ -1575,6 +1637,12 @@ static inline psa_status_t psa_driver_wrapper_hash_clone(
             return( hashcrypt_hash_clone( &source_operation->ctx.hashcrypt_driver_ctx,
                                     &target_operation->ctx.hashcrypt_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
+#if defined(PSA_CRYPTO_DRIVER_DCP) && defined(PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH)
+        case DCP_TRANSPARENT_DRIVER_ID:
+            target_operation->id = DCP_TRANSPARENT_DRIVER_ID;
+            return( dcp_hash_clone( &source_operation->ctx.dcp_driver_ctx,
+                                &target_operation->ctx.dcp_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_DCP && PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH */
         default:
             (void) target_operation;
             return( PSA_ERROR_BAD_STATE );
@@ -1604,6 +1672,11 @@ static inline psa_status_t psa_driver_wrapper_hash_update(
             return( hashcrypt_hash_update( &operation->ctx.hashcrypt_driver_ctx,
                                      input, input_length ) );
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
+#if defined(PSA_CRYPTO_DRIVER_DCP) && defined(PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH)
+        case DCP_TRANSPARENT_DRIVER_ID:
+            return( dcp_hash_update( &operation->ctx.dcp_driver_ctx,
+                                input, input_length ) );
+#endif /* PSA_CRYPTO_DRIVER_DCP && PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH */
         default:
             (void) input;
             (void) input_length;
@@ -1635,6 +1708,11 @@ static inline psa_status_t psa_driver_wrapper_hash_finish(
             return( hashcrypt_hash_finish( &operation->ctx.hashcrypt_driver_ctx,
                                      hash, hash_size, hash_length ) );
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
+#if defined(PSA_CRYPTO_DRIVER_DCP) && defined(PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH)
+        case DCP_TRANSPARENT_DRIVER_ID:
+            return( dcp_hash_finish( &operation->ctx.dcp_driver_ctx,
+                                hash, hash_size, hash_length ) );
+#endif /* PSA_CRYPTO_DRIVER_DCP && PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH */
         default:
             (void) hash;
             (void) hash_size;
@@ -1661,6 +1739,10 @@ static inline psa_status_t psa_driver_wrapper_hash_abort(
         case HASHCRYPT_TRANSPARENT_DRIVER_ID:
             return( hashcrypt_hash_abort( &operation->ctx.hashcrypt_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_HASHCRYPT */
+#if defined(PSA_CRYPTO_DRIVER_DCP) && defined(PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH)
+        case DCP_TRANSPARENT_DRIVER_ID:
+            return( dcp_hash_abort( &operation->ctx.dcp_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_DCP && PSA_CRYPTO_DRIVER_DCP_ENFORCE_HASH */
         default:
             return( PSA_ERROR_BAD_STATE );
     }
