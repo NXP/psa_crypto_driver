@@ -42,8 +42,8 @@ static bool is_hse_ready(void)
 bool g_isCryptoHWInitialized = false;
 
 #if defined(CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS)
-static const hseKeyGroupCfgEntry_t nvmKeyCatalog[] = {HSE_NVM_KEY_CATALOG_CFG};
-static const hseKeyGroupCfgEntry_t ramKeyCatalog[] = {HSE_RAM_KEY_CATALOG_CFG};
+static const hseKeyGroupCfgEntry_t nvmKeyCatalog[] = { HSE_NVM_KEY_CATALOG_CFG };
+static const hseKeyGroupCfgEntry_t ramKeyCatalog[] = { HSE_RAM_KEY_CATALOG_CFG };
 #endif
 
 /*!
