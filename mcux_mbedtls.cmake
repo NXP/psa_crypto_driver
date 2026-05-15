@@ -94,6 +94,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.mbedtls)
     # Generated files
     mcux_add_source(
         SOURCES # Sources
+                ssl_debug_helpers_generated.c
                 mbedtls_config_check_user.h
                 mbedtls_config_check_final.h
                 mbedtls_config_check_before.h
