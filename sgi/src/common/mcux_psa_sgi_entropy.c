@@ -19,6 +19,12 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#include "mbedtls/build_info.h"
+
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "psa/crypto_driver_random.h"
+#endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
+
 #include "fsl_device_registers.h"
 
 #if defined(MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED)
@@ -201,6 +207,17 @@ cleanup:
  * entropy_poll.h for details. This needs to be revised once Mbed TLS adds
  * support for entropy.
  */
+
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+
+int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+                                 size_t *estimate_bits,
+                                 unsigned char *output, size_t output_size)
+{
+    return sgi_get_entropy((uint32_t)flags, estimate_bits, output, output_size);
+}
+#endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
+
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
     size_t estimate_bits = 0u;

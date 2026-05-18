@@ -49,6 +49,16 @@
 #include "dcp.h"
 
 #endif
+/* Headers for sgi transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_SGI)
+#include "sgi.h"
+
+#endif
+/* Headers for pkc transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_PKC)
+#include "pkc.h"
+
+#endif
 
 /* END-driver headers */
 
@@ -61,6 +71,8 @@
 #define HASHCRYPT_TRANSPARENT_DRIVER_ID (3)
 #define CASPER_TRANSPARENT_DRIVER_ID (4)
 #define DCP_TRANSPARENT_DRIVER_ID (5)
+#define SGI_TRANSPARENT_DRIVER_ID (6)
+#define PKC_TRANSPARENT_DRIVER_ID (7)
 
 /* END-driver id */
 
@@ -150,6 +162,8 @@ psa_status_t psa_driver_wrapper_export_public_key(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+
+
 
 
 
