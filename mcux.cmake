@@ -236,6 +236,8 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent)
                 ele_s4xx/include/transparent/mcux_psa_s4xx_asymmetric_encryption.h
                 ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_signature.c
                 ele_s4xx/include/transparent/mcux_psa_s4xx_asymmetric_signature.h
+                ele_s4xx/src/transparent/mcux_psa_s4xx_key_agreement.c
+                ele_s4xx/include/transparent/mcux_psa_s4xx_key_agreement.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
