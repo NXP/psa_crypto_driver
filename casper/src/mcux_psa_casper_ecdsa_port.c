@@ -10,6 +10,7 @@
  *
  * SEC1 https://www.secg.org/sec1-v2.pdf
  */
+
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 
 #include "mcux_psa_casper_ecdsa_port.h"
@@ -35,6 +36,11 @@
 #include "mbedtls/bignum.h"
 #include "mbedtls/hmac_drbg.h"
 #endif
+
+#if defined(MBEDTLS_BIGNUM_C) && defined(MBEDTLS_ECP_C) && \
+    (defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) || \
+     defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED) || \
+     defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED))
 
 /*
  * Derive a suitable integer for group grp from a buffer of length len
@@ -325,3 +331,5 @@ int casper_mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
 {
     return casper_mbedtls_ecdsa_verify_internal(grp, buf, blen, Q, r, s);
 }
+
+#endif /* MBEDTLS_BIGNUM_C && MBEDTLS_ECP_C && (SECP256R1 || SECP384R1 || SECP521R1) */

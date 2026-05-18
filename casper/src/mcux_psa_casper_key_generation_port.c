@@ -2,6 +2,13 @@
  *  Copyright The Mbed TLS Contributors
  *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
+
+#if defined(MBEDTLS_BIGNUM_C) && defined(MBEDTLS_ECP_C) && \
+      defined(PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY) &&   \
+    ( defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) || \
+      defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED) || \
+      defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED) )
+
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 
 #include "mcux_psa_casper_key_generation_port.h"
@@ -112,3 +119,5 @@ psa_status_t casper_mbedtls_psa_ecp_generate_key(const psa_key_attributes_t *att
 
     return status;
 }
+
+#endif /* MBEDTLS_ECP_C && MBEDTLS_BIGNUM_C */

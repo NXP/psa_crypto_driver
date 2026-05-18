@@ -2,20 +2,19 @@
  *  Copyright The Mbed TLS Contributors
  *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
+
+#if defined(MBEDTLS_BIGNUM_C) && defined(MBEDTLS_ECP_C) && \
+    (defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) || \
+     defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED) || \
+     defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED))
+
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 
 #include "mcux_psa_casper_ecp_port.h"
-
 #include "mbedtls/private_access.h"
-
 #include "mbedtls/build_info.h"
-
-// #if defined(FSL_FEATURE_SOC_CASPER_COUNT) && (FSL_FEATURE_SOC_CASPER_COUNT > 0)
 #include "fsl_casper.h"
-
-// #if defined(MIMXRT685S_cm33_SERIES) || defined(MIMXRT595S_cm33_SERIES)
 #include "fsl_power.h"
-// #endif
 
 /* Initialize CASPER */
 static volatile bool casper_init_is_done = false;
@@ -272,4 +271,4 @@ int casper_mbedtls_ecp_muladd(mbedtls_ecp_group *grp,
     return casper_mbedtls_ecp_muladd_internal(grp, R, m, P, n, Q);
 }
 
-// #endif /* FSL_FEATURE_SOC_CASPER_COUNT */
+#endif /* MBEDTLS_BIGNUM_C && MBEDTLS_ECP_C && (SECP256R1 || SECP384R1 || SECP521R1) */

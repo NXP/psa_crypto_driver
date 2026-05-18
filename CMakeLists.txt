@@ -11,8 +11,7 @@ endif()
 if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 	message ("psa-crypto-driver-casper_hashcrypt module is included.")
 
-	# Creating new library
-	zephyr_library_named(McuxPsaCryptoDriverCasperHashcrypt)
+	zephyr_library_named(McuxPsaDrvCasperHc)
 
 	# This ensures that even zephyr part will see these defines (e.g. MbedTLS module)
 	zephyr_compile_definitions(
@@ -23,7 +22,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 
 	### IP Drivers ###
 	target_include_directories(
-		McuxPsaCryptoDriverCasperHashcrypt
+		McuxPsaDrvCasperHc
 		PUBLIC
 		# Hashcrypt and CASPER drivers
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/casper
@@ -32,7 +31,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 
 
 	target_sources(
-		McuxPsaCryptoDriverCasperHashcrypt
+		McuxPsaDrvCasperHc
 		PRIVATE
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/casper/fsl_casper.c
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/hashcrypt/fsl_hashcrypt.c
@@ -41,7 +40,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 
 	### MbedTLS ###
 	target_include_directories(
-		McuxPsaCryptoDriverCasperHashcrypt
+		McuxPsaDrvCasperHc
 		PUBLIC
 		# PSA crypto headers
 		${ZEPHYR_BASE}/modules/mbedtls/configs
@@ -67,10 +66,10 @@ if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 
 
 	### PSA Crypto Driver ###
-	
+
 	# PSA driver include paths
 	target_include_directories(
-		McuxPsaCryptoDriverCasperHashcrypt
+		McuxPsaDrvCasperHc
 		PUBLIC
 		${PSA_CRYPTO_DRIVER_PATH}/casper/
 		${PSA_CRYPTO_DRIVER_PATH}/casper/include
@@ -83,7 +82,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 
 	# PSA driver implementation
 	target_sources(
-		McuxPsaCryptoDriverCasperHashcrypt
+		McuxPsaDrvCasperHc
 		PRIVATE
 		# Source
         ${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_common_asymmetric_signature.c
@@ -97,16 +96,27 @@ if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
         ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_common_init.c
         ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_entropy.c
         ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_hash.c
-        ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_init.c	)
+        ${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/src/mcux_psa_hashcrypt_init.c
+	)
 
 	# Adding OSAL for Zephyr Mutexes
 	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
 
-	# We must ensure we link this library into zephyr_interface, 
-	# otherwise we won't get compile options defined in Zephyr
-	target_link_libraries(McuxPsaCryptoDriverCasperHashcrypt PUBLIC zephyr_interface)
-	target_link_libraries(McuxPsaCryptoDriverCasperHashcrypt INTERFACE mbedTLS)
-
+	target_link_libraries(McuxPsaDrvCasperHc PUBLIC zephyr_interface)
+	target_link_libraries(McuxPsaDrvCasperHc PUBLIC mbedTLS tfpsacrypto builtin)
+	# The casper driver uses the legacy mbedTLS C API (mbedtls_mpi_*, mbedtls_ecp_*).
+	# These symbols are compiled into the 'builtin' target only when the legacy
+	# MBEDTLS_ECP_C / MBEDTLS_BIGNUM_C symbols are defined.  With mbedTLS 4.x /
+	# TF-PSA-Crypto driver stubs them out unless we opt back in.
+	#
+	# We inject the defines via -include with #ifndef guards instead of bare -D
+	# command-line defines. If another build path (e.g. crypto_adjust_config_enable_builtins.h)
+	# already defines these macros the #ifndef guards resolve redefinition issue.
+	# zephyr_compile_options() propagates the flag to all Zephyr
+	# targets (including 'builtin' and 'tfpsacrypto').
+	zephyr_compile_options(
+		-include ${PSA_CRYPTO_DRIVER_PATH}/casper/casper_ecp_legacy_config.h
+	)
 
 endif() # CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT #
 if(CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC)

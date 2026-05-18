@@ -79,14 +79,14 @@ endif() # CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC OR CONFIG_PSA_CRYPTO_DRIVER_ELS_PKC
 
 if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 target_include_directories(
-    McuxPsaCryptoDriverCasperHashcrypt
+    McuxPsaDrvCasperHc
     PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/.
         zephyr/.
 )
 
 target_sources(
-    McuxPsaCryptoDriverCasperHashcrypt
+    McuxPsaDrvCasperHc
     PRIVATE
         zephyr/osal_mutex.c
 )

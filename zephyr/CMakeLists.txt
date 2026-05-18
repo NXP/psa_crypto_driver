@@ -44,6 +44,6 @@ endif()
 
 if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ psa_crypto_driver)
-    target_link_libraries(app PUBLIC McuxPsaCryptoDriverCasperHashcrypt)
-    zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverCasperHashcrypt,INTERFACE_INCLUDE_DIRECTORIES>")
+    target_link_libraries(app PUBLIC McuxPsaDrvCasperHc)
+    zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaDrvCasperHc,INTERFACE_INCLUDE_DIRECTORIES>")
 endif()

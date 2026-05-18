@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -145,8 +145,10 @@ static psa_status_t casper_common_internal_ecc_sign(const psa_key_attributes_t *
     // cleanup
     mbedtls_mpi_free(&r);
     mbedtls_mpi_free(&s);
-    mbedtls_ecp_keypair_free(ecp);
-    mbedtls_free(ecp);
+    if (ecp != NULL) {
+        mbedtls_ecp_keypair_free(ecp);
+        mbedtls_free(ecp);
+    }
 
     return status;
 }
@@ -239,8 +241,10 @@ static psa_status_t casper_common_internal_ecc_verify(const psa_key_attributes_t
     // cleanup
     mbedtls_mpi_free(&r);
     mbedtls_mpi_free(&s);
-    mbedtls_ecp_keypair_free(ecp);
-    mbedtls_free(ecp);
+    if (ecp != NULL) {
+        mbedtls_ecp_keypair_free(ecp);
+        mbedtls_free(ecp);
+    }
 
     return status;
 }

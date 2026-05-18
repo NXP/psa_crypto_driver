@@ -6,6 +6,11 @@
 #ifndef MCUX_PSA_CASPER_ECP_PORT_H
 #define MCUX_PSA_CASPER_ECP_PORT_H
 
+#if defined(MBEDTLS_BIGNUM_C) && defined(MBEDTLS_ECP_C) && \
+    defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) || \
+    defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED) || \
+    defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED)
+
 #include "mbedtls/private_access.h"
 
 #include "mbedtls/build_info.h"
@@ -44,5 +49,7 @@ int casper_mbedtls_ecp_muladd(mbedtls_ecp_group *grp,
                               const mbedtls_ecp_point *P,
                               const mbedtls_mpi *n,
                               const mbedtls_ecp_point *Q);
+
+#endif /* MBEDTLS_ECP_C && MBEDTLS_BIGNUM_C */
 
 #endif // MCUX_PSA_CASPER_ECP_PORT_H
