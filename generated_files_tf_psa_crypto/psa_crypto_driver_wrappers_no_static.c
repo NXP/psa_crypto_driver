@@ -59,6 +59,16 @@
 #include "pkc.h"
 
 #endif
+/* Headers for ele_s2xx transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+#include "ele_s2xx.h"
+
+#endif
+/* Headers for ele_s2xx opaque driver */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+#include "ele_s2xx.h"
+
+#endif
 
 /* END-driver headers */
 
@@ -73,6 +83,8 @@
 #define DCP_TRANSPARENT_DRIVER_ID (5)
 #define SGI_TRANSPARENT_DRIVER_ID (6)
 #define PKC_TRANSPARENT_DRIVER_ID (7)
+#define ELE_S2XX_TRANSPARENT_DRIVER_ID (8)
+#define ELE_S2XX_OPAQUE_DRIVER_ID (9)
 
 /* END-driver id */
 
@@ -123,6 +135,13 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
             return( ( *key_buffer_size != 0 ) ?
                     PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            *key_buffer_size = ele_s2xx_opaque_get_key_buffer_size( attributes );
+            return( ( *key_buffer_size != 0 ) ?
+                    PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
         default:
             (void)key_type;
@@ -168,6 +187,20 @@ psa_status_t psa_driver_wrapper_export_public_key(
 
 
 
+#if (defined(PSA_CRYPTO_DRIVER_ELE_S2XX) )
+            status = ele_s2xx_transparent_export_public_key
+                (attributes,
+                                key_buffer,
+                                key_buffer_size,
+                                data,
+                                data_size,
+                                data_length
+            );
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif
+
 
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
             /* Fell through, meaning no accelerator supports this operation */
@@ -182,6 +215,19 @@ psa_status_t psa_driver_wrapper_export_public_key(
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 
 
+
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            return( ele_s2xx_opaque_export_public_key
+            (attributes,
+                            key_buffer,
+                            key_buffer_size,
+                            data,
+                            data_size,
+                            data_length
+        ));
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -200,6 +246,7 @@ psa_status_t psa_driver_wrapper_get_builtin_key(
     switch( location )
     {
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+
 
 
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */

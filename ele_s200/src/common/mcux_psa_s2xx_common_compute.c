@@ -18,6 +18,7 @@
  *
  */
 
+#include <limits.h>
 #include "mcux_psa_s2xx_common_compute.h"
 #include "mcux_psa_s2xx_key_locations.h"
 #include "mcux_psa_util_wrapcheck_static_inline.h"
@@ -303,7 +304,6 @@ psa_status_t is_fw_loaded(void)
     /* Some FW is loaded */
     return PSA_SUCCESS;
 }
-
 
 /**
  * Taken from the mbedtls library/constant_time.c implementation file and

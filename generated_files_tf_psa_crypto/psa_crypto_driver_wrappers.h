@@ -61,6 +61,16 @@
 #include "pkc.h"
 
 #endif
+/* Headers for ele_s2xx transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+#include "ele_s2xx.h"
+
+#endif
+/* Headers for ele_s2xx opaque driver */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+#include "ele_s2xx.h"
+
+#endif
 
 /* END-driver headers */
 
@@ -75,6 +85,8 @@
 #define DCP_TRANSPARENT_DRIVER_ID (5)
 #define SGI_TRANSPARENT_DRIVER_ID (6)
 #define PKC_TRANSPARENT_DRIVER_ID (7)
+#define ELE_S2XX_TRANSPARENT_DRIVER_ID (8)
+#define ELE_S2XX_OPAQUE_DRIVER_ID (9)
 
 /* END-driver id */
 
@@ -125,6 +137,12 @@ static inline psa_status_t psa_driver_wrapper_init( void )
         return ( status );
 #endif /* PSA_CRYPTO_DRIVER_PKC */
 
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+    status = ele_s2xx_transparent_init();
+    if (status != PSA_SUCCESS)
+        return ( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+
     (void) status;
     return( PSA_SUCCESS );
 }
@@ -154,6 +172,10 @@ static inline void psa_driver_wrapper_free( void )
 #if defined(PSA_CRYPTO_DRIVER_PKC)
     (void)psa_pkc_deinit();
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+    (void)ele_s2xx_transparent_free();
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 }
 
 /* Start delegation functions */
@@ -214,6 +236,23 @@ static inline psa_status_t psa_driver_wrapper_sign_message(
                 return( status );
             break;
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            status = ele_s2xx_opaque_sign_message(
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_size,
+                        signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -286,6 +325,23 @@ static inline psa_status_t psa_driver_wrapper_verify_message(
                 return( status );
             break;
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            return( ele_s2xx_opaque_verify_message(
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_length ) );
+            /* Below code is unreachable */
+//            if( status != PSA_ERROR_NOT_SUPPORTED )
+//                return( status );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -390,6 +446,20 @@ static inline psa_status_t psa_driver_wrapper_sign_hash(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_sign_hash(
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        hash,
+                        hash_length,
+                        signature,
+                        signature_size,
+                        signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
             /* Fell through, meaning no accelerator supports this operation */
             return( psa_sign_hash_builtin( attributes,
@@ -416,6 +486,19 @@ static inline psa_status_t psa_driver_wrapper_sign_hash(
                                                              signature_size,
                                                              signature_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            return( ele_s2xx_opaque_sign_hash( attributes,
+                                               key_buffer,
+                                               key_buffer_size,
+                                               alg,
+                                               hash,
+                                               hash_length,
+                                               signature,
+                                               signature_size,
+                                               signature_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -509,6 +592,20 @@ static inline psa_status_t psa_driver_wrapper_verify_hash(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_verify_hash(
+                         attributes,
+                         key_buffer,
+                         key_buffer_size,
+                         alg,
+                         hash,
+                         hash_length,
+                         signature,
+                         signature_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             return( psa_verify_hash_builtin( attributes,
@@ -533,6 +630,18 @@ static inline psa_status_t psa_driver_wrapper_verify_hash(
                                                                signature,
                                                                signature_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            return( ele_s2xx_opaque_verify_hash( attributes,
+                                                 key_buffer,
+                                                 key_buffer_size,
+                                                 alg,
+                                                 hash,
+                                                 hash_length,
+                                                 signature,
+                                                 signature_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -801,6 +910,16 @@ static inline psa_status_t psa_driver_wrapper_get_key_buffer_size_from_key_data(
             return( ( *key_buffer_size != 0 ) ?
                     PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+        case PSA_CRYPTO_LOCATION_S200_DATA_STORAGE:
+            *key_buffer_size = ele_s2xx_opaque_size_function( attributes,
+                                                 data,
+                                                 data_length);
+            return( ( *key_buffer_size != 0 ) ?
+                    PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
         default:
             (void)key_type;
@@ -891,6 +1010,14 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
                 if( status != PSA_ERROR_NOT_SUPPORTED )
                     break;
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+                status = ele_s2xx_transparent_generate_key(
+                    attributes, key_buffer, key_buffer_size,
+                    key_buffer_length );
+                /* Declared with fallback == true */
+                if( status != PSA_ERROR_NOT_SUPPORTED )
+                    break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
             }
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
@@ -908,6 +1035,12 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
                 attributes, key_buffer, key_buffer_size, key_buffer_length );
             break;
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            status = ele_s2xx_opaque_generate_key(
+                attributes, key_buffer, key_buffer_size, key_buffer_length );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
@@ -961,6 +1094,7 @@ static inline psa_status_t psa_driver_wrapper_import_key(
 
 
 
+
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -972,6 +1106,21 @@ static inline psa_status_t psa_driver_wrapper_import_key(
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 
 
+
+#if (defined(PSA_CRYPTO_DRIVER_ELE_S2XX) )
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+        case PSA_CRYPTO_LOCATION_S200_DATA_STORAGE:
+            return( ele_s2xx_opaque_import_key
+            (attributes,
+                            data,
+                            data_length,
+                            key_buffer,
+                            key_buffer_size,
+                            key_buffer_length,
+                            bits
+        ));
+#endif  /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void)status;
@@ -1005,6 +1154,20 @@ static inline psa_status_t psa_driver_wrapper_export_key(
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 
 
+
+#if (defined(PSA_CRYPTO_DRIVER_ELE_S2XX) )
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+        case PSA_CRYPTO_LOCATION_S200_DATA_STORAGE:
+            return( ele_s2xx_opaque_export_key
+            (attributes,
+                            key_buffer,
+                            key_buffer_size,
+                            data,
+                            data_size,
+                            data_length
+        ));
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -1029,6 +1192,19 @@ static inline psa_status_t psa_driver_wrapper_copy_key(
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 
 
+
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            return( ele_s2xx_opaque_copy_key
+            (attributes,
+                            source_key,
+                            source_key_length,
+                            target_key_buffer,
+                            target_key_buffer_size,
+                            target_key_buffer_length
+        ));
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void)source_key;
@@ -1131,6 +1307,22 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_cipher_encrypt( attributes,
+                                         key_buffer,
+                                         key_buffer_size,
+                                         alg,
+                                         iv,
+                                         iv_length,
+                                         input,
+                                         input_length,
+                                         output,
+                                         output_size,
+                                         output_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
@@ -1165,6 +1357,21 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
                                                         output_size,
                                                         output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            return ( ele_s2xx_opaque_cipher_encrypt( attributes,
+                                                     key_buffer,
+                                                     key_buffer_size,
+                                                     alg,
+                                                     iv,
+                                                     iv_length,
+                                                     input,
+                                                     input_length,
+                                                     output,
+                                                     output_size,
+                                                     output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
@@ -1260,6 +1467,20 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_cipher_decrypt( attributes,
+                                         key_buffer,
+                                         key_buffer_size,
+                                         alg,
+                                         input,
+                                         input_length,
+                                         output,
+                                         output_size,
+                                         output_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
@@ -1290,6 +1511,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
                                                         output_size,
                                                         output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+           return ( ele_s2xx_opaque_cipher_decrypt( attributes,
+                                                    key_buffer,
+                                                    key_buffer_size,
+                                                    alg,
+                                                    input,
+                                                    input_length,
+                                                    output,
+                                                    output_size,
+                                                    output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
@@ -1700,6 +1934,12 @@ static inline psa_status_t psa_driver_wrapper_hash_compute(
     if( status != PSA_ERROR_NOT_SUPPORTED )
         return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+    status = ele_s2xx_transparent_hash_compute(alg, input, input_length, hash, hash_size,
+                              hash_length);
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
     /* If software fallback is compiled in, try fallback */
 #if defined(MBEDTLS_PSA_BUILTIN_HASH)
@@ -1759,6 +1999,14 @@ static inline psa_status_t psa_driver_wrapper_hash_setup(
     if( status != PSA_ERROR_NOT_SUPPORTED )
         return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+    status = ele_s2xx_transparent_hash_setup( &operation->ctx.ele_driver_ctx, alg );
+    if( status == PSA_SUCCESS )
+        operation->id = ELE_S2XX_TRANSPARENT_DRIVER_ID;
+
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
     /* If software fallback is compiled in, try fallback */
 #if defined(MBEDTLS_PSA_BUILTIN_HASH)
@@ -1813,6 +2061,12 @@ static inline psa_status_t psa_driver_wrapper_hash_clone(
             return( sgi_hash_clone( &source_operation->ctx.sgi_driver_ctx,
                                     &target_operation->ctx.sgi_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case ELE_S2XX_TRANSPARENT_DRIVER_ID:
+            target_operation->id = ELE_S2XX_TRANSPARENT_DRIVER_ID;
+            return( ele_s2xx_transparent_hash_clone( &source_operation->ctx.ele_driver_ctx,
+                                    &target_operation->ctx.ele_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
         default:
             (void) target_operation;
             return( PSA_ERROR_BAD_STATE );
@@ -1852,6 +2106,11 @@ static inline psa_status_t psa_driver_wrapper_hash_update(
             return( sgi_hash_update( &operation->ctx.sgi_driver_ctx,
                                      input, input_length ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case ELE_S2XX_TRANSPARENT_DRIVER_ID:
+            return( ele_s2xx_transparent_hash_update( &operation->ctx.ele_driver_ctx,
+                                     input, input_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
         default:
             (void) input;
             (void) input_length;
@@ -1893,6 +2152,11 @@ static inline psa_status_t psa_driver_wrapper_hash_finish(
             return( sgi_hash_finish( &operation->ctx.sgi_driver_ctx,
                                      hash, hash_size, hash_length ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case ELE_S2XX_TRANSPARENT_DRIVER_ID:
+            return( ele_s2xx_transparent_hash_finish( &operation->ctx.ele_driver_ctx,
+                                     hash, hash_size, hash_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
         default:
             (void) hash;
             (void) hash_size;
@@ -1927,6 +2191,10 @@ static inline psa_status_t psa_driver_wrapper_hash_abort(
         case SGI_TRANSPARENT_DRIVER_ID:
             return( sgi_hash_abort( &operation->ctx.sgi_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case ELE_S2XX_TRANSPARENT_DRIVER_ID:
+            return( ele_s2xx_transparent_hash_abort( &operation->ctx.ele_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
         default:
             return( PSA_ERROR_BAD_STATE );
     }
@@ -2107,6 +2375,18 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_aead_encrypt(
+                         attributes, key_buffer, key_buffer_size,
+                         alg,
+                         nonce, nonce_length,
+                         additional_data, additional_data_length,
+                         plaintext, plaintext_length,
+                         ciphertext, ciphertext_size, ciphertext_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -2123,6 +2403,21 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt(
 #endif
 
         /* Add cases for opaque driver here */
+#if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            status = ele_s2xx_opaque_aead_encrypt(
+                         attributes, key_buffer, key_buffer_size,
+                         alg,
+                         nonce, nonce_length,
+                         additional_data, additional_data_length,
+                         plaintext, plaintext_length,
+                         ciphertext, ciphertext_size, ciphertext_length );
+
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
             /* Key is declared with a lifetime not known to us */
@@ -2179,6 +2474,18 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_aead_decrypt(
+                        attributes, key_buffer, key_buffer_size,
+                        alg,
+                        nonce, nonce_length,
+                        additional_data, additional_data_length,
+                        ciphertext, ciphertext_length,
+                        plaintext, plaintext_size, plaintext_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -2195,6 +2502,21 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt(
 #endif
 
         /* Add cases for opaque driver here */
+#if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            status = ele_s2xx_opaque_aead_decrypt(
+                         attributes, key_buffer, key_buffer_size,
+                         alg,
+                         nonce, nonce_length,
+                         additional_data, additional_data_length,
+                         ciphertext, ciphertext_length,
+                         plaintext, plaintext_size, plaintext_length );
+
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
             /* Key is declared with a lifetime not known to us */
@@ -2689,6 +3011,15 @@ static inline psa_status_t psa_driver_wrapper_mac_compute(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_mac_compute(
+                attributes, key_buffer, key_buffer_size, alg,
+                input, input_length,
+                mac, mac_size, mac_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_MAC)
             /* Fell through, meaning no accelerator supports this operation */
@@ -2711,6 +3042,15 @@ static inline psa_status_t psa_driver_wrapper_mac_compute(
                 mac, mac_size, mac_length );
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            status = ele_s2xx_opaque_mac_compute(
+                attributes, key_buffer, key_buffer_size, alg,
+                input, input_length,
+                mac, mac_size, mac_length );
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -2768,6 +3108,19 @@ static inline psa_status_t psa_driver_wrapper_mac_sign_setup(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_mac_sign_setup(
+                &operation->ctx.transparent_ele_s2xx_driver_ctx,
+                attributes,
+                key_buffer, key_buffer_size,
+                alg );
+            /* Declared with fallback == true */
+            if( status == PSA_SUCCESS )
+                operation->id = ELE_S2XX_TRANSPARENT_DRIVER_ID;
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_MAC)
             /* Fell through, meaning no accelerator supports this operation */
@@ -2851,6 +3204,19 @@ static inline psa_status_t psa_driver_wrapper_mac_verify_setup(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_mac_verify_setup(
+                &operation->ctx.transparent_ele_s2xx_driver_ctx,
+                attributes,
+                key_buffer, key_buffer_size,
+                alg );
+            /* Declared with fallback == true */
+            if( status == PSA_SUCCESS )
+                operation->id = ELE_S2XX_TRANSPARENT_DRIVER_ID;
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_MAC)
             /* Fell through, meaning no accelerator supports this operation */
@@ -2923,6 +3289,12 @@ static inline psa_status_t psa_driver_wrapper_mac_update(
             return( sgi_mac_update( &operation->ctx.sgi_driver_ctx,
                                     input, input_length ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case ELE_S2XX_TRANSPARENT_DRIVER_ID:
+            return( ele_s2xx_transparent_mac_update(
+                        &operation->ctx.transparent_ele_s2xx_driver_ctx,
+                        input, input_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) input;
@@ -2962,6 +3334,12 @@ static inline psa_status_t psa_driver_wrapper_mac_sign_finish(
             return( sgi_mac_sign_finish( &operation->ctx.sgi_driver_ctx,
                                          mac, mac_size, mac_length ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case ELE_S2XX_TRANSPARENT_DRIVER_ID:
+            return( ele_s2xx_transparent_mac_sign_finish(
+                        &operation->ctx.transparent_ele_s2xx_driver_ctx,
+                        mac, mac_size, mac_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) mac;
@@ -3001,6 +3379,12 @@ static inline psa_status_t psa_driver_wrapper_mac_verify_finish(
             return( sgi_mac_verify_finish( &operation->ctx.sgi_driver_ctx,
                                            mac, mac_length ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case ELE_S2XX_TRANSPARENT_DRIVER_ID:
+            return( ele_s2xx_transparent_mac_verify_finish(
+                        &operation->ctx.transparent_ele_s2xx_driver_ctx,
+                        mac, mac_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) mac;
@@ -3029,6 +3413,11 @@ static inline psa_status_t psa_driver_wrapper_mac_abort(
                         &operation->ctx.opaque_test_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 #if defined(PSA_CRYPTO_DRIVER_SGI)
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case ELE_S2XX_TRANSPARENT_DRIVER_ID:
+            return( ele_s2xx_transparent_mac_abort(
+                        &operation->ctx.transparent_ele_s2xx_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
         case SGI_TRANSPARENT_DRIVER_ID:
             return( sgi_mac_abort( &operation->ctx.sgi_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
@@ -3220,6 +3609,20 @@ static inline psa_status_t psa_driver_wrapper_key_agreement(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+            status = ele_s2xx_transparent_key_agreement( attributes,
+                                          key_buffer,
+                                          key_buffer_size,
+                                          alg,
+                                          peer_key,
+                                          peer_key_length,
+                                          shared_secret,
+                                          shared_secret_size,
+                                          shared_secret_length);
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Software Fallback */
@@ -3241,6 +3644,19 @@ static inline psa_status_t psa_driver_wrapper_key_agreement(
                         peer_key_length, shared_secret, shared_secret_size,
                         shared_secret_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
+        case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
+            return( ele_s2xx_opaque_key_agreement( attributes,
+                         key_buffer,
+                         key_buffer_size,
+                         alg,
+                         peer_key,
+                         peer_key_length,
+                         shared_secret,
+                         shared_secret_size,
+                         shared_secret_length) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:

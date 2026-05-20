@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -18,6 +18,11 @@
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
+
+#include "mbedtls/build_info.h"
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "psa/crypto_driver_random.h"
+#endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
 
 #include "fsl_sss_mgmt.h"
 #include "fsl_sss_sscp.h"
@@ -94,6 +99,15 @@ exit:
     return status;
 }
 /** @} */ // end of psa_entropy
+
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+                                 size_t *estimate_bits,
+                                 unsigned char *output, size_t output_size)
+{
+    return ele_get_entropy((uint32_t)flags, estimate_bits, output, output_size);
+}
+#endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
 
 /*
  * FixMe: This function is required to integrate into Mbed TLS as the PSA
