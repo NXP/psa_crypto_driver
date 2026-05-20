@@ -79,6 +79,11 @@
 #include "ele_s4xx.h"
 
 #endif
+/* Headers for els_pkc transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_ELS_PKC)
+#include "els_pkc_driver.h"
+
+#endif
 
 /* END-driver headers */
 
@@ -97,6 +102,7 @@
 #define ELE_S2XX_OPAQUE_DRIVER_ID (9)
 #define ELE_S4XX_OPAQUE_DRIVER_ID (10)
 #define ELE_S4XX_TRANSPARENT_DRIVER_ID (11)
+#define ELS_PKC_TRANSPARENT_DRIVER_ID (12)
 
 /* END-driver id */
 
@@ -220,6 +226,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+
 
 
 

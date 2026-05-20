@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "fsl_device_registers.h"
 #include <mcuxClPsaDriver.h>
 
 #include <mbedtls/platform.h>

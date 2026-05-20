@@ -164,7 +164,7 @@ static psa_status_t mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot(mcuxClEl
     psa_status_t psa_status = PSA_SUCCESS;
     mcuxClEls_KeyProp_t key_properties;
     psa_status = mcuxClPsaDriver_Oracle_ElsUtils_GetKeyProperties(key_slot, &key_properties);
-    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_ElsUtils_GetKeyProperties returned 0x%x", psa_status);
+    PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_ElsUtils_GetKeyProperties returned 0x%x", (unsigned int)psa_status);
     mcuxClKey_setLoadedKeyData(out_key_descriptor, NULL);
     mcuxClKey_setLoadedKeyLength(out_key_descriptor,
                                  (key_properties.bits.ksize == MCUXCLELS_KEYPROPERTY_KEY_SIZE_128) ? 16u : 32u);
@@ -196,7 +196,7 @@ psa_status_t mcuxClPsaDriver_Oracle_LoadKey(mcuxClKey_Descriptor_t *pKey)
             (mcuxClEls_KeyIndex_t)PSA_DRIVER_LITTLE_ENDIAN_FROM_U8_TO_U32(&pKey->container.pData[0]);
 
         psa_status = mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot(key_slot, pKey);
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", psa_status);
+        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", (unsigned int)psa_status);
     }
     else if (MCUXCLPSADRIVER_IS_S50_KEY_GEN_STORAGE(location))
     {
@@ -207,12 +207,12 @@ psa_status_t mcuxClPsaDriver_Oracle_LoadKey(mcuxClKey_Descriptor_t *pKey)
             key_recipe_t *recipe = (key_recipe_t *)pKey->container.pData;
             psa_status = mcuxClPsaDriver_Oracle_Utils_ExecuteKeyRecipe(psa_get_key_id(attributes), // psa reference
                                                                        recipe, &key_slot);
-            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_Utils_ExecuteKeyRecipe returned 0x%x", psa_status);
+            PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_Utils_ExecuteKeyRecipe returned 0x%x", (unsigned int)psa_status);
         }
 
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in getting the slot from the key ID");
         psa_status = mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot(key_slot, pKey);
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", psa_status);
+        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", (unsigned int)psa_status);
     }
     else if (MCUXCLPSADRIVER_IS_S50_BLOB_STORAGE(location))
     {
@@ -256,7 +256,7 @@ psa_status_t mcuxClPsaDriver_Oracle_LoadKey(mcuxClKey_Descriptor_t *pKey)
 
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in getting the slot from the key ID");
         psa_status = mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot(key_slot, pKey);
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", psa_status);
+        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", (unsigned int)psa_status);
     }
     else if (MCUXCLPSADRIVER_IS_S50_ENC_STORAGE(location))
     {
@@ -334,7 +334,7 @@ psa_status_t mcuxClPsaDriver_Oracle_LoadKey(mcuxClKey_Descriptor_t *pKey)
 
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in getting the slot from the key ID");
         psa_status = mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot(key_slot, pKey);
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", psa_status);
+        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("mcuxClPsaDriver_Oracle_FillKeyDescriptorFromKeySlot failed: 0x%x", (unsigned int)psa_status);
     }
     else
     {

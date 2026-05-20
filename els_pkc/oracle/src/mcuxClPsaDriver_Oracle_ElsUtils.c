@@ -23,7 +23,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_GetKeyProperties(mcuxClEls_KeyIndex
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_GetKeyProperties(keyIdx, keyProperties));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_GetKeyProperties) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("mcuxClEls_GetKeyProperties failed: 0x%x\r\n", result);
+        PRINTF("mcuxClEls_GetKeyProperties failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
 
@@ -76,7 +76,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_Ckdf(mcuxClEls_KeyIndex_t derivatio
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_Ckdf_Sp800108_Async) != token) || (MCUXCLELS_STATUS_OK_WAIT != result))
     {
-        PRINTF("Css_Ckdf_Sp800108_Async failed: 0x%x\r\n", result);
+        PRINTF("Css_Ckdf_Sp800108_Async failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -84,7 +84,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_Ckdf(mcuxClEls_KeyIndex_t derivatio
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("Css_Ckdf_Sp800108_Asyn WaitForOperation failed: 0x%x\r\n", result);
+        PRINTF("Css_Ckdf_Sp800108_Asyn WaitForOperation failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -102,7 +102,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_EccKeyGen(mcuxClEls_EccKeyGenOption
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_EccKeyGen_Async) != token) || (MCUXCLELS_STATUS_OK_WAIT != result))
     {
-        PRINTF("Css_EccKeyGen_Async failed: 0x%x\r\n", result);
+        PRINTF("Css_EccKeyGen_Async failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -110,7 +110,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_EccKeyGen(mcuxClEls_EccKeyGenOption
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("Css_EccKeyGen_Async WaitForOperation failed: 0x%x\r\n", result);
+        PRINTF("Css_EccKeyGen_Async WaitForOperation failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -122,7 +122,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_KeyDelete(mcuxClEls_KeyIndex_t targ
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_KeyDelete_Async(targetKeyIdx));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_KeyDelete_Async) != token) || (MCUXCLELS_STATUS_OK_WAIT != result))
     {
-        PRINTF("Css_KeyDelete_Async failed: 0x%x\r\n", result);
+        PRINTF("Css_KeyDelete_Async failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -130,7 +130,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_KeyDelete(mcuxClEls_KeyIndex_t targ
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("Css_KeyDelete_Async WaitForOperation failed: 0x%x\r\n", result);
+        PRINTF("Css_KeyDelete_Async WaitForOperation failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -149,7 +149,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_KeyIn(const uint8_t *keyin_command_
         mcuxClEls_KeyImport_Async(options, keyin_command_blob, keyin_command_blob_size, unwrapKeyIdx, targetKeyIdx));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_KeyImport_Async) != token) || (MCUXCLELS_STATUS_OK_WAIT != result))
     {
-        PRINTF("mcuxClEls_KeyImport_Async failed: 0x%x\r\n", result);
+        PRINTF("mcuxClEls_KeyImport_Async failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -157,7 +157,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_KeyIn(const uint8_t *keyin_command_
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("mcuxClEls_KeyImport_Async WaitForOperation failed: 0x%x", result);
+        PRINTF("mcuxClEls_KeyImport_Async WaitForOperation failed: 0x%x", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -178,7 +178,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_Cmac(uint8_t *data,
                                      mcuxClEls_Cmac_Async(options, authKeyIdx, NULL, 0, data, data_size, pCmac));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_Cmac_Async) != token) || (MCUXCLELS_STATUS_OK_WAIT != result))
     {
-        PRINTF("mcuxClEls_Cmac_Async failed: 0x%x\r\n", result);
+        PRINTF("mcuxClEls_Cmac_Async failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -187,7 +187,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_Cmac(uint8_t *data,
                                      mcuxClEls_LimitedWaitForOperation(0x00100000U, MCUXCLELS_ERROR_FLAGS_CLEAR));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_LimitedWaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("mcuxClEls_Cmac_Async LimitedWaitForOperation failed: 0x%x", result);
+        PRINTF("mcuxClEls_Cmac_Async LimitedWaitForOperation failed: 0x%x", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -212,7 +212,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_Cipher_Decrypt(
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_Cipher_Async) != token) || (MCUXCLELS_STATUS_OK_WAIT != result))
     {
-        PRINTF("mcuxClEls_Cipher_Async failed: 0x%x\r\n", result);
+        PRINTF("mcuxClEls_Cipher_Async failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -220,7 +220,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_Cipher_Decrypt(
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("mcuxClEls_Cipher_Async LimitedWaitForOperation failed: 0x%x", result);
+        PRINTF("mcuxClEls_Cipher_Async LimitedWaitForOperation failed: 0x%x", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -239,7 +239,7 @@ psa_status_t mcxClPsaDriver_Oracle_ElsUtils_Key_Export(
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_KeyExport_Async) != token) || (MCUXCLELS_STATUS_OK_WAIT != result))
     {
-        PRINTF("mcuxClEls_KeyExport_Async failed: 0x%x\r\n", result);
+        PRINTF("mcuxClEls_KeyExport_Async failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -247,7 +247,7 @@ psa_status_t mcxClPsaDriver_Oracle_ElsUtils_Key_Export(
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("mcuxClEls_KeyExport_Async LimitedWaitForOperation failed: 0x%x", result);
+        PRINTF("mcuxClEls_KeyExport_Async LimitedWaitForOperation failed: 0x%x", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -266,7 +266,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_EccKeyAgreement(
 
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_EccKeyExchange_Async) != token) || (MCUXCLELS_STATUS_OK_WAIT != result))
     {
-        PRINTF("mcuxClEls_EccKeyExchange_Async failed: 0x%x\r\n", result);
+        PRINTF("mcuxClEls_EccKeyExchange_Async failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
@@ -274,7 +274,7 @@ psa_status_t mcuxClPsaDriver_Oracle_ElsUtils_EccKeyAgreement(
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
     if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
     {
-        PRINTF("mcuxClEls_EccKeyExchange_Async WaitForOperation failed: 0x%x\r\n", result);
+        PRINTF("mcuxClEls_EccKeyExchange_Async WaitForOperation failed: 0x%x\r\n", (unsigned int)result);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();

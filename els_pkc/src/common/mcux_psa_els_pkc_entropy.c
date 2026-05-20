@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -16,7 +16,10 @@
 #include "mbedtls/build_info.h"
 //#include "entropy_poll.h"
 
-#if defined(MBEDTLS_MCUX_ENTROPY) && (MBEDTLS_MCUX_ENTROPY == 1)
+/* mbedTLS 4.x: include the driver random header for psa_driver_get_entropy_flags_t */
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "psa/crypto_driver_random.h"
+#endif
 
 #include "mcux_psa_els_pkc_entropy.h"
 
@@ -33,7 +36,8 @@
 #include <mcuxClRandom.h>
 #include <mcuxClRandomModes.h>
 #endif /* MCUXCL_FEATURE_RANDOMMODES_SECSTRENGTH_256 || MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED */
-      
+
+
 /** \defgroup psa_entropy PSA driver entry points for entropy collection
  *
  *  Entry points for entropy collection from the TRNG source as described by the
@@ -132,7 +136,7 @@ psa_status_t els_pkc_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t 
                 return PSA_ERROR_GENERIC_ERROR;
             }
             MCUX_CSSL_FP_FUNCTION_CALL_END();
-            
+
 #else
             /* Call ELS to get random data */
             MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(els_result, token, mcuxClEls_Prng_GetRandom(output, output_size));
@@ -160,9 +164,25 @@ psa_status_t els_pkc_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t 
         }
 #endif
     }
+    if (status == PSA_SUCCESS)
+    {
+        *estimate_bits = output_size * 8u;
+    }
     return status;
 }
 /** @} */ // end of psa_entropy
+
+/*
+ * mbedTLS 4.x entropy callback required when MBEDTLS_PSA_DRIVER_GET_ENTROPY is enabled.
+ */
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+                                 size_t *estimate_bits,
+                                 unsigned char *output, size_t output_size)
+{
+    return els_pkc_get_entropy(flags, estimate_bits, output, output_size);
+}
+#endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
 
 /*
  * FixMe: This function is required to integrate into Mbed TLS as the PSA
@@ -175,4 +195,3 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
     int status = els_pkc_get_entropy(0, olen, output, len);
     return status;
 }
-#endif /* MBEDTLS_MCUX_ENTROPY */

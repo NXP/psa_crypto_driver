@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "fsl_device_registers.h"
 #include <mcuxClPsaDriver_Oracle_Utils.h>
 #include <mcuxClPsaDriver_Oracle_ElsUtils.h>
 #include <mcuxClPsaDriver_Oracle_Macros.h>
@@ -242,7 +243,7 @@ static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_si
     {
         tag        = *cmd_ptr;
         psa_status = get_tag(&cmd_ptr, end, &cmd_len, tag);
-        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("get_tag failed: 0x%x", psa_status);
+        PSA_DRIVER_SUCCESS_OR_EXIT_MSG("get_tag failed: 0x%x", (unsigned int)psa_status);
 
         switch (tag)
         {
@@ -567,15 +568,15 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteKeyRecipe(mbedtls_svc_key_id_t 
         {
             case OP_CKDF:
                 psa_status = execute_ckdf_step(key_id, step, target_key_slot);
-                PSA_DRIVER_SUCCESS_OR_EXIT_MSG("execute_ckdf_recipe returned 0x%x", psa_status);
+                PSA_DRIVER_SUCCESS_OR_EXIT_MSG("execute_ckdf_recipe returned 0x%x", (unsigned int)psa_status);
                 break;
             case OP_KEYGEN:
                 psa_status = execute_keygen_step(key_id, step, target_key_slot);
-                PSA_DRIVER_SUCCESS_OR_EXIT_MSG("execute_ckdf_recipe returned 0x%x", psa_status);
+                PSA_DRIVER_SUCCESS_OR_EXIT_MSG("execute_ckdf_recipe returned 0x%x", (unsigned int)psa_status);
                 break;
             case OP_KDELETE:
                 psa_status = execute_kdelete_step(key_id, step);
-                PSA_DRIVER_SUCCESS_OR_EXIT_MSG("execute_kdelete_recipe returned 0x%x", psa_status);
+                PSA_DRIVER_SUCCESS_OR_EXIT_MSG("execute_kdelete_recipe returned 0x%x", (unsigned int)psa_status);
                 break;
             default:
                 PSA_DRIVER_ERROR("Unknown recipe operation: 0x%x", step->operation);
