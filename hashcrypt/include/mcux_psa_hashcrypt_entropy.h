@@ -17,8 +17,14 @@
  */
 
 #include "psa/crypto.h"
-#include "fsl_trng.h"
 #include "osal_mutex.h"
+
+/* Zephyr doesn't have adapter_rng in HAL, and doesnt't need it. So using TRNG directly */
+#if defined(__ZEPHYR__)
+#include "fsl_trng.h"
+#else
+#include "fsl_adapter_rng.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
