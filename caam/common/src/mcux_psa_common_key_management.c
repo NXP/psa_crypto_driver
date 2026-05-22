@@ -1,18 +1,23 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"
 #include "psa_crypto_ecp.h"
-#include "psa_crypto_random_impl.h"
+#include "psa_util_internal.h"
+
+#include "mbedtls/private_access.h"
+#include "ctr_drbg.h"
+#include "ecdsa.h"
+#include "ecp.h"
 
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform.h"
-#include "mbedtls/ecdsa.h"
 #include "mbedtls/psa_util.h"
 
 #include "mcux_psa_common_key_management.h"
@@ -304,6 +309,7 @@ psa_status_t mcux_key_buf_to_raw_rsa(psa_key_type_t key_type,
     return status;
 }
 
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
 psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
                                      bool only_public,
                                      const struct mcux_rsa_keypair *rsa_key,
@@ -366,6 +372,7 @@ psa_status_t mcux_raw_rsa_to_key_buf(psa_key_type_t key_type,
 
     return status;
 }
+#endif /* MBEDTLS_VERSION_NUMBER < 0x04000000 */
 
 psa_status_t mcux_alloc_raw_rsa(struct mcux_rsa_keypair *rsa_key,
                                 size_t key_bytes,

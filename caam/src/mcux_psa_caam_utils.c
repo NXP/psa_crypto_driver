@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -18,6 +18,7 @@
 #include "mbedtls/error.h"
 #include "mcux_psa_caam_common_key_generation.h"
 #include "mbedtls/psa_util.h"
+#include "psa_util_internal.h"
 
 static inline psa_status_t caam_cesc_key_type(mcux_psa_caam_key_type_t caam_key_type,
                                               caam_desc_type_t *desc_key_type)

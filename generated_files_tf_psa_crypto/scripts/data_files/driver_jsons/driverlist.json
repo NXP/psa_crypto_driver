@@ -5,6 +5,8 @@
     "dcp_transparent_driver.json",
     "sgi_transparent_driver.json",
     "pkc_transparent_driver.json",
+    "caam_opaque_driver.json",
+    "caam_transparent_driver.json",
     "ele_s2xx_transparent_driver.json",
     "ele_s2xx_opaque_driver.json",
     "ele_s4xx_opaque_driver.json",

@@ -29,6 +29,8 @@
 #include "mbedtls/error.h"
 #include "mbedtls/oid.h"
 
+extern int mbedtls_oid_get_oid_by_md(mbedtls_md_type_t md_alg, const char **oid, size_t *olen);
+
 /* Construct a PKCS v1.5 encoding of a hashed message
  *
  * This is used both for signature generation and verification.

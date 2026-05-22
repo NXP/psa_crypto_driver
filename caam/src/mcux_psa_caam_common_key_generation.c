@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -173,6 +173,7 @@ static inline psa_status_t psa_to_caam_rsa_key_type(mcux_psa_caam_key_type_t caa
     return PSA_SUCCESS;
 }
 
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
 static psa_status_t caam_internal_rsa_generate_key(mcux_psa_caam_key_type_t caam_key_type,
                                                    const psa_key_attributes_t *attributes,
                                                    uint8_t *key_buffer,
@@ -286,6 +287,7 @@ static psa_status_t caam_internal_rsa_generate_key(mcux_psa_caam_key_type_t caam
 
     return err;
 }
+#endif
 
 static inline psa_status_t caam_fifost_key_type(mcux_psa_caam_key_type_t caam_key_type,
                                                 caam_fifost_type_t *fifost_key_type)
@@ -473,6 +475,7 @@ psa_status_t caam_common_generate_key(mcux_psa_caam_key_type_t caam_key_type,
         } else
 #endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
 #if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
         if (PSA_KEY_TYPE_IS_RSA(key_type)) {
             err = caam_internal_rsa_generate_key(caam_key_type,
                                                  attributes,
@@ -480,6 +483,7 @@ psa_status_t caam_common_generate_key(mcux_psa_caam_key_type_t caam_key_type,
                                                  key_buffer_size,
                                                  key_buffer_length);
         } else
+#endif /* MBEDTLS_VERSION_NUMBER < 0x04000000 */
 #endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE */
         {
         }
@@ -531,14 +535,16 @@ psa_status_t caam_common_export_public_key(const psa_key_attributes_t *attribute
     psa_status_t err        = PSA_ERROR_NOT_SUPPORTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
     size_t key_bits         = psa_get_key_bits(attributes);
-    size_t key_bytes        = PSA_BITS_TO_BYTES(key_bits);
 #if defined(PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE)
     mbedtls_ecp_group_id ecp_grou_id;
     caam_ecc_ecdsel_t ecc_ecdsel;
     size_t pk_len;
 #endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
 #if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
+    size_t key_bytes = PSA_BITS_TO_BYTES(key_bits);
     struct mcux_rsa_keypair rsa_key;
+#endif
 #endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE */
 
 #if defined(PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE)
@@ -555,6 +561,7 @@ psa_status_t caam_common_export_public_key(const psa_key_attributes_t *attribute
     } else
 #endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
 #if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
     if (PSA_KEY_TYPE_IS_RSA(key_type)) {
         rsa_key.modulus     = (uint8_t *) key_buffer;
         rsa_key.modulus_len = key_bytes;
@@ -565,6 +572,7 @@ psa_status_t caam_common_export_public_key(const psa_key_attributes_t *attribute
                                                       data_size,
                                                       data_length);
     } else
+#endif /* MBEDTLS_VERSION_NUMBER < 0x04000000 */
 #endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE */
     {
     }
@@ -592,10 +600,12 @@ size_t caam_common_size_function(psa_key_type_t key_type, size_t key_bits)
         } else
 #endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
 #if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
         if (PSA_KEY_TYPE_IS_RSA(key_type)) {
             ret = key_bytes + CAAM_ENCAP_DATA_SIZE(RSA_ALIGN_PRIVATE_EXPONENT_SIZE(key_bytes))+
                   sizeof(size_t);
         } else
+#endif /* MBEDTLS_VERSION_NUMBER < 0x04000000 */
 #endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE */
         {
         }
