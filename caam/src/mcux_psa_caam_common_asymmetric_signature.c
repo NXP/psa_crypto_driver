@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -19,7 +19,6 @@
 #include "mcux_psa_mbedtls_origin.h"
 #include "mcux_psa_caam_common_asymmetric_encryption.h"
 #include "mcux_psa_caam_utils.h"
-#include "psa_crypto_random_impl.h"
 
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"

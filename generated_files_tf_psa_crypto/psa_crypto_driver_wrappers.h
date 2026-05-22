@@ -61,6 +61,16 @@
 #include "pkc.h"
 
 #endif
+/* Headers for caam opaque driver */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+#include "caam.h"
+
+#endif
+/* Headers for caam transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+#include "caam.h"
+
+#endif
 /* Headers for ele_s2xx transparent driver */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
 #include "ele_s2xx.h"
@@ -100,11 +110,13 @@
 #define DCP_TRANSPARENT_DRIVER_ID (5)
 #define SGI_TRANSPARENT_DRIVER_ID (6)
 #define PKC_TRANSPARENT_DRIVER_ID (7)
-#define ELE_S2XX_TRANSPARENT_DRIVER_ID (8)
-#define ELE_S2XX_OPAQUE_DRIVER_ID (9)
-#define ELE_S4XX_OPAQUE_DRIVER_ID (10)
-#define ELE_S4XX_TRANSPARENT_DRIVER_ID (11)
-#define ELS_PKC_TRANSPARENT_DRIVER_ID (12)
+#define CAAM_OPAQUE_DRIVER_ID (8)
+#define CAAM_TRANSPARENT_DRIVER_ID (9)
+#define ELE_S2XX_TRANSPARENT_DRIVER_ID (10)
+#define ELE_S2XX_OPAQUE_DRIVER_ID (11)
+#define ELE_S4XX_OPAQUE_DRIVER_ID (12)
+#define ELE_S4XX_TRANSPARENT_DRIVER_ID (13)
+#define ELS_PKC_TRANSPARENT_DRIVER_ID (14)
 
 /* END-driver id */
 
@@ -154,6 +166,12 @@ static inline psa_status_t psa_driver_wrapper_init( void )
     if (status != PSA_SUCCESS)
         return ( status );
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+    status = caam_common_init();
+    if (status != PSA_SUCCESS)
+        return ( status );
+#endif
 
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
     status = ele_s2xx_transparent_init();
@@ -209,6 +227,10 @@ static inline void psa_driver_wrapper_free( void )
     (void)psa_pkc_deinit();
 #endif /* PSA_CRYPTO_DRIVER_PKC */
 
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+    (void)caam_common_free();
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
+
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
     (void)ele_s2xx_transparent_free();
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
@@ -255,6 +277,21 @@ static inline psa_status_t psa_driver_wrapper_sign_message(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_asymmetric_sign_message(MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_size,
+                        signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
             status = ele_s4xx_transparent_sign_message(
                         attributes,
@@ -305,6 +342,22 @@ static inline psa_status_t psa_driver_wrapper_sign_message(
                 return( status );
             break;
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            status = caam_common_asymmetric_sign_message((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE,
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_size,
+                        signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
         case PSA_CRYPTO_ELE_S4XX_LOCATION:
             status = ele_s4xx_opaque_sign_message(
@@ -390,6 +443,22 @@ static inline psa_status_t psa_driver_wrapper_verify_message(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_asymmetric_verify_message(
+                        MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_length );
+
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
             status = ele_s4xx_transparent_verify_message(
                         attributes,
@@ -439,6 +508,23 @@ static inline psa_status_t psa_driver_wrapper_verify_message(
                 return( status );
             break;
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            return (caam_common_asymmetric_verify_message(
+                        (mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE,
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_length ) );
+            /* Below code is unreachable */
+//            if( status != PSA_ERROR_NOT_SUPPORTED )
+//                return( status );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
         case PSA_CRYPTO_ELE_S4XX_LOCATION:
             return( ele_s4xx_opaque_verify_message(
@@ -604,6 +690,20 @@ static inline psa_status_t psa_driver_wrapper_sign_hash(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_asymmetric_sign_hash(MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        hash,
+                        hash_length,
+                        signature,
+                        signature_size,
+                        signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
             status = ele_s2xx_transparent_sign_hash(
                         attributes,
@@ -644,6 +744,18 @@ static inline psa_status_t psa_driver_wrapper_sign_hash(
                                                              signature_size,
                                                              signature_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            return (caam_common_asymmetric_sign_hash((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE, attributes,
+                                            key_buffer,
+                                            key_buffer_size,
+                                            alg,
+                                            hash,
+                                            hash_length,
+                                            signature,
+                                            signature_size,
+                                            signature_length ) );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
         case PSA_CRYPTO_ELE_S4XX_LOCATION:
             return( ele_s4xx_opaque_sign_hash( attributes,
@@ -788,6 +900,21 @@ static inline psa_status_t psa_driver_wrapper_verify_hash(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_asymmetric_verify_hash(
+                        MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                         attributes,
+                         key_buffer,
+                         key_buffer_size,
+                         alg,
+                         hash,
+                         hash_length,
+                         signature,
+                         signature_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
             status = ele_s2xx_transparent_verify_hash(
                          attributes,
@@ -826,6 +953,18 @@ static inline psa_status_t psa_driver_wrapper_verify_hash(
                                                                signature,
                                                                signature_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            return (caam_common_asymmetric_verify_hash( (mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE,
+                                                 attributes,
+                                                 key_buffer,
+                                                 key_buffer_size,
+                                                 alg,
+                                                 hash,
+                                                 hash_length,
+                                                 signature,
+                                                 signature_length ) );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
         case PSA_CRYPTO_ELE_S4XX_LOCATION:
             return( ele_s4xx_opaque_verify_hash( attributes,
@@ -1223,6 +1362,14 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
                 if( status != PSA_ERROR_NOT_SUPPORTED )
                     break;
 #endif /* PSA_CRYPTO_DRIVER_PKC */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+                status = caam_common_generate_key(MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                    attributes, key_buffer, key_buffer_size,
+                    key_buffer_length );
+                /* Declared with fallback == true */
+                if( status != PSA_ERROR_NOT_SUPPORTED )
+                    break;
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
                 status = ele_s2xx_transparent_generate_key(
                     attributes, key_buffer, key_buffer_size,
@@ -1248,6 +1395,12 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
                 attributes, key_buffer, key_buffer_size, key_buffer_length );
             break;
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            status = caam_common_generate_key((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE,
+                attributes, key_buffer, key_buffer_size, key_buffer_length );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
     case PSA_CRYPTO_ELE_S4XX_LOCATION:
             status = ele_s4xx_opaque_generate_key(
@@ -1371,6 +1524,7 @@ static inline psa_status_t psa_driver_wrapper_import_key(
 
 
 
+
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -1380,6 +1534,7 @@ static inline psa_status_t psa_driver_wrapper_import_key(
                                               key_buffer_length, bits ) );
         /* Add cases for opaque driver here */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+
 
 
 
@@ -1433,6 +1588,7 @@ static inline psa_status_t psa_driver_wrapper_export_key(
 
 
 
+
 #if (defined(PSA_CRYPTO_DRIVER_ELE_S2XX) )
         case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
         case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
@@ -1468,6 +1624,7 @@ static inline psa_status_t psa_driver_wrapper_copy_key(
     switch( location )
     {
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+
 
 
 
@@ -1602,6 +1759,23 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_cipher_encrypt(MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                                         attributes,
+                                         key_buffer,
+                                         key_buffer_size,
+                                         alg,
+                                         iv,
+                                         iv_length,
+                                         input,
+                                         input_length,
+                                         output,
+                                         output_size,
+                                         output_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
             status = ele_s2xx_transparent_cipher_encrypt( attributes,
                                          key_buffer,
@@ -1667,6 +1841,20 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
                                                         output_size,
                                                         output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            return (caam_common_cipher_encrypt((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE, attributes,
+                                         key_buffer,
+                                         key_buffer_size,
+                                         alg,
+                                         iv,
+                                         iv_length,
+                                         input,
+                                         input_length,
+                                         output,
+                                         output_size,
+                                         output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
         case PSA_CRYPTO_ELE_S4XX_LOCATION:
             return (ele_s4xx_opaque_cipher_encrypt( attributes,
@@ -1806,6 +1994,21 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_cipher_decrypt(MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                                         attributes,
+                                         key_buffer,
+                                         key_buffer_size,
+                                         alg,
+                                         input,
+                                         input_length,
+                                         output,
+                                         output_size,
+                                         output_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
             status = ele_s2xx_transparent_cipher_decrypt( attributes,
                                          key_buffer,
@@ -1863,6 +2066,18 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
                                                         output_size,
                                                         output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            return (caam_common_cipher_decrypt((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE, attributes,
+                                                     key_buffer,
+                                                     key_buffer_size,
+                                                     alg,
+                                                     input,
+                                                     input_length,
+                                                     output,
+                                                     output_size,
+                                                     output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
          case PSA_CRYPTO_ELE_S4XX_LOCATION:
            return ( ele_s4xx_opaque_cipher_decrypt( attributes,
@@ -2357,6 +2572,12 @@ static inline psa_status_t psa_driver_wrapper_hash_compute(
     if( status != PSA_ERROR_NOT_SUPPORTED )
         return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+    status = caam_hash_compute(alg, input, input_length, hash, hash_size,
+                              hash_length);
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
     status = ele_s2xx_transparent_hash_compute(alg, input, input_length, hash, hash_size,
                               hash_length);
@@ -2436,6 +2657,14 @@ static inline psa_status_t psa_driver_wrapper_hash_setup(
     if( status != PSA_ERROR_NOT_SUPPORTED )
         return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+    status = caam_hash_setup( &operation->ctx.caam_driver_ctx, alg );
+    if( status == PSA_SUCCESS )
+        operation->id = CAAM_TRANSPARENT_DRIVER_ID;
+
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
     status = ele_s2xx_transparent_hash_setup( &operation->ctx.ele_driver_ctx, alg );
     if( status == PSA_SUCCESS )
@@ -2506,6 +2735,12 @@ static inline psa_status_t psa_driver_wrapper_hash_clone(
             return( sgi_hash_clone( &source_operation->ctx.sgi_driver_ctx,
                                     &target_operation->ctx.sgi_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case CAAM_TRANSPARENT_DRIVER_ID:
+            target_operation->id = CAAM_TRANSPARENT_DRIVER_ID;
+            return( caam_hash_clone( &source_operation->ctx.caam_driver_ctx,
+                                    &target_operation->ctx.caam_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
         case ELE_S2XX_TRANSPARENT_DRIVER_ID:
             target_operation->id = ELE_S2XX_TRANSPARENT_DRIVER_ID;
@@ -2564,6 +2799,11 @@ static inline psa_status_t psa_driver_wrapper_hash_update(
             return( sgi_hash_update( &operation->ctx.sgi_driver_ctx,
                                      input, input_length ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case CAAM_TRANSPARENT_DRIVER_ID:
+            return( caam_hash_update( &operation->ctx.caam_driver_ctx,
+                                     input, input_length ) );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
         case ELE_S2XX_TRANSPARENT_DRIVER_ID:
             return( ele_s2xx_transparent_hash_update( &operation->ctx.ele_driver_ctx,
@@ -2621,6 +2861,11 @@ static inline psa_status_t psa_driver_wrapper_hash_finish(
             return( sgi_hash_finish( &operation->ctx.sgi_driver_ctx,
                                      hash, hash_size, hash_length ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case CAAM_TRANSPARENT_DRIVER_ID:
+            return( caam_hash_finish( &operation->ctx.caam_driver_ctx,
+                                     hash, hash_size, hash_length ) );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
         case ELE_S2XX_TRANSPARENT_DRIVER_ID:
             return( ele_s2xx_transparent_hash_finish( &operation->ctx.ele_driver_ctx,
@@ -2671,6 +2916,10 @@ static inline psa_status_t psa_driver_wrapper_hash_abort(
         case SGI_TRANSPARENT_DRIVER_ID:
             return( sgi_hash_abort( &operation->ctx.sgi_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case CAAM_TRANSPARENT_DRIVER_ID:
+            return( caam_hash_abort( &operation->ctx.caam_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
         case ELE_S2XX_TRANSPARENT_DRIVER_ID:
             return( ele_s2xx_transparent_hash_abort( &operation->ctx.ele_driver_ctx ) );
@@ -2864,6 +3113,18 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_aead_encrypt(MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                         attributes, key_buffer, key_buffer_size,
+                         alg,
+                         nonce, nonce_length,
+                         additional_data, additional_data_length,
+                         plaintext, plaintext_length,
+                         ciphertext, ciphertext_size, ciphertext_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
             status = ele_s2xx_transparent_aead_encrypt(
                          attributes, key_buffer, key_buffer_size,
@@ -2916,6 +3177,18 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt(
 
         /* Add cases for opaque driver here */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            status = caam_common_aead_encrypt((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE,
+                         attributes, key_buffer, key_buffer_size,
+                         alg,
+                         nonce, nonce_length,
+                         additional_data, additional_data_length,
+                         plaintext, plaintext_length,
+                         ciphertext, ciphertext_size, ciphertext_length );
+
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
         case PSA_CRYPTO_ELE_S4XX_LOCATION:
             status = ele_s4xx_opaque_aead_encrypt(
@@ -2998,6 +3271,19 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SGI */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_aead_decrypt(MCUX_PSA_CAAM_KEY_TYPE_NONE,
+                        attributes, key_buffer, key_buffer_size,
+                        alg,
+                        nonce, nonce_length,
+                        additional_data, additional_data_length,
+                        ciphertext, ciphertext_length,
+                        plaintext, plaintext_size, plaintext_length );
+
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
             status = ele_s2xx_transparent_aead_decrypt(
                         attributes, key_buffer, key_buffer_size,
@@ -3051,6 +3337,18 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt(
 
         /* Add cases for opaque driver here */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            status = caam_common_aead_decrypt((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE,
+                         attributes, key_buffer, key_buffer_size,
+                         alg,
+                         nonce, nonce_length,
+                         additional_data, additional_data_length,
+                         ciphertext, ciphertext_length,
+                         plaintext, plaintext_size, plaintext_length );
+
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
         case PSA_CRYPTO_ELE_S4XX_LOCATION:
             status = ele_s4xx_opaque_aead_decrypt(
@@ -3662,6 +3960,14 @@ static inline psa_status_t psa_driver_wrapper_mac_compute(
                 mac, mac_size, mac_length );
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            status = caam_common_mac_compute(
+                attributes, key_buffer, key_buffer_size, alg,
+                input, input_length,
+                mac, mac_size, mac_length );
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
         case PSA_CRYPTO_ELE_S4XX_LOCATION:
             status = ele_s4xx_opaque_mac_compute(
@@ -4124,6 +4430,15 @@ static inline psa_status_t psa_driver_wrapper_asymmetric_encrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_asymmetric_encrypt(MCUX_PSA_CAAM_KEY_TYPE_NONE, attributes,
+                        key_buffer, key_buffer_size, alg, input, input_length,
+                        salt, salt_length, output, output_size,
+                        output_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
             status = ele_s4xx_transparent_asymmetric_encrypt( attributes,
                         key_buffer, key_buffer_size, alg, input, input_length,
@@ -4147,6 +4462,13 @@ static inline psa_status_t psa_driver_wrapper_asymmetric_encrypt(
                         salt, salt_length, output, output_size, output_length )
                   );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            return caam_common_asymmetric_encrypt((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE, attributes,
+                        key_buffer, key_buffer_size, alg, input, input_length,
+                        salt, salt_length, output, output_size,
+                        output_length );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
@@ -4191,6 +4513,15 @@ static inline psa_status_t psa_driver_wrapper_asymmetric_decrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+            status = caam_common_asymmetric_decrypt(MCUX_PSA_CAAM_KEY_TYPE_NONE, attributes,
+                        key_buffer, key_buffer_size, alg, input, input_length,
+                        salt, salt_length, output, output_size,
+                        output_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
             status = ele_s4xx_transparent_asymmetric_decrypt( attributes,
                         key_buffer, key_buffer_size, alg, input, input_length,
@@ -4214,6 +4545,13 @@ static inline psa_status_t psa_driver_wrapper_asymmetric_decrypt(
                         salt, salt_length, output, output_size,
                         output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case PSA_CRYPTO_CAAM_LOCATION:
+            return caam_common_asymmetric_decrypt((mcux_psa_caam_key_type_t)PSA_CRYPTO_DRIVER_CAAM_OPAQUE, attributes,
+                        key_buffer, key_buffer_size, alg, input, input_length,
+                        salt, salt_length, output, output_size,
+                        output_length );
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:

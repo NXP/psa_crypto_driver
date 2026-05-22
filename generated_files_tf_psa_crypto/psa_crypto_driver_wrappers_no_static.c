@@ -59,6 +59,16 @@
 #include "pkc.h"
 
 #endif
+/* Headers for caam opaque driver */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+#include "caam.h"
+
+#endif
+/* Headers for caam transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+#include "caam.h"
+
+#endif
 /* Headers for ele_s2xx transparent driver */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
 #include "ele_s2xx.h"
@@ -98,11 +108,13 @@
 #define DCP_TRANSPARENT_DRIVER_ID (5)
 #define SGI_TRANSPARENT_DRIVER_ID (6)
 #define PKC_TRANSPARENT_DRIVER_ID (7)
-#define ELE_S2XX_TRANSPARENT_DRIVER_ID (8)
-#define ELE_S2XX_OPAQUE_DRIVER_ID (9)
-#define ELE_S4XX_OPAQUE_DRIVER_ID (10)
-#define ELE_S4XX_TRANSPARENT_DRIVER_ID (11)
-#define ELS_PKC_TRANSPARENT_DRIVER_ID (12)
+#define CAAM_OPAQUE_DRIVER_ID (8)
+#define CAAM_TRANSPARENT_DRIVER_ID (9)
+#define ELE_S2XX_TRANSPARENT_DRIVER_ID (10)
+#define ELE_S2XX_OPAQUE_DRIVER_ID (11)
+#define ELE_S4XX_OPAQUE_DRIVER_ID (12)
+#define ELE_S4XX_TRANSPARENT_DRIVER_ID (13)
+#define ELS_PKC_TRANSPARENT_DRIVER_ID (14)
 
 /* END-driver id */
 
@@ -153,6 +165,14 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
             return( ( *key_buffer_size != 0 ) ?
                     PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case 0x000001:
+            *key_buffer_size = caam_common_size_function(key_type,
+                                                        key_bits );
+            return( ( *key_buffer_size != 0 ) ?
+                    PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
         case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
             *key_buffer_size = ele_s2xx_opaque_get_key_buffer_size( attributes );
@@ -213,6 +233,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
 
 
 
+
 #if (defined(PSA_CRYPTO_DRIVER_ELE_S2XX) )
             status = ele_s2xx_transparent_export_public_key
                 (attributes,
@@ -243,6 +264,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 
 
+
 #if (defined(PSA_CRYPTO_DRIVER_ELE_S4XX) )
         case 0x000001:
             return( ele_s4xx_opaque_export_public_key
@@ -256,6 +278,17 @@ psa_status_t psa_driver_wrapper_export_public_key(
 #endif
 
 
+#if defined(PSA_CRYPTO_DRIVER_CAAM)
+        case 0x000001:
+            return( caam_common_export_public_key
+            (attributes,
+                            key_buffer,
+                            key_buffer_size,
+                            data,
+                            data_size,
+                            data_length
+        ));
+#endif /* PSA_CRYPTO_DRIVER_CAAM */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
         case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
         case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
@@ -286,6 +319,7 @@ psa_status_t psa_driver_wrapper_get_builtin_key(
     switch( location )
     {
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+
 
 
 
