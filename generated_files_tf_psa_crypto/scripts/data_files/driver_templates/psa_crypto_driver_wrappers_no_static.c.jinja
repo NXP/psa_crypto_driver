@@ -114,6 +114,14 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
             break;
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
+#if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
+        case PSA_CRYPTO_ELE_S4XX_LOCATION:
+            *key_buffer_size = ele_s4xx_opaque_size_function(key_type,
+                                                           key_bits );
+            return( ( *key_buffer_size != 0 ) ?
+                    PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_S4XX */
         default:
             (void)key_type;
             (void)key_bits;

@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"
 #include "mbedtls/asn1write.h"

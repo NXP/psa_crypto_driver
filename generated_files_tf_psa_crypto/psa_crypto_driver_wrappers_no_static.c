@@ -69,6 +69,16 @@
 #include "ele_s2xx.h"
 
 #endif
+/* Headers for ele_s4xx opaque driver */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
+#include "ele_s4xx.h"
+
+#endif
+/* Headers for ele_s4xx transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
+#include "ele_s4xx.h"
+
+#endif
 
 /* END-driver headers */
 
@@ -85,6 +95,8 @@
 #define PKC_TRANSPARENT_DRIVER_ID (7)
 #define ELE_S2XX_TRANSPARENT_DRIVER_ID (8)
 #define ELE_S2XX_OPAQUE_DRIVER_ID (9)
+#define ELE_S4XX_OPAQUE_DRIVER_ID (10)
+#define ELE_S4XX_TRANSPARENT_DRIVER_ID (11)
 
 /* END-driver id */
 
@@ -143,6 +155,14 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
             break;
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
+#if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
+        case PSA_CRYPTO_ELE_S4XX_LOCATION:
+            *key_buffer_size = ele_s4xx_opaque_size_function(key_type,
+                                                           key_bits );
+            return( ( *key_buffer_size != 0 ) ?
+                    PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_S4XX */
         default:
             (void)key_type;
             (void)key_bits;
@@ -202,6 +222,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
 #endif
 
 
+
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
             /* Fell through, meaning no accelerator supports this operation */
             return( psa_export_public_key_internal( attributes,
@@ -214,6 +235,18 @@ psa_status_t psa_driver_wrapper_export_public_key(
         /* Add cases for opaque driver here */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 
+
+#if (defined(PSA_CRYPTO_DRIVER_ELE_S4XX) )
+        case 0x000001:
+            return( ele_s4xx_opaque_export_public_key
+            (attributes,
+                            key_buffer,
+                            key_buffer_size,
+                            data,
+                            data_size,
+                            data_length
+        ));
+#endif
 
 
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
@@ -246,6 +279,7 @@ psa_status_t psa_driver_wrapper_get_builtin_key(
     switch( location )
     {
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+
 
 
 

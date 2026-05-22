@@ -36,7 +36,6 @@ psa_status_t ele_s4xx_transparent_key_agreement(const psa_key_attributes_t *attr
 	    status_t ele_status = kStatus_Fail;
 	    ele_ecdh_t ecdh_conf = {0};
 	    uint32_t secret_size = 0;
-	    psa_key_type_t key_type = psa_get_key_type(attributes);
 
 	    /* Algorithm needs to be a ECDH algo. If not return NOT supported to enable SW Fallback. */
 	    if (!PSA_ALG_IS_ECDH(alg)) {
