@@ -11,7 +11,12 @@
 #include "mbedtls/build_info.h"
 
 #include "fsl_casper.h"
+#include "mbedtls/build_info.h"
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "mbedtls/private/ecp.h"
+#else
 #include "mbedtls/ecp.h"
+#endif
 
 #include "mbedtls/threading.h"
 #include "mbedtls/platform_util.h"

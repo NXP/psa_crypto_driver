@@ -6,7 +6,12 @@
 
 #include "mcux_psa_casper_key_generation_port.h"
 
+#include "mbedtls/build_info.h"
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "mbedtls/private/ecp.h"
+#else
 #include "mbedtls/ecp.h"
+#endif
 #include "mbedtls/error.h"
 #include "mbedtls/private_access.h"
 #include "mbedtls/psa_util.h"
