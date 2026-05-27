@@ -177,6 +177,7 @@ struct _caam_des_modes {
     }
 };
 
+#if defined(PSA_WANT_KEY_TYPE_DES)
 static inline psa_status_t caam_des_x(caam_des_type_t desType,
                                       bool isEncrypt,
                                       size_t keySize,
@@ -231,6 +232,7 @@ static inline psa_status_t caam_des_x(caam_des_type_t desType,
 
     return status;
 }
+#endif /* PSA_WANT_KEY_TYPE_DES */
 
 psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type,
                                           const psa_key_attributes_t *attributes,

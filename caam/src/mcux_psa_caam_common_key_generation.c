@@ -145,6 +145,7 @@ static psa_status_t caam_internal_ecc_generate_key(mcux_psa_caam_key_type_t caam
     return err;
 }
 
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
 static inline psa_status_t psa_to_caam_rsa_key_type(mcux_psa_caam_key_type_t caam_key_type,
                                                     caam_rsa_key_type_t *rsa_key_type)
 {
@@ -172,6 +173,7 @@ static inline psa_status_t psa_to_caam_rsa_key_type(mcux_psa_caam_key_type_t caa
 
     return PSA_SUCCESS;
 }
+#endif
 
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
 static psa_status_t caam_internal_rsa_generate_key(mcux_psa_caam_key_type_t caam_key_type,
