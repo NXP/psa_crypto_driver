@@ -20,17 +20,7 @@
 #include "fsl_common.h"
 #include "osal_mutex.h"
 
-#if defined(MIMXRT1171_SERIES) || defined(MIMXRT1172_SERIES) ||         \
-    defined(MIMXRT1173_cm4_SERIES) || defined(MIMXRT1173_cm7_SERIES) || \
-    defined(MIMXRT1175_cm4_SERIES) || defined(MIMXRT1175_cm7_SERIES) || \
-    defined(MIMXRT1176_cm4_SERIES) || defined(MIMXRT1176_cm7_SERIES) || \
-    defined(MIMXRT1165_cm4_SERIES) || defined(MIMXRT1165_cm7_SERIES) || \
-    defined(MIMXRT1166_cm4_SERIES) || defined(MIMXRT1166_cm7_SERIES)
 #define PSA_CAAM CAAM
-#else
-#error "No valid SoC defined"
-#endif \
-    /* MIMXRT1171_SERIES | MIMXRT1172_SERIES | MIMXRT1173_SERIES | MIMXRT1175_SERIES | MIMXRT1176_SERIES */
 
 #include "fsl_caam.h"
 
