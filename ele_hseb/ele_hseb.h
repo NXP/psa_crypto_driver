@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -16,6 +16,7 @@
  *
  *  - Symmetric ciphers:                      mcux_psa_ele_hseb_cipher.h
  *  - Message authentication codes:           mcux_psa_ele_hseb_mac.h
+ *  - Authenticated encryption with AD:       mcux_psa_ele_hseb_aead.h
  *  - Entropy extraction:                     mcux_psa_ele_hseb_entropy.h
  *  - Asymmetric signatures:                  mcux_psa_ele_hseb_asymmetric_signature.h
  *  - Hashing:                                mcux_psa_ele_hseb_hash.h
@@ -48,6 +49,7 @@
 #include "mcux_psa_ele_hseb_entropy.h"
 #include "mcux_psa_ele_hseb_cipher.h"
 #include "mcux_psa_ele_hseb_mac.h"
+#include "mcux_psa_ele_hseb_aead.h"
 #include "mcux_psa_ele_hseb_hash.h"
 #include "mcux_psa_ele_hseb_asymmetric_signature.h"
 

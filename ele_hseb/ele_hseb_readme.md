@@ -57,20 +57,7 @@ limitations.
 Below is a list of algorithms supported by the current version of the ELE HSEB
 port. Key types and sizes are also specified where relevant.
 
-* Transparent
-    * Cipher
-        * One-Go
-            * PSA_ALG_ECB_NO_PADDING
-            * PSA_ALG_CBC_NO_PADDING
-            * PSA_ALG_CTR
-            * PSA_ALG_CFB
-            * PSA_ALG_OFB
-        * Multipart
-            * PSA_ALG_ECB_NO_PADDING
-            * PSA_ALG_CBC_NO_PADDING
-            * PSA_ALG_CTR
-            * PSA_ALG_CFB
-            * PSA_ALG_OFB
+* Keyless algorithms
     * Hash
         * One-Go
             * PSA_ALG_SHA_1
@@ -96,6 +83,26 @@ port. Key types and sizes are also specified where relevant.
             * PSA_ALG_SHA3_256
             * PSA_ALG_SHA3_384
             * PSA_ALG_SHA3_512
+
+* `PSA_KEY_LOCATION_LOCAL_STORAGE`
+    * Cipher
+        * Unauthenticated
+            * One-Go
+                * PSA_ALG_ECB_NO_PADDING
+                * PSA_ALG_CBC_NO_PADDING
+                * PSA_ALG_CTR
+                * PSA_ALG_CFB
+                * PSA_ALG_OFB
+            * Multipart
+                * PSA_ALG_ECB_NO_PADDING
+                * PSA_ALG_CBC_NO_PADDING
+                * PSA_ALG_CTR
+                * PSA_ALG_CFB
+                * PSA_ALG_OFB
+        * Authenticated
+            * One-Go
+                * PSA_ALG_CCM
+                * PSA_ALG_GCM
     * MAC
         * One-Go
             * PSA_ALG_CMAC

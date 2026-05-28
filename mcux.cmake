@@ -541,11 +541,13 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb)
                 ele_hseb/include/transparent/mcux_psa_ele_hseb_hash.h
                 ele_hseb/include/transparent/mcux_psa_ele_hseb_init.h
                 ele_hseb/include/transparent/mcux_psa_ele_hseb_mac.h
+                ele_hseb/include/transparent/mcux_psa_ele_hseb_aead.h
                 ele_hseb/src/transparent/mcux_psa_ele_hseb_asymmetric_signature.c
                 ele_hseb/src/transparent/mcux_psa_ele_hseb_cipher.c
                 ele_hseb/src/transparent/mcux_psa_ele_hseb_hash.c
                 ele_hseb/src/transparent/mcux_psa_ele_hseb_init.c
                 ele_hseb/src/transparent/mcux_psa_ele_hseb_mac.c
+                ele_hseb/src/transparent/mcux_psa_ele_hseb_aead.c
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
