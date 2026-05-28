@@ -180,7 +180,7 @@ int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
                                  size_t *estimate_bits,
                                  unsigned char *output, size_t output_size)
 {
-    return els_pkc_get_entropy(flags, estimate_bits, output, output_size);
+    return els_pkc_get_entropy((uint32_t) flags, estimate_bits, output, output_size);
 }
 #endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
 
@@ -192,6 +192,10 @@ int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
  */
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
-    int status = els_pkc_get_entropy(0, olen, output, len);
+    size_t estimate_bits = 0u;
+    int status = els_pkc_get_entropy(0u, &estimate_bits, output, len);
+
+    *olen = estimate_bits / 8u;
+
     return status;
 }
