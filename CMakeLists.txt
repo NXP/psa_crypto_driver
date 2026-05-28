@@ -434,13 +434,19 @@ if(CONFIG_PSA_CRYPTO_DRIVER_DCP)
 		${PSA_CRYPTO_DRIVER_PATH}/dcp/src/mcux_psa_dcp_init.c
 	)
 
-	target_sources(
-		McuxPsaCryptoDriverDcp
-		PRIVATE
-		# SDK driver files
-		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/dcp/fsl_dcp.c
-		# ${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/osa/fsl_os_abstraction_zephyr.c
-	)
+	# fsl_dcp.c is conditionally compiled here only when the Zephyr MCUX DCP
+	# crypto driver (CONFIG_CRYPTO_MCUX_DCP) is NOT enabled. When that driver is
+	# active, hal_nxp already compiles fsl_dcp.c into libmodules__hal_nxp.a and
+	# adding it here again causes duplicate symbol link errors.
+	# When CONFIG_CRYPTO_MCUX_DCP is not set (e.g. tests/crypto/mbedtls_psa),
+	# hal_nxp does not provide fsl_dcp.c, so we must compile it here.
+	if(NOT CONFIG_CRYPTO_MCUX_DCP)
+		target_sources(
+			McuxPsaCryptoDriverDcp
+			PRIVATE
+			${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/dcp/fsl_dcp.c
+		)
+	endif()
 
 	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
 
