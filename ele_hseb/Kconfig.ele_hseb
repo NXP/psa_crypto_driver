@@ -11,6 +11,7 @@ config MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
     bool "ELE HSEB"
     select MCUX_COMPONENT_component.psa_crypto_driver
     select MCUX_COMPONENT_component.ele_hseb
+    select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
     imply MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb.feature.autoformat_key_catalogs
 
 config MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb.feature.autoformat_key_catalogs

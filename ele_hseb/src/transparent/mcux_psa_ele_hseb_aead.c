@@ -20,6 +20,8 @@
 #include "hse_host_aead.h"
 #include "hse_host_import_key.h"
 
+#include "mcux_psa_util_wrapcheck_static_inline.h"
+
 /**
  * \brief Translate PSA AEAD algorithm and key type to HSE parameters,
  *        and validate the tag length.
@@ -121,6 +123,10 @@ psa_status_t ele_hseb_transparent_aead_encrypt(const psa_key_attributes_t *attri
     }
 
     if ((NULL == ciphertext) || (NULL == ciphertext_length)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (true == mcux_psa_add_size_t_wrapcheck(plaintext_length, tag_length)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
