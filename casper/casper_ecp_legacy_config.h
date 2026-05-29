@@ -23,9 +23,10 @@
 #if defined(CONFIG_PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE) || \
     defined(CONFIG_PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT)   || \
     defined(CONFIG_PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT)   || \
-    defined(CONFIG_PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY)         || \
-    defined(CONFIG_PSA_WANT_ALG_ECDSA)                       || \
-    defined(CONFIG_PSA_WANT_ALG_ECDSA_ANY)
+    defined(CONFIG_PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY)        || \
+    defined(CONFIG_PSA_WANT_ALG_ECDSA)                      || \
+    defined(CONFIG_PSA_WANT_ALG_ECDSA_ANY)                  || \
+    defined(CONFIG_PSA_WANT_ALG_ECDH)
 
 /* Legacy mbedTLS ECP/bignum modules required by the casper key-gen port. */
 #ifndef MBEDTLS_BIGNUM_C

@@ -391,12 +391,14 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.casper)
                 casper/common/src/mcux_psa_common_key_management.c
                 casper/include/mcux_psa_casper_common_asymmetric_signature.h
                 casper/include/mcux_psa_casper_common_init.h
+                casper/include/mcux_psa_casper_ecdh_port.h
                 casper/include/mcux_psa_casper_ecdsa_port.h
                 casper/include/mcux_psa_casper_ecp_port.h
                 casper/include/mcux_psa_casper_init.h
                 casper/include/mcux_psa_casper_key_generation_port.h
                 casper/src/mcux_psa_casper_common_asymmetric_signature.c
                 casper/src/mcux_psa_casper_common_init.c
+                casper/src/mcux_psa_casper_ecdh_port.c
                 casper/src/mcux_psa_casper_ecdsa_port.c
                 casper/src/mcux_psa_casper_ecp_port.c
                 casper/src/mcux_psa_casper_init.c

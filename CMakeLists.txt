@@ -85,8 +85,9 @@ if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 		McuxPsaDrvCasperHc
 		PRIVATE
 		# Source
-        ${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_common_asymmetric_signature.c
+		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_common_asymmetric_signature.c
 		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_common_init.c
+		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_ecdh_port.c
 		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_ecdsa_port.c
 		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_ecp_port.c
 		${PSA_CRYPTO_DRIVER_PATH}/casper/src/mcux_psa_casper_init.c

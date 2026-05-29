@@ -41,6 +41,7 @@
 
 #include "mcux_psa_casper_ecp_port.h"
 #include "mcux_psa_casper_ecdsa_port.h"
+#include "mcux_psa_casper_ecdh_port.h"
 //  #include "casper_crypto_primitives.h"
 #include "mcux_psa_casper_common_asymmetric_signature.h"
 #include "mcux_psa_casper_common_init.h"
