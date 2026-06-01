@@ -223,17 +223,6 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     mcuxClSession_Descriptor_t sessionDesc;
     mcuxClSession_Handle_t session = &sessionDesc;
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
-        goto cleanup;
-    }
-
-    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
-
-
 #if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
@@ -245,6 +234,16 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
                                                   0u);
 #endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
+
+    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
+
+    if (type == NULL) {
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto cleanup;
+    }
+
+    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
+    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
 
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
@@ -575,16 +574,6 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     mcuxClSession_Descriptor_t sessionDesc;
     mcuxClSession_Handle_t session = &sessionDesc;
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
-        goto cleanup;
-    }
-
-    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
-
 #if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
@@ -596,6 +585,16 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
                                                   0u);
 #endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
+
+    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
+
+    if (type == NULL) {
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto cleanup;
+    }
+
+    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
+    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
 
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
@@ -1171,6 +1170,7 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
                                            size_t *output_length)
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
     mcuxClSession_Descriptor_t sessionDesc;
     mcuxClSession_Handle_t session = &sessionDesc;
     uint32_t output_length_tmp = 0u;

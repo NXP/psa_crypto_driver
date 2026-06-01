@@ -214,7 +214,7 @@ int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
                                  size_t *estimate_bits,
                                  unsigned char *output, size_t output_size)
 {
-    return sgi_get_entropy((uint32_t)flags, estimate_bits, output, output_size);
+    return sgi_get_entropy((uint32_t) flags, estimate_bits, output, output_size);
 }
 #endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
 
