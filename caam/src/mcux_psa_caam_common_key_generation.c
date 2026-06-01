@@ -540,7 +540,6 @@ psa_status_t caam_common_export_public_key(const psa_key_attributes_t *attribute
 #if defined(PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE)
     mbedtls_ecp_group_id ecp_grou_id;
     caam_ecc_ecdsel_t ecc_ecdsel;
-    size_t pk_len;
 #endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
 #if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
@@ -553,11 +552,11 @@ psa_status_t caam_common_export_public_key(const psa_key_attributes_t *attribute
     if (PSA_KEY_TYPE_IS_ECC(key_type)) {
         err = psa_to_caam_ecc_key_algo(key_type, key_bits, &ecc_ecdsel, &ecp_grou_id);
         if (err == PSA_SUCCESS) {
-            pk_len = CAAM_ECC_PUBLIC_KEY_LENGTH(ecc_ecdsel) + 1u;
-            if (data_size < pk_len) {
+            *data_length = CAAM_ECC_PUBLIC_KEY_LENGTH(ecc_ecdsel) + 1u;
+            if (data_size < *data_length) {
                 err = PSA_ERROR_BUFFER_TOO_SMALL;
             } else {
-                (void) memcpy(data, key_buffer, pk_len);
+                (void) memcpy(data, key_buffer, *data_length);
             }
         }
     } else
@@ -577,6 +576,10 @@ psa_status_t caam_common_export_public_key(const psa_key_attributes_t *attribute
 #endif /* MBEDTLS_VERSION_NUMBER < 0x04000000 */
 #endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE */
     {
+    }
+    if (err != PSA_SUCCESS)
+    {
+        *data_length = 0;
     }
     return err;
 }
