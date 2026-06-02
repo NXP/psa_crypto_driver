@@ -208,7 +208,7 @@ cleanup:
  * support for entropy.
  */
 
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)  && !defined(__ZEPHYR__)
 
 int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
                                  size_t *estimate_bits,
@@ -228,7 +228,7 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
     return status;
 }
 
-#if defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+#if defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)  && !defined(__ZEPHYR__)
 #if !defined(CONFIG_PSA_NO_EXTERNAL_RNG_IN_DRIVER)
 psa_status_t mbedtls_psa_external_get_random(mbedtls_psa_external_random_context_t *context,
                                              uint8_t *output,

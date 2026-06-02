@@ -175,7 +175,7 @@ psa_status_t els_pkc_get_entropy(uint32_t flags, size_t *estimate_bits, uint8_t 
 /*
  * mbedTLS 4.x entropy callback required when MBEDTLS_PSA_DRIVER_GET_ENTROPY is enabled.
  */
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) && !defined(__ZEPHYR__)
 int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
                                  size_t *estimate_bits,
                                  unsigned char *output, size_t output_size)
