@@ -50,6 +50,15 @@ that can be configured with their respective Kconfig options:
 The ELE HSEB PSA driver implementation is subject to the following hardware
 limitations.
 
+* ELE HSEB does not implement correct handling of data cached by the chip's
+  D-cache. As a result, the D-cache **MUST** be disabled when utilizing the ELE
+  HSEB security engine.
+  Additionally, due to errata *ERR052645*, the flash data prefetching
+  functionality **MUST** also be disabled to prevent very rare, but possible,
+  issues in software-only code.
+  For an example on how to disable the D-cache and flash prefetching, please
+  see the `BOARD_InitHardware()` function in MbedTLS/PSA examples for
+  ELE HSEB-enabled boards.
 * For PSA_KEY_TYPE_HMAC, the only supported key bit sizes are in the range
   [128, 1024].
 
