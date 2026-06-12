@@ -13,6 +13,7 @@
  *
  */
 #include "mcux_psa_pkc_key_generation.h"
+#include "mcux_psa_sgi_common_key_management.h"
 
 #define RSA_PUBLIC_EXP_BYTE_LENGTH (3u)
 
@@ -536,10 +537,6 @@ psa_status_t pkc_key_agreement(const psa_key_attributes_t *attributes,
     psa_key_type_t key_type = psa_get_key_type(attributes);
     size_t bits             = psa_get_key_bits(attributes);
     psa_ecc_family_t curve_family = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
-    mcuxClKey_Type_t key_type_priv = { NULL };
-    mcuxClKey_Type_t key_type_pub = { NULL };
-    size_t priv_key_size = 0;
-    size_t pub_key_size = 0;
 
     /* Validate all input parameters BEFORE acquiring mutex */
     if (key_buffer == NULL || peer_key == NULL ||
@@ -566,23 +563,6 @@ psa_status_t pkc_key_agreement(const psa_key_attributes_t *attributes,
     /* Check whether the peer key is valid for the given private key. */
     if (PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(bits) != peer_key_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Get actual key sizes for this curve */
-    status = get_ecc_key_sizes(attributes, &priv_key_size, &pub_key_size);
-    if (PSA_SUCCESS != status) {
-        return status;
-    }
-
-    /* Get mcuxCl key types */
-    status = psa_to_pkc_asym_alg_priv(attributes, &key_type_priv);
-    if (PSA_SUCCESS != status) {
-        return status;
-    }
-
-    status = psa_to_pkc_asym_alg_pub(attributes, &key_type_pub);
-    if (PSA_SUCCESS != status) {
-        return status;
     }
 
     /* Check peer key format */
@@ -613,44 +593,29 @@ psa_status_t pkc_key_agreement(const psa_key_attributes_t *attributes,
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    /* Initialize private key handle */
-    uint32_t privKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t privKey = (mcuxClKey_Handle_t) &privKeyDesc;
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(privkey_init_result, privkey_init_token,
-                                     mcuxClKey_init(session,
-                                                    privKey,
-                                                    key_type_priv,
-                                                    key_buffer,
-                                                    key_buffer_size));
-
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != privkey_init_token) ||
-        (MCUXCLKEY_STATUS_OK != privkey_init_result)) {
-        status = PSA_ERROR_INVALID_ARGUMENT;
+    /* Create private key descriptor using the common key management utility */
+    mcuxClKey_Descriptor_t privKeyDesc;
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size, &privKeyDesc);
+    if (PSA_SUCCESS != status) {
         goto exit;
     }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
-    /* Skip the leading byte (0x04) from peer key */
+    /* Create public key descriptor for peer key using the common utility.
+     * Skip the leading byte (0x04) indicating uncompressed format. */
     const uint8_t *pOtherPublic = peer_key + 1u;
+    size_t peer_pub_data_size = peer_key_length - 1u;
 
-    /* Initialize peer public key handle */
-    uint32_t peerPubKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t peerPubKey = (mcuxClKey_Handle_t) &peerPubKeyDesc;
+    psa_key_attributes_t pub_attributes = *attributes;
+    psa_set_key_type(&pub_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(curve_family));
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(peerpubkey_init_result, peerpubkey_init_token,
-                                     mcuxClKey_init(session,
-                                                    peerPubKey,
-                                                    key_type_pub,
-                                                    pOtherPublic,
-                                                    pub_key_size));
-
-    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != peerpubkey_init_token) ||
-        (MCUXCLKEY_STATUS_OK != peerpubkey_init_result)) {
-        status = PSA_ERROR_INVALID_ARGUMENT;
+    mcuxClKey_Descriptor_t peerPubKeyDesc;
+    status = sgi_create_key_descriptor(&pub_attributes,
+                                       pOtherPublic,
+                                       peer_pub_data_size,
+                                       &peerPubKeyDesc);
+    if (PSA_SUCCESS != status) {
         goto exit;
     }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     /* Perform ECDH key agreement */
     uint32_t outputLength = 0u;
@@ -659,8 +624,8 @@ psa_status_t pkc_key_agreement(const psa_key_attributes_t *attributes,
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(keyagreement_result, keyagreement_token,
                                      mcuxClKey_agreement(session,
                                                          mcuxClKey_Agreement_ECDH,
-                                                         privKey,
-                                                         peerPubKey,
+                                                         (mcuxClKey_Handle_t) &privKeyDesc,
+                                                         (mcuxClKey_Handle_t) &peerPubKeyDesc,
                                                          NULL,
                                                          numberOfInputs,
                                                          shared_secret,

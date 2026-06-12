@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025 - 2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -15,6 +15,7 @@
 
 #include "mcux_psa_sgi_init.h"
 #include "mcux_psa_sgi_cipher.h"
+#include "mcux_psa_sgi_common_key_management.h"
 
 #include "mbedtls/platform.h"
 
@@ -64,31 +65,6 @@ static inline void psa_cipher_to_sgi_alg(const psa_algorithm_t alg,
             *mode = NULL;
             break;
     }
-}
-
-static inline mcuxClKey_Type_t get_sgi_keytype(const psa_key_attributes_t *attributes)
-{
-    size_t key_bits = psa_get_key_bits(attributes);
-    mcuxClKey_Type_t type = { NULL };
-
-    if (psa_get_key_type(attributes) == PSA_KEY_TYPE_AES &&
-        (psa_get_key_bits(attributes) == 128u ||
-         psa_get_key_bits(attributes) == 256u)) {
-        switch (key_bits) {
-#if defined(PSA_WANT_KEY_TYPE_AES)
-            case 128:
-                type = mcuxClKey_Type_Aes128;
-                break;
-            case 256:
-                type = mcuxClKey_Type_Aes256;
-                break;
-#endif /* PSA_WANT_KEY_TYPE_AES */
-            default:
-                type = NULL;
-                break;
-        }
-    }
-    return type;
 }
 
 /**
@@ -223,6 +199,8 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     mcuxClSession_Descriptor_t sessionDesc;
     mcuxClSession_Handle_t session = &sessionDesc;
 
+    mcuxClKey_Descriptor_t keyDesc;
+
 #if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
@@ -235,33 +213,13 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
                                                   0u);
 #endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
-        goto cleanup;
-    }
-
-    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
-
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session, key, type,
-                                                    key_buffer, key_buffer_size));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size, &keyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     /* Initializing the output length with zero */
     uint32_t output_length_tmp = 0u;
@@ -303,28 +261,27 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     /* Initialize CMAC key descriptor */
-    uint32_t cmacKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t cmacKey = (mcuxClKey_Handle_t) &cmacKeyDesc;
+    mcuxClKey_Descriptor_t cmacKeyDesc;
+    psa_key_attributes_t cmac_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&cmac_attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&cmac_attributes, 128u);
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session, cmacKey, mcuxClKey_Type_Aes128,
-                                                    cmac_key, CMAC_KEY_SIZE_BYTES));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
+    status = sgi_create_key_descriptor(&cmac_attributes, cmac_key, CMAC_KEY_SIZE_BYTES,
+                                       &cmacKeyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     /* First encryption */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(e_status, e_token,
-                                     mcuxClCipher_encrypt(session, key, mode, iv, iv_length,
-                                                          input, input_length, output,
+                                     mcuxClCipher_encrypt(session,
+                                                          (mcuxClKey_Handle_t) &keyDesc,
+                                                          mode,
+                                                          iv,
+                                                          iv_length,
+                                                          input,
+                                                          input_length,
+                                                          output,
                                                           &output_length_tmp));
 
     *output_length = (size_t) output_length_tmp;
@@ -344,7 +301,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     uint32_t cmac1_length = 0u;
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mac_status, mac_token,
                                      mcuxClMac_compute(session,
-                                                       cmacKey,
+                                                       (mcuxClKey_Handle_t) &cmacKeyDesc,
                                                        mcuxClMac_Mode_CMAC,
                                                        output,
                                                        *output_length,
@@ -365,8 +322,14 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     /* Second encryption */
     output_length_tmp = 0u;
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(e2_status, e2_token,
-                                     mcuxClCipher_encrypt(session, key, mode, iv, iv_length,
-                                                          input, input_length, output,
+                                     mcuxClCipher_encrypt(session,
+                                                          (mcuxClKey_Handle_t) &keyDesc,
+                                                          mode,
+                                                          iv,
+                                                          iv_length,
+                                                          input,
+                                                          input_length,
+                                                          output,
                                                           &output_length_tmp));
 
     if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClCipher_encrypt) != e2_token) {
@@ -391,7 +354,7 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     uint32_t cmac2_length = 0u;
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mac2_status, mac2_token,
                                      mcuxClMac_compute(session,
-                                                       cmacKey,
+                                                       (mcuxClKey_Handle_t) &cmacKeyDesc,
                                                        mcuxClMac_Mode_CMAC,
                                                        output,
                                                        *output_length,
@@ -443,8 +406,14 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
 #else
     /* Standard single encryption */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(e_status, e_token,
-                                     mcuxClCipher_encrypt(session, key, mode, iv, iv_length,
-                                                          input, input_length, output,
+                                     mcuxClCipher_encrypt(session,
+                                                          (mcuxClKey_Handle_t) &keyDesc,
+                                                          mode,
+                                                          iv,
+                                                          iv_length,
+                                                          input,
+                                                          input_length,
+                                                          output,
                                                           &output_length_tmp));
 
     *output_length = (size_t) output_length_tmp;
@@ -574,6 +543,8 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     mcuxClSession_Descriptor_t sessionDesc;
     mcuxClSession_Handle_t session = &sessionDesc;
 
+    mcuxClKey_Descriptor_t keyDesc;
+
 #if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
@@ -586,33 +557,13 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
                                                   0u);
 #endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
-        goto cleanup;
-    }
-
-    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
-
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session, key, type,
-                                                    key_buffer, key_buffer_size));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size, &keyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     /* Variable for the AES mode. */
     const mcuxClCipher_ModeDescriptor_t *mode = NULL;
@@ -651,28 +602,26 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     /* Initialize CMAC key descriptor */
-    uint32_t cmacKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t cmacKey = (mcuxClKey_Handle_t) &cmacKeyDesc;
+    mcuxClKey_Descriptor_t cmacKeyDesc;
+    psa_key_attributes_t cmac_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&cmac_attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&cmac_attributes, 128u);
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session, cmacKey, mcuxClKey_Type_Aes128,
-                                                    cmac_key, CMAC_KEY_SIZE_BYTES));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
+    status = sgi_create_key_descriptor(&cmac_attributes, cmac_key, CMAC_KEY_SIZE_BYTES,
+                                       &cmacKeyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d_status, d_token,
-                                     mcuxClCipher_decrypt(session, key, mode, input, iv_length,
+                                     mcuxClCipher_decrypt(session,
+                                                          (mcuxClKey_Handle_t) &keyDesc,
+                                                          mode,
+                                                          input,
+                                                          iv_length,
                                                           (mcuxCl_Buffer_t) (input + iv_length),
-                                                          input_length - iv_length, output,
+                                                          input_length - iv_length,
+                                                          output,
                                                           &expected_op_length));
 
     *output_length = (size_t) expected_op_length;
@@ -698,7 +647,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     uint32_t cmac1_length = 0u;
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mac_status, mac_token,
                                      mcuxClMac_compute(session,
-                                                       cmacKey,
+                                                       (mcuxClKey_Handle_t) &cmacKeyDesc,
                                                        mcuxClMac_Mode_CMAC,
                                                        output,
                                                        *output_length,
@@ -718,9 +667,14 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
 
     /* Second decryption */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d2_status, d2_token,
-                                     mcuxClCipher_decrypt(session, key, mode, input, iv_length,
+                                     mcuxClCipher_decrypt(session,
+                                                          (mcuxClKey_Handle_t) &keyDesc,
+                                                          mode,
+                                                          input,
+                                                          iv_length,
                                                           (mcuxCl_Buffer_t) (input + iv_length),
-                                                          input_length - iv_length, output,
+                                                          input_length - iv_length,
+                                                          output,
                                                           &expected_op_length));
 
     *output_length = (size_t) expected_op_length;
@@ -746,7 +700,7 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     uint32_t cmac2_length = 0u;
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mac2_status, mac2_token,
                                      mcuxClMac_compute(session,
-                                                       cmacKey,
+                                                       (mcuxClKey_Handle_t) &cmacKeyDesc,
                                                        mcuxClMac_Mode_CMAC,
                                                        output,
                                                        *output_length,
@@ -799,9 +753,14 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
 #else
     /* Standard single decryption */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d_status, d_token,
-                                     mcuxClCipher_decrypt(session, key, mode, input, iv_length,
+                                     mcuxClCipher_decrypt(session,
+                                                          (mcuxClKey_Handle_t) &keyDesc,
+                                                          mode,
+                                                          input,
+                                                          iv_length,
                                                           (mcuxCl_Buffer_t) (input + iv_length),
-                                                          input_length - iv_length, output,
+                                                          input_length - iv_length,
+                                                          output,
                                                           &expected_op_length));
 
     *output_length = (size_t) expected_op_length;
@@ -901,30 +860,11 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size,
+                                       (mcuxClKey_Descriptor_t *) &operation->keyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session,
-                                                    (mcuxClKey_Handle_t) &operation->keyDesc,
-                                                    type, key_buffer, key_buffer_size));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
-        goto cleanup;
-    }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
-
-    status = PSA_SUCCESS;
 
 cleanup:
     /**************************************************************************/

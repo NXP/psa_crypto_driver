@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025 - 2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -35,6 +35,7 @@
 #endif
 #endif /* PSA_CRYPTO_DRIVER_SGI */
 
+#include "mcux_psa_sgi_opaque_key_locations.h"
 
 #if !defined(__ZEPHYR__)
 /*
@@ -52,5 +53,8 @@
 #include "mcux_psa_sgi_aead.h"
 #include "mcux_psa_sgi_mac.h"
 #include "mcux_psa_sgi_init.h"
+
+/* Opaque driver entry points */
+#include "mcux_psa_sgi_opaque_key_generation.h"
 
 #endif /* SGI_H */

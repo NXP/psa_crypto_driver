@@ -255,6 +255,9 @@ menu "PSA Crypto Driver"
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
         bool "SGI Transparent"
 
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque
+        bool "SGI Opaque"
+
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.feature.double_cipher_enable
         bool "SGI Double cipher enable"
         default false
@@ -267,6 +270,7 @@ menu "PSA Crypto Driver"
         bool "SGI"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
         select MCUX_COMPONENT_component.sgi_pkc
         select MCUX_COMPONENT_component.sgi_pkc.example

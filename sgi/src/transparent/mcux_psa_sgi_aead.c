@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025 - 2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -14,6 +14,7 @@
 
 #include "mcux_psa_sgi_init.h"
 #include "mcux_psa_sgi_aead.h"
+#include "mcux_psa_sgi_common_key_management.h"
 
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
 #include "tf-psa-crypto/build_info.h"
@@ -87,31 +88,6 @@ static inline mcuxClAead_Mode_t get_aead_sgi_mode(psa_algorithm_t alg)
     }
 
     return (mcuxClAead_Mode_t) mode;
-}
-
-static inline mcuxClKey_Type_t get_sgi_keytype(const psa_key_attributes_t *attributes)
-{
-    size_t key_bits = psa_get_key_bits(attributes);
-    mcuxClKey_Type_t type = { NULL };
-
-    if (psa_get_key_type(attributes) == PSA_KEY_TYPE_AES &&
-        (psa_get_key_bits(attributes) == 128u ||
-         psa_get_key_bits(attributes) == 256u)) {
-        switch (key_bits) {
-#if defined(PSA_WANT_KEY_TYPE_AES)
-            case 128:
-                type = mcuxClKey_Type_Aes128;
-                break;
-            case 256:
-                type = mcuxClKey_Type_Aes256;
-                break;
-#endif /* PSA_WANT_KEY_TYPE_AES */
-            default:
-                type = NULL;
-                break;
-        }
-    }
-    return type;
 }
 
 /** \defgroup psa_aead PSA driver entry points for AEAD
@@ -200,41 +176,30 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
+    mcuxClKey_Descriptor_t keyDesc;
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size, &keyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session, key, type,
-                                                    key_buffer, key_buffer_size));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
-        goto cleanup;
-    }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     uint32_t ciphertext_length_tmp = 0u;
 
     tag = (uint8_t *) (ciphertext + plaintext_length);
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(e_status, e_token,
-                                     mcuxClAead_encrypt(session, key, mode, nonce,
-                                                        nonce_length, plaintext,
-                                                        plaintext_length, additional_data,
-                                                        additional_data_length, ciphertext,
-                                                        &ciphertext_length_tmp, tag,
+                                     mcuxClAead_encrypt(session,
+                                                        (mcuxClKey_Handle_t) &keyDesc,
+                                                        mode,
+                                                        nonce,
+                                                        nonce_length,
+                                                        plaintext,
+                                                        plaintext_length,
+                                                        additional_data,
+                                                        additional_data_length,
+                                                        ciphertext,
+                                                        &ciphertext_length_tmp,
+                                                        tag,
                                                         tag_length));
 
     if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClAead_encrypt) != e_token) {
@@ -368,42 +333,29 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) &keyDesc;
+    mcuxClKey_Descriptor_t keyDesc;
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size, &keyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session, key, type,
-                                                    key_buffer, key_buffer_size));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
-        goto cleanup;
-    }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     uint32_t plaintext_length_tmp = 0u;
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(d_status, d_token,
-                                     mcuxClAead_decrypt(session, key, mode, nonce,
-                                                        nonce_length, ciphertext,
+                                     mcuxClAead_decrypt(session,
+                                                        (mcuxClKey_Handle_t) &keyDesc,
+                                                        mode,
+                                                        nonce,
+                                                        nonce_length,
+                                                        ciphertext,
                                                         ciphertext_length - tag_length,
                                                         additional_data,
                                                         additional_data_length,
                                                         (uint8_t *) &ciphertext[ciphertext_length -
                                                                                 tag_length],
-                                                        tag_length, plaintext,
+                                                        tag_length,
+                                                        plaintext,
                                                         &plaintext_length_tmp));
 
     *plaintext_length = (size_t) plaintext_length_tmp;
@@ -468,13 +420,6 @@ static psa_status_t sgi_aead_multipart_common_setup(sgi_aead_operation_t *operat
        operation->alg is already reset to psa_base_alg_value */
     operation->tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(operation->alg);
 
-    /* Create the key */
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
@@ -491,23 +436,12 @@ static psa_status_t sgi_aead_multipart_common_setup(sgi_aead_operation_t *operat
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session,
-                                                    (mcuxClKey_Handle_t) &operation->keyDesc,
-                                                    type, key_buffer, key_buffer_size));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
+    /* Create the key descriptor */
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size,
+                                       (mcuxClKey_Descriptor_t *) &operation->keyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
-
-    status = PSA_SUCCESS;
 
 cleanup:
     /**************************************************************************/

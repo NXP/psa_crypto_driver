@@ -208,7 +208,8 @@ cleanup:
  * support for entropy.
  */
 
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)  && !defined(__ZEPHYR__)
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)  && \
+    !defined(__ZEPHYR__)
 
 int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
                                  size_t *estimate_bits,

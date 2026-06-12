@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025 - 2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -25,6 +25,13 @@
 #include "mbedtls/build_info.h"
 #endif
 
+#include "mcux_psa_sgi_common_key_management.h"
+
+
+#include <mcuxClKey.h>
+#include <internal/mcuxClCipherModes_Sgi_Types.h>
+
+
 /*
  * Entry points for MAC computation and verification as described by the PSA
  *  Cryptoprocessor Driver interface specification
@@ -43,31 +50,6 @@ static inline mcuxClMac_Mode_t get_mac_sgi_mode(const psa_key_attributes_t *attr
         default:
             return NULL;
     }
-}
-
-static inline mcuxClKey_Type_t get_sgi_keytype(const psa_key_attributes_t *attributes)
-{
-    size_t key_bits = psa_get_key_bits(attributes);
-    mcuxClKey_Type_t type = { NULL };
-
-    if (psa_get_key_type(attributes) == PSA_KEY_TYPE_AES &&
-        (psa_get_key_bits(attributes) == 128u ||
-         psa_get_key_bits(attributes) == 256u)) {
-        switch (key_bits) {
-#if defined(PSA_WANT_KEY_TYPE_AES)
-            case 128:
-                type = mcuxClKey_Type_Aes128;
-                break;
-            case 256:
-                type = mcuxClKey_Type_Aes256;
-                break;
-#endif /* PSA_WANT_KEY_TYPE_AES */
-            default:
-                type = NULL;
-                break;
-        }
-    }
-    return type;
 }
 
 psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
@@ -103,36 +85,23 @@ psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
     /* Allocate and initialize session */
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLMAC_MAX_CPU_WA_BUFFER_SIZE, 0u);
 
-    uint32_t keyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
-    mcuxClKey_Handle_t key = (mcuxClKey_Handle_t) keyDesc;
+    mcuxClKey_Descriptor_t keyDesc;
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size, &keyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session, key, type,
-                                                    key_buffer, key_buffer_size));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
-        goto cleanup;
-    }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     uint32_t mac_length_tmp = mac_size;
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mc_status, mc_token,
-                                     mcuxClMac_compute(session, key, mode, input,
-                                                       input_length, mac, &mac_length_tmp));
+                                     mcuxClMac_compute(session,
+                                                       (mcuxClKey_Handle_t) &keyDesc,
+                                                       mode,
+                                                       input,
+                                                       input_length,
+                                                       mac,
+                                                       &mac_length_tmp));
 
     if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMac_compute) != mc_token) {
         status = PSA_ERROR_CORRUPTION_DETECTED;
@@ -202,28 +171,11 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
     /* Initialize the PRNG */
     MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
 
-    mcuxClKey_Type_t type = get_sgi_keytype(attributes);
-
-    if (type == NULL) {
-        status = PSA_ERROR_NOT_SUPPORTED;
+    status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size,
+                                       (mcuxClKey_Descriptor_t *) &operation->keyDesc);
+    if (PSA_SUCCESS != status) {
         goto cleanup;
     }
-
-    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ki_status, ki_token,
-                                     mcuxClKey_init(session,
-                                                    (mcuxClKey_Handle_t) &operation->keyDesc,
-                                                    type, key_buffer, key_buffer_size));
-
-    if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClKey_init) != ki_token) {
-        status = PSA_ERROR_CORRUPTION_DETECTED;
-        goto cleanup;
-    }
-
-    if (MCUXCLKEY_STATUS_OK != ki_status) {
-        status = PSA_ERROR_HARDWARE_FAILURE;
-        goto cleanup;
-    }
-    MCUX_CSSL_FP_FUNCTION_CALL_END();
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mi_status, mi_token,
                                      mcuxClMac_init(session,
