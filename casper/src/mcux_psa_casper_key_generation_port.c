@@ -3,34 +3,27 @@
  *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
+
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include <psa/crypto.h>
+#include "psa_crypto_core.h"
+
+#include "mbedtls/private_access.h"
+#include "mbedtls/psa_util.h"
+
+#include "mcux_psa_casper_key_generation_port.h"
+#include "mcux_psa_casper_ecp_port.h"
+
 #if defined(MBEDTLS_BIGNUM_C) && defined(MBEDTLS_ECP_C) && \
       defined(PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY) &&   \
     ( defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) || \
       defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED) || \
       defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED) )
 
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-
-#include "mcux_psa_casper_key_generation_port.h"
-
-#include "mbedtls/build_info.h"
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
-#include "mbedtls/private/ecp.h"
-#else
-#include "mbedtls/ecp.h"
-#endif
-#include "mbedtls/error.h"
-#include "mbedtls/private_access.h"
-#include "mbedtls/psa_util.h"
-
-#include <psa/crypto.h>
-#include "psa_crypto_core.h"
-
 /* Forward declaration for PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY-gated function.
  * mbedtls_ecp_group_id is available from mbedtls/ecp.h above. */
 mbedtls_ecp_group_id mbedtls_ecc_group_from_psa(psa_ecc_family_t family, size_t bits);
 
-#include "mcux_psa_casper_ecp_port.h"
 
 /*****************************************************************************
  * ecp.c

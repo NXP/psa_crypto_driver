@@ -18,6 +18,7 @@
 
 #include "mbedtls/private_access.h"
 #include "mbedtls/build_info.h"
+#include "mbedtls/platform.h"
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
 #include "mbedtls/private/ecdsa.h"
 #include "mbedtls/private/ecp.h"
@@ -25,7 +26,6 @@
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/ecp.h"
 #endif
-#include "mbedtls/platform.h"
 #include "mbedtls/error.h"
 
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
