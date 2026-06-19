@@ -73,10 +73,10 @@ static psa_status_t casper_common_internal_ecc_sign(const psa_key_attributes_t *
     mbedtls_mpi_init(&r);
     mbedtls_mpi_init(&s);
 
-    /* Check for input buffer size in case it is hash it should match the algorithm size */
-    if ((status == PSA_SUCCESS) && (input_length > key_bytes)) {
-        status = PSA_ERROR_INVALID_ARGUMENT;
-    }
+    /* In case that input buffer size is larger than algorithm size 
+     * (e.g. SHA512 (64B) vs P384 (48B)), leftmost bits truncation
+     * happens in derive_mpi() function later
+     */
 
     if ((status == PSA_SUCCESS) && (signature_size < 2u * key_bytes)) {
         status = PSA_ERROR_INVALID_ARGUMENT;
