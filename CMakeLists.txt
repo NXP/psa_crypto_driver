@@ -507,18 +507,7 @@ endif()
 		"$<TARGET_PROPERTY:McuxElsPkc,INTERFACE_INCLUDE_DIRECTORIES>"
 	)
 
-if(CONFIG_BUILD_WITH_TFM)
-	target_include_directories(McuxPsaCryptoDriverElsPkc
-		PRIVATE
-		# psa/crypto.h and psa/crypto_types.h
-		${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/include
-		${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/include/psa
-		# for psa driver wrapper
-		${NXP_MODULE_CRYPTO_PATH}/mbedtls-3.6/library
-		# cmsis required to build els_pkc
-		${NXP_MODULE_ELS_PKC_PATH}/src/platforms/rw61x/cmsis_cortex_m_5_5_1/inc
-	)
-else()
+if(NOT CONFIG_BUILD_WITH_TFM)
 	target_include_directories(McuxPsaCryptoDriverElsPkc
 		PRIVATE
 		# psa/crypto.h and psa/crypto_types.h
