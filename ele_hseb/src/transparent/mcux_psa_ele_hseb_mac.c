@@ -92,9 +92,20 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
     /* Set the MAC length that is requested */
     *mac_length = PSA_MAC_LENGTH(key_type, key_bits, alg);
 
+    /* Use a separate uint32_t to pass MAC length to HSEB APIs that require
+     * a uint32_t pointer; copy back to size_t after the call. */
+    uint32_t mac_length_u32 = (uint32_t) *mac_length;
+
+    /* Key size in bytes must fit in uint16_t (max 512-bit = 64 bytes) */
+    const size_t key_size_bytes = PSA_BITS_TO_BYTES(key_bits);
+    if (key_size_bytes > (size_t) UINT16_MAX) {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
     if (HSE_MAC_ALGO_CMAC == hseb_mac_scheme.macAlgo) {
         hseb_status = LoadAesKey(&key_handle, false,
-                                 (uint16_t) (PSA_BITS_TO_BYTES(key_bits)),
+                                 (uint16_t) key_size_bytes,
                                  key_buffer);
         if (HSE_SRV_RSP_OK != hseb_status) {
             status = ele_hseb_to_psa_status(hseb_status);
@@ -102,10 +113,10 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
         }
 
         hseb_status = AesCmacGenerate(key_handle, input_length, input,
-                                      (uint32_t *) mac_length, mac, HSE_SGT_OPTION_NONE);
+                                      &mac_length_u32, mac, HSE_SGT_OPTION_NONE);
     } else { /* HSE_MAC_ALGO_HMAC */
         hseb_status = LoadHmacKey(&key_handle, false,
-                                  (uint16_t) (PSA_BITS_TO_BYTES(key_bits)),
+                                  (uint16_t) key_size_bytes,
                                   key_buffer);
         if (HSE_SRV_RSP_OK != hseb_status) {
             status = ele_hseb_to_psa_status(hseb_status);
@@ -114,7 +125,7 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
 
         const hseHashAlgo_t hash_alg = hseb_mac_scheme.sch.hmac.hashAlgo;
         hseb_status = HmacGenerate(key_handle, hash_alg, input_length, input,
-                                   (uint32_t *) mac_length, mac, HSE_SGT_OPTION_NONE);
+                                   &mac_length_u32, mac, HSE_SGT_OPTION_NONE);
     }
 
     if (HSE_SRV_RSP_OK != hseb_status) {
@@ -123,6 +134,8 @@ psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attrib
         goto exit;
     }
 
+    /* Write back the actual MAC length reported by HSEB */
+    *mac_length = (size_t) mac_length_u32;
     status = PSA_SUCCESS;
 exit:
     (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
@@ -517,6 +530,9 @@ psa_status_t ele_hseb_transparent_mac_sign_finish(ele_hseb_transparent_mac_opera
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
+    /* Use a separate uint32_t for HSEB APIs that require a uint32_t pointer */
+    uint32_t mac_length_u32 = (uint32_t) *mac_length;
+
     if (PSA_KEY_TYPE_AES == operation->key_type) {
         hseb_status = LoadAesKey(&key_handle, false,
                                  (uint16_t) (PSA_BITS_TO_BYTES(operation->key_bits)),
@@ -529,7 +545,7 @@ psa_status_t ele_hseb_transparent_mac_sign_finish(ele_hseb_transparent_mac_opera
         if (true == operation->is_mac_started) {
             hseb_status = AesCmacGenerateStreamFinish(STREAM_ID, operation->chunk_length,
                                                       operation->chunk,
-                                                      (uint32_t *) mac_length, mac,
+                                                      &mac_length_u32, mac,
                                                       HSE_SGT_OPTION_NONE);
         } else {
             /* This should be only reachable iff CMAC never received at least
@@ -538,7 +554,7 @@ psa_status_t ele_hseb_transparent_mac_sign_finish(ele_hseb_transparent_mac_opera
              * stream, so we use one-shot.
              */
             hseb_status = AesCmacGenerate(key_handle, operation->chunk_length,
-                                          operation->chunk, (uint32_t *) mac_length,
+                                          operation->chunk, &mac_length_u32,
                                           mac, HSE_SGT_OPTION_NONE);
         }
         if (HSE_SRV_RSP_OK != hseb_status) {
@@ -558,14 +574,14 @@ psa_status_t ele_hseb_transparent_mac_sign_finish(ele_hseb_transparent_mac_opera
             hseb_status = HmacGenerateFinishStream(operation->hash_alg, STREAM_ID,
                                                    operation->chunk_length,
                                                    operation->chunk,
-                                                   (uint32_t *) mac_length, mac);
+                                                   &mac_length_u32, mac);
         } else {
             /* We didn't receive enough data to START multipart HMAC,
              * so we consume the stashed data with a one-shot operation.
              */
             hseb_status = HmacGenerate(key_handle, operation->hash_alg,
                                        operation->chunk_length, operation->chunk,
-                                       (uint32_t *) mac_length, mac,
+                                       &mac_length_u32, mac,
                                        HSE_SGT_OPTION_NONE);
         }
         if (HSE_SRV_RSP_OK != hseb_status) {
@@ -577,6 +593,8 @@ psa_status_t ele_hseb_transparent_mac_sign_finish(ele_hseb_transparent_mac_opera
         goto exit;
     }
 
+    /* Write back the actual MAC length reported by HSEB */
+    *mac_length = (size_t) mac_length_u32;
     status = PSA_SUCCESS;
 exit:
     (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);

@@ -196,10 +196,10 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
-    mcuxClKey_Descriptor_t keyDesc;
+    mcuxClKey_Descriptor_t keyDesc = { 0 };
 
 #if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
@@ -540,10 +540,10 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
-    mcuxClKey_Descriptor_t keyDesc;
+    mcuxClKey_Descriptor_t keyDesc = { 0 };
 
 #if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */

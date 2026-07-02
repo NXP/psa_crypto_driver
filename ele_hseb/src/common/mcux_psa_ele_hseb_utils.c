@@ -16,10 +16,11 @@ size_t ele_hseb_get_chunk_overflow(size_t chunk_size,
                                    size_t chunk_used_length,
                                    size_t input_length)
 {
-    const size_t final_length = chunk_used_length + input_length;
+    /* Avoid unsigned wrap: compute available space first, then compare */
+    const size_t available = chunk_size - chunk_used_length;
 
-    if (final_length > chunk_size) {
-        return final_length - chunk_size;
+    if (input_length > available) {
+        return input_length - available;
     }
     return 0u;
 }

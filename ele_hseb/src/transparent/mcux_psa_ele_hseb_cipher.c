@@ -173,8 +173,8 @@ psa_status_t ele_hseb_transparent_cipher_decrypt(const psa_key_attributes_t *att
     hseCipherBlockMode_t cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
     size_t iv_length                 = PSA_CIPHER_IV_LENGTH(key_type, alg);
     const uint8_t *iv                = input;
-    const uint8_t *input_no_iv       = input + iv_length;
-    size_t input_no_iv_length        = input_length - iv_length;
+    const uint8_t *input_no_iv       = NULL;
+    size_t input_no_iv_length        = 0u;
 
     /* Key buffer or size or output buffer or output length can't be NULL */
     if (NULL == key_buffer || 0u == key_buffer_size ||
@@ -196,6 +196,15 @@ psa_status_t ele_hseb_transparent_cipher_decrypt(const psa_key_attributes_t *att
         AES_BLOCK_LENGTH != iv_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+
+    /* Validate that input_length is large enough to subtract iv_length */
+    if (input_length < iv_length) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Now safe to compute payload pointer and length */
+    input_no_iv       = input + iv_length;
+    input_no_iv_length = input_length - iv_length;
 
     /* Translate mode from PSA to HSE */
     cipher_mode = psa_to_hseb_cipher_mode(alg);
