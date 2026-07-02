@@ -90,6 +90,21 @@ size_t ele_hseb_manage_chunk(uint8_t *chunk,
 bool is_mac_length_supported(const psa_key_attributes_t *attributes,
                              psa_algorithm_t alg);
 
+/**
+ * \brief Validate if the key size is supported for a given MAC key type.
+ *
+ * Checks whether \p key_bits is a valid and supported key size for the
+ * specified \p key_type when used in a MAC operation on HSE-B. For example,
+ * verifies that an HMAC key length falls within the range accepted by the
+ * hardware.
+ *
+ * \param[in] key_type PSA key type.
+ * \param[in] key_bits Key size in bits to validate.
+ *
+ * \retval true if the key size is supported for the given type, false otherwise.
+ */
+bool is_mac_key_size_supported(psa_key_type_t key_type, size_t key_bits);
+
 #ifdef __cplusplus
 }
 #endif

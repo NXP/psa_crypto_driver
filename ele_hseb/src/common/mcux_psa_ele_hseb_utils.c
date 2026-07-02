@@ -12,6 +12,9 @@
 
 #include "mcux_psa_ele_hseb_utils.h"
 
+#include "hse_common_types.h"
+#include "hse_b_config.h"
+
 size_t ele_hseb_get_chunk_overflow(size_t chunk_size,
                                    size_t chunk_used_length,
                                    size_t input_length)
@@ -91,6 +94,24 @@ bool is_mac_length_supported(const psa_key_attributes_t *attributes,
 
     if (true == PSA_ALG_IS_BLOCK_CIPHER_MAC(alg)) {
         return mac_length <= PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type);
+    }
+
+    return false;
+}
+
+bool is_mac_key_size_supported(psa_key_type_t key_type, size_t key_bits)
+{
+    if (PSA_KEY_TYPE_AES == key_type) {
+        if ((128u == key_bits) || (192u == key_bits) || (256u == key_bits)) {
+            return true;
+        }
+    }
+
+    if (PSA_KEY_TYPE_HMAC == key_type) {
+        if ((HSE_MIN_HMAC_KEY_BITS_LEN <= key_bits) &&
+            (HSE_MAX_HMAC_KEY_BITS_LEN >= key_bits)) {
+            return true;
+        }
     }
 
     return false;

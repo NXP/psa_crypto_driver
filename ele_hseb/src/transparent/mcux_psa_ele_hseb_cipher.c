@@ -38,32 +38,6 @@ static bool is_input_length_correct(size_t input_length,
     return true;
 }
 
-inline static hseCipherBlockMode_t psa_to_hseb_cipher_mode(psa_algorithm_t alg)
-{
-    hseCipherBlockMode_t cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
-    switch (alg) {
-        case PSA_ALG_ECB_NO_PADDING:
-            cipher_mode = HSE_CIPHER_BLOCK_MODE_ECB;
-            break;
-        case PSA_ALG_CBC_NO_PADDING:
-            cipher_mode = HSE_CIPHER_BLOCK_MODE_CBC;
-            break;
-        case PSA_ALG_CTR:
-            cipher_mode = HSE_CIPHER_BLOCK_MODE_CTR;
-            break;
-        case PSA_ALG_CFB:
-            cipher_mode = HSE_CIPHER_BLOCK_MODE_CFB;
-            break;
-        case PSA_ALG_OFB:
-            cipher_mode = HSE_CIPHER_BLOCK_MODE_OFB;
-            break;
-        default:
-            cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
-            break;
-    }
-    return cipher_mode;
-}
-
 psa_status_t ele_hseb_transparent_cipher_encrypt(const psa_key_attributes_t *attributes,
                                                  const uint8_t *key_buffer,
                                                  size_t key_buffer_size,

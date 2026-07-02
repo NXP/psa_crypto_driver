@@ -186,3 +186,159 @@ psa_status_t psa_to_hseb_mac_scheme(psa_algorithm_t alg,
 
     return status;
 }
+
+psa_status_t psa_to_hseb_curve(const psa_key_attributes_t *attributes,
+                               hseEccCurveId_t *curve_id)
+{
+    psa_status_t status         = PSA_SUCCESS;
+    psa_key_type_t key_type     = psa_get_key_type(attributes);
+    psa_ecc_family_t ecc_family = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
+    size_t key_bits             = psa_get_key_bits(attributes);
+
+    *curve_id = HSE_EC_CURVE_NONE;
+
+    if (PSA_ECC_FAMILY_SECP_R1 == ecc_family) {
+        switch (key_bits) {
+            case 256:
+                *curve_id = HSE_EC_SEC_SECP256R1;
+                break;
+            case 384:
+                *curve_id = HSE_EC_SEC_SECP384R1;
+                break;
+            case 521:
+                *curve_id = HSE_EC_SEC_SECP521R1;
+                break;
+            default:
+                status = PSA_ERROR_NOT_SUPPORTED;
+                break;
+        }
+    } else if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 == ecc_family) {
+        switch (key_bits) {
+            case 256:
+                *curve_id = HSE_EC_BRAINPOOL_BRAINPOOLP256R1;
+                break;
+            case 320:
+                *curve_id = HSE_EC_BRAINPOOL_BRAINPOOLP320R1;
+                break;
+            case 384:
+                *curve_id = HSE_EC_BRAINPOOL_BRAINPOOLP384R1;
+                break;
+            case 512:
+                *curve_id = HSE_EC_BRAINPOOL_BRAINPOOLP512R1;
+                break;
+            default:
+                status = PSA_ERROR_NOT_SUPPORTED;
+                break;
+        }
+    } else if (PSA_ECC_FAMILY_TWISTED_EDWARDS == ecc_family) {
+        if (256 == key_bits) {
+            *curve_id = HSE_EC_25519_ED25519;
+        } else {
+            status = PSA_ERROR_NOT_SUPPORTED;
+        }
+    } else if (PSA_ECC_FAMILY_MONTGOMERY == ecc_family) {
+        if (256 == key_bits) {
+            *curve_id = HSE_EC_25519_CURVE25519;
+        } else {
+            status = PSA_ERROR_NOT_SUPPORTED;
+        }
+    } else {
+        status = PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    return status;
+}
+
+void psa_to_hseb_key_usage(psa_key_usage_t key_usage,
+                           hseKeyFlags_t *hseb_key_flags)
+{
+    if ((key_usage & PSA_KEY_USAGE_EXPORT) != 0u) {
+        *hseb_key_flags |= HSE_KF_ACCESS_EXPORTABLE;
+    }
+    if ((key_usage & PSA_KEY_USAGE_ENCRYPT) != 0u) {
+        *hseb_key_flags |= HSE_KF_USAGE_ENCRYPT;
+    }
+    if ((key_usage & PSA_KEY_USAGE_DECRYPT) != 0u) {
+        *hseb_key_flags |= HSE_KF_USAGE_DECRYPT;
+    }
+    if (((key_usage & PSA_KEY_USAGE_SIGN_MESSAGE) != 0u) ||
+        ((key_usage & PSA_KEY_USAGE_SIGN_HASH) != 0u)) {
+        *hseb_key_flags |= HSE_KF_USAGE_SIGN;
+    }
+    if (((key_usage & PSA_KEY_USAGE_VERIFY_MESSAGE) != 0u) ||
+        ((key_usage & PSA_KEY_USAGE_VERIFY_HASH) != 0u)) {
+        *hseb_key_flags |= HSE_KF_USAGE_VERIFY;
+    }
+    if ((key_usage & PSA_KEY_USAGE_DERIVE) != 0u) {
+        *hseb_key_flags |= HSE_KF_USAGE_DERIVE;
+        *hseb_key_flags |= HSE_KF_USAGE_EXCHANGE;
+    }
+    if ((key_usage & PSA_KEY_USAGE_VERIFY_DERIVATION) != 0u) {
+        *hseb_key_flags |= HSE_KF_USAGE_DERIVE;
+    }
+}
+
+hseCipherBlockMode_t psa_to_hseb_cipher_mode(psa_algorithm_t alg)
+{
+    hseCipherBlockMode_t cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
+    switch (alg) {
+        case PSA_ALG_ECB_NO_PADDING:
+            cipher_mode = HSE_CIPHER_BLOCK_MODE_ECB;
+            break;
+        case PSA_ALG_CBC_NO_PADDING:
+            cipher_mode = HSE_CIPHER_BLOCK_MODE_CBC;
+            break;
+        case PSA_ALG_CTR:
+            cipher_mode = HSE_CIPHER_BLOCK_MODE_CTR;
+            break;
+        case PSA_ALG_CFB:
+            cipher_mode = HSE_CIPHER_BLOCK_MODE_CFB;
+            break;
+        case PSA_ALG_OFB:
+            cipher_mode = HSE_CIPHER_BLOCK_MODE_OFB;
+            break;
+        case PSA_ALG_CCM:
+            cipher_mode = HSE_AUTH_CIPHER_MODE_CCM;
+            break;
+        case PSA_ALG_GCM:
+            cipher_mode = HSE_AUTH_CIPHER_MODE_GCM;
+            break;
+        default:
+            cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
+            break;
+    }
+    return cipher_mode;
+}
+
+hseAesBlockModeMask_t cipher_mode_to_cipher_mask(hseCipherBlockMode_t hse_cipher_mode)
+{
+    hseAesBlockModeMask_t mask = { 0 };
+    /* PSA supports only one permitted cipher alg, so no need to OR them */
+    switch (hse_cipher_mode) {
+        case HSE_CIPHER_BLOCK_MODE_CTR:
+            mask = HSE_KU_AES_BLOCK_MODE_CTR;
+            break;
+        case HSE_CIPHER_BLOCK_MODE_CBC:
+            mask = HSE_KU_AES_BLOCK_MODE_CBC;
+            break;
+        case HSE_CIPHER_BLOCK_MODE_ECB:
+            mask = HSE_KU_AES_BLOCK_MODE_ECB;
+            break;
+        case HSE_CIPHER_BLOCK_MODE_CFB:
+            mask = HSE_KU_AES_BLOCK_MODE_CFB;
+            break;
+        case HSE_CIPHER_BLOCK_MODE_OFB:
+            mask = HSE_KU_AES_BLOCK_MODE_OFB;
+            break;
+        case HSE_AUTH_CIPHER_MODE_CCM:
+            mask = HSE_KU_AES_BLOCK_MODE_CCM;
+            break;
+        case HSE_AUTH_CIPHER_MODE_GCM:
+            mask = HSE_KU_AES_BLOCK_MODE_GCM;
+            break;
+        default:
+            mask = HSE_KU_AES_BLOCK_MODE_ANY;
+            break;
+    }
+    return mask;
+}

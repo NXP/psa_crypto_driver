@@ -27,24 +27,6 @@
 
 #define AES_BLOCK_LENGTH (16u)
 
-static bool is_mac_key_size_supported(psa_key_type_t key_type, size_t key_bits)
-{
-    if (PSA_KEY_TYPE_AES == key_type) {
-        if ((128u == key_bits) || (192u == key_bits) || (256u == key_bits)) {
-            return true;
-        }
-    }
-
-    if (PSA_KEY_TYPE_HMAC == key_type) {
-        if ((HSE_MIN_HMAC_KEY_BITS_LEN <= key_bits) &&
-            (HSE_MAX_HMAC_KEY_BITS_LEN >= key_bits)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 psa_status_t ele_hseb_transparent_mac_compute(const psa_key_attributes_t *attributes,
                                               const uint8_t *key_buffer,
                                               size_t key_buffer_size,
