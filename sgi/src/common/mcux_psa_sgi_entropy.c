@@ -12,11 +12,12 @@
  * Driver interface specification
  *
  */
-
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
+#endif
 #endif
 
 #include "mbedtls/build_info.h"

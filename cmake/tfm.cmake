@@ -42,10 +42,32 @@ if(CONFIG_BUILD_WITH_TFM)
         ${NXP_MODULE_CRYPTO_PATH}/mbedtls/include/psa
         # for psa driver wrapper
         ${NXP_MODULE_CRYPTO_PATH}/mbedtls/library
+        ${NXP_MODULE_CRYPTO_PATH}/tf-psa-crypto/include
+        ${NXP_MODULE_CRYPTO_PATH}/tf-psa-crypto/include/psa
+        ${NXP_MODULE_CRYPTO_PATH}/tf-psa-crypto/drivers/builtin/include
         ${NXP_MODULE_CRYPTO_PATH}/tf-psa-crypto/core
         ${NXP_MODULE_CRYPTO_PATH}/tf-psa-crypto/drivers/builtin/src
         ${NXP_MODULE_CRYPTO_PATH}/tf-psa-crypto/drivers/pqcp/src
         ${NXP_MODULE_CRYPTO_PATH}/tf-psa-crypto/dispatch
+    )
+
+    # Common TF-M include paths required, as the MBEDTLS_PSA_CRYPTO_CONFIG_FILE includes the config_tfm.h
+    set(TFM_COMMON_INCLUDES
+      ${TFM_SOURCE_DIR}/config
+      ${TFM_SOURCE_DIR}/interface/include
+      ${TFM_SOURCE_DIR}/platform/include
+      ${TFM_SOURCE_DIR}/secure_fw/include
+      ${TFM_SOURCE_DIR}/secure_fw/spm/include
+      ${TFM_SOURCE_DIR}/secure_fw/partitions/lib/runtime/include
+      ${TFM_SOURCE_DIR}/secure_fw/partitions/crypto
+      ${TFM_SOURCE_DIR}/secure_fw/partitions/crypto/psa_driver_api
+    )
+
+    target_include_directories(McuxPsaCryptoDriverSgiPkc
+      PRIVATE
+        #${NXP_HAL_FILE_PATH}/common/Native_Driver/drivers/common
+        #${NXP_HAL_FILE_PATH}/common/Native_Driver/drivers/trng
+        ${TFM_COMMON_INCLUDES}
     )
 
     target_compile_definitions(McuxPsaCryptoDriverSgiPkc

@@ -183,7 +183,9 @@ endif()
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/common
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/opaque
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/osal/
+		#${CMAKE_CURRENT_LIST_DIR}/osal/zephyr
 		"$<TARGET_PROPERTY:McuxSgiPkc,INTERFACE_INCLUDE_DIRECTORIES>"
 	)
 
@@ -194,6 +196,7 @@ endif()
 		# Source
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/common/mcux_psa_sgi_common_init.c
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/common/mcux_psa_sgi_entropy.c
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/common/mcux_psa_sgi_common_key_management.c
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_aead.c
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_cipher.c
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_hash.c
