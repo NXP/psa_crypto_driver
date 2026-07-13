@@ -152,10 +152,21 @@ else()
 	target_sources(
 		McuxPsaCryptoDriverSgiPkc
 		PRIVATE
-		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/trng/fsl_trng.c
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/glikey/fsl_glikey.c
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/crc/fsl_crc.c
 	)
+	# fsl_trng.c is compiled here only when the Zephyr MCUX TRNG entropy driver
+	# (CONFIG_ENTROPY_MCUX_TRNG) is NOT enabled. When that driver is active,
+	# hal_nxp already compiles fsl_trng.c into libmodules__hal_nxp.a and adding
+	# it here again causes duplicate symbol link errors.
+	if(NOT CONFIG_ENTROPY_MCUX_TRNG)
+		target_sources(
+			McuxPsaCryptoDriverSgiPkc
+			PRIVATE
+			${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/trng/fsl_trng.c
+		)
+	endif()
+
 
 	target_include_directories(McuxPsaCryptoDriverSgiPkc
 		PRIVATE
