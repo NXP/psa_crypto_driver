@@ -231,13 +231,13 @@ psa_status_t psa_to_hseb_curve(const psa_key_attributes_t *attributes,
                 break;
         }
     } else if (PSA_ECC_FAMILY_TWISTED_EDWARDS == ecc_family) {
-        if (256 == key_bits) {
+        if (255 == key_bits) {
             *curve_id = HSE_EC_25519_ED25519;
         } else {
             status = PSA_ERROR_NOT_SUPPORTED;
         }
     } else if (PSA_ECC_FAMILY_MONTGOMERY == ecc_family) {
-        if (256 == key_bits) {
+        if (255 == key_bits) {
             *curve_id = HSE_EC_25519_CURVE25519;
         } else {
             status = PSA_ERROR_NOT_SUPPORTED;
