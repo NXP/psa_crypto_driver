@@ -174,5 +174,6 @@ port. Key types and sizes are also specified where relevant.
                 * PSA_ALG_ECDSA(PSA_ALG_SHA3_384)
                 * PSA_ALG_ECDSA(PSA_ALG_SHA3_512)
 
-* Opaque
-    * N/A
+* `PSA_KEY_LOCATION_ELE_HSEB`
+Currently, only key generation and import is implemented and no operations
+with such keys are possible.

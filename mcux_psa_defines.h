@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2026 NXP
  * All rights reserved.
  *
  *
@@ -24,5 +24,9 @@
 #if defined(PSA_CRYPTO_DRIVER_CAAM)
 #define PSA_CRYPTO_CAAM_LOCATION 			0x000001
 #endif /* PSA_CRYPTO_DRIVER_CAAM */
+
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+#include "mcux_psa_ele_hseb_key_locations.h"
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 
 #endif /* MCUX_PSA_DEFINES_H */

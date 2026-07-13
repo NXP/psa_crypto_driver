@@ -116,3 +116,17 @@ bool is_mac_key_size_supported(psa_key_type_t key_type, size_t key_bits)
 
     return false;
 }
+
+void ele_hseb_read_key_handle_from_buffer(const uint8_t *key_buffer,
+                                          hseKeyHandle_t *hseb_key_handle)
+{
+    (void) memcpy(hseb_key_handle, key_buffer, sizeof(hseKeyHandle_t));
+}
+
+void ele_hseb_write_key_handle_to_buffer(uint8_t *key_buffer,
+                                         size_t *key_buffer_length,
+                                         const hseKeyHandle_t *hseb_key_handle)
+{
+    (void) memcpy(key_buffer, hseb_key_handle, sizeof(hseKeyHandle_t));
+    *key_buffer_length = sizeof(hseKeyHandle_t);
+}

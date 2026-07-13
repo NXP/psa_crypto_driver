@@ -86,7 +86,17 @@ status_t CRYPTO_InitHardware(void)
          * Otherwise we just check if formatting was done by the user.
          */
 #if defined(CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS)
-        result_fmt = FormatKeyCatalogs(nvmKeyCatalog, ramKeyCatalog);
+        /* Formatting may have been done before a power cycle. In order to preserve
+         * persistent keys (those that are in the NVM key catalog), we check
+         * if formatting is already done. If yes, we skip reformatting, so we don't
+         * delete them.
+         */
+        if (is_key_catalog_formatted() == false) {
+            result_fmt = FormatKeyCatalogs(nvmKeyCatalog, ramKeyCatalog);
+        } else {
+            /* Catalog is formatted, we assume an OK */
+            result_fmt = HSE_SRV_RSP_OK;
+        }
         result_hkf = HKF_Init(nvmKeyCatalog, ramKeyCatalog);
         if (HSE_SRV_RSP_OK != result_fmt ||
             HSE_SRV_RSP_OK != result_hkf) {

@@ -105,6 +105,37 @@ bool is_mac_length_supported(const psa_key_attributes_t *attributes,
  */
 bool is_mac_key_size_supported(psa_key_type_t key_type, size_t key_bits);
 
+/**
+ * \brief Read an HSE-B key handle from an opaque key buffer.
+ *
+ * Deserialises the \c hseKeyHandle_t value previously stored by
+ * \ref ele_hseb_write_key_handle_to_buffer from the first
+ * \c sizeof(hseKeyHandle_t) bytes of \p key_buffer.
+ *
+ * \param[in]  key_buffer      Opaque key buffer containing the serialised
+ *                             key handle.
+ * \param[out] hseb_key_handle Destination for the deserialised handle.
+ */
+void ele_hseb_read_key_handle_from_buffer(const uint8_t *key_buffer,
+                                          hseKeyHandle_t *hseb_key_handle);
+
+/**
+ * \brief Write an HSE-B key handle into an opaque key buffer.
+ *
+ * Serialises \p hseb_key_handle into the first \c sizeof(hseKeyHandle_t)
+ * bytes of \p key_buffer and sets \p key_buffer_length accordingly. This is
+ * the counterpart to \ref ele_hseb_read_key_handle_from_buffer and is called
+ * after a successful key generation or import to record the allocated slot
+ * handle for the PSA core.
+ *
+ * \param[out] key_buffer        Buffer to receive the serialised key handle.
+ * \param[out] key_buffer_length Set to \c sizeof(hseKeyHandle_t) on return.
+ * \param[in]  hseb_key_handle   Handle to serialise into \p key_buffer.
+ */
+void ele_hseb_write_key_handle_to_buffer(uint8_t *key_buffer,
+                                         size_t *key_buffer_length,
+                                         const hseKeyHandle_t *hseb_key_handle);
+
 #ifdef __cplusplus
 }
 #endif

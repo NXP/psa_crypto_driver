@@ -52,5 +52,6 @@
 #include "mcux_psa_ele_hseb_aead.h"
 #include "mcux_psa_ele_hseb_hash.h"
 #include "mcux_psa_ele_hseb_asymmetric_signature.h"
+#include "mcux_psa_ele_hseb_opaque_key_generation.h"
 
 #endif /* ELE_HSEB_H */
