@@ -153,8 +153,23 @@ else()
 		McuxPsaCryptoDriverSgiPkc
 		PRIVATE
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/glikey/fsl_glikey.c
-		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/crc/fsl_crc.c
 	)
+
+	# fsl_crc.c is compiled here only when the Zephyr NXP CRC driver
+	# (CONFIG_CRC_DRIVER_NXP) is NOT enabled. When that driver is active, it
+	# selects the MCUX crc component and hal_nxp already compiles fsl_crc.c into
+	# libmodules__hal_nxp.a, so adding it here again causes duplicate symbol
+	# link errors. Note: CONFIG_MCUX_COMPONENT_driver.crc is only a CMake
+	# variable set within the hal_nxp module scope (from CONFIG_CRC_DRIVER_NXP)
+	# and is not visible here, so we guard on the real Kconfig symbol instead.
+	if(NOT CONFIG_CRC_DRIVER_NXP)
+		target_sources(
+			McuxPsaCryptoDriverSgiPkc
+			PRIVATE
+			${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/crc/fsl_crc.c
+		)
+	endif()
+
 	# fsl_trng.c is compiled here only when the Zephyr MCUX TRNG entropy driver
 	# (CONFIG_ENTROPY_MCUX_TRNG) is NOT enabled. When that driver is active,
 	# hal_nxp already compiles fsl_trng.c into libmodules__hal_nxp.a and adding
