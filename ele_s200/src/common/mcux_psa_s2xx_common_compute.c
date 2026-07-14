@@ -353,18 +353,38 @@ int ele_s2xx_util_ct_memcmp(const void *a,
 
 size_t ele_s2xx_get_ecc_private_key_size(size_t key_bits)
 {
+    /* CERT INT30-C: guard addition before computing byte length */
+    if (true == mcux_psa_add_size_t_wrapcheck(key_bits, 7u))
+    {
+        return 0u;
+    }
     return (key_bits + 7u) >> 3u;
 }
 
 size_t ele_s2xx_get_ecc_public_key_size(size_t key_bits)
 {
-    return ((key_bits + 7u) >> 3u) << 1u;
+    /* CERT INT30-C: guard addition and subsequent left-shift (x2) */
+    if (true == mcux_psa_add_size_t_wrapcheck(key_bits, 7u))
+    {
+        return 0u;
+    }
+    size_t bytes = (key_bits + 7u) >> 3u;
+    if (true == mcux_psa_add_size_t_wrapcheck(bytes, bytes))
+    {
+        return 0u;
+    }
+    return bytes << 1u;
 }
 
 size_t ele_s2xx_get_ecc_keypair_size(size_t key_bits)
 {
     const size_t key_length_private = ele_s2xx_get_ecc_private_key_size(key_bits);
     const size_t key_length_public  = ele_s2xx_get_ecc_public_key_size(key_bits);
+    /* CERT INT30-C: guard addition of private and public key lengths */
+    if (true == mcux_psa_add_size_t_wrapcheck(key_length_private, key_length_public))
+    {
+        return 0u;
+    }
     return key_length_private + key_length_public;
 }
 

@@ -36,9 +36,26 @@ static bool ele_s2xx_key_is_likely_non_el2go_blob(psa_key_type_t key_type,
                                                   size_t data_length)
 {
     /* IF ECC keypair, we need a different check */
-    return (true == PSA_KEY_TYPE_IS_ECC_KEY_PAIR(key_type) ?
-            ((ele_s2xx_get_ecc_keypair_size(key_bits) + S200_BLOB_OVERHEAD) == data_length) :
-            ((PSA_EXPORT_KEY_OUTPUT_SIZE(key_type, key_bits) + S200_BLOB_OVERHEAD) == data_length));
+    if (true == PSA_KEY_TYPE_IS_ECC_KEY_PAIR(key_type))
+    {
+        size_t keypair_size = ele_s2xx_get_ecc_keypair_size(key_bits);
+        /* CERT INT30-C: guard addition before comparison */
+        if (true == mcux_psa_add_size_t_wrapcheck(keypair_size, (size_t)S200_BLOB_OVERHEAD))
+        {
+            return false;
+        }
+        return ((keypair_size + S200_BLOB_OVERHEAD) == data_length);
+    }
+    else
+    {
+        size_t export_size = PSA_EXPORT_KEY_OUTPUT_SIZE(key_type, key_bits);
+        /* CERT INT30-C: guard addition before comparison */
+        if (true == mcux_psa_add_size_t_wrapcheck(export_size, (size_t)S200_BLOB_OVERHEAD))
+        {
+            return false;
+        }
+        return ((export_size + S200_BLOB_OVERHEAD) == data_length);
+    }
 }
 
 static bool ele_s2xx_key_is_likely_transparent(psa_key_type_t key_type,
@@ -454,6 +471,14 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
     /* For an opaque blob, we can't directly export, so we import the key,
      * let the S200 calculate/unwrap the public key and then we retrieve it.
      */
+
+    /* CERT INT30-C: guard subtraction to prevent underflow when data_size == 0 */
+    if (0u == data_size)
+    {
+        status = PSA_ERROR_BUFFER_TOO_SMALL;
+        goto exit;
+    }
+
     status = ele_s2xx_import_key(attributes, key_buffer, key_buffer_size, &sssKey);
     if (PSA_SUCCESS != status)
     {
@@ -470,7 +495,13 @@ psa_status_t ele_s2xx_opaque_export_public_key(const psa_key_attributes_t *attri
     }
 
     /* PSA expects 0x04 as the leading byte for uncompressed ECC public keys */
-    *data        = 0x04u;
+    *data = 0x04u;
+    /* CERT INT30-C: guard addition to prevent overflow when incrementing data_length */
+    if (true == mcux_psa_add_size_t_wrapcheck(*data_length, 1u))
+    {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
     *data_length = *data_length + 1u;
 
     status = PSA_SUCCESS;
