@@ -708,7 +708,7 @@ psa_status_t ele_hseb_opaque_import_key(const psa_key_attributes_t *attributes,
         } else if ((true == PSA_KEY_TYPE_IS_RSA(key_type)) &&
                    (true == is_nvm)) {
             /* RSA keys must be NVM keys, fail otherwise; HSEB limitation */
-            // TBA
+            /* To be implemented in MCUX-89255 */
             status = PSA_ERROR_NOT_SUPPORTED;
         } else {
             status = PSA_ERROR_NOT_SUPPORTED;
@@ -727,6 +727,24 @@ psa_status_t ele_hseb_opaque_import_key(const psa_key_attributes_t *attributes,
     return status;
 }
 
+static psa_status_t hseb_export_ecc_public_key_req(hseExportKeySrv_t *export_key_srv,
+                                                   hseKeyHandle_t key_handle)
+{
+    hseSrvResponse_t hseSrvResponse = HSE_SRV_RSP_GENERAL_ERROR;
+    hseSrvDescriptor_t *pHseSrvDesc = &gHseSrvDesc[muIf][muChannelIdx];
+
+    (void) memset(pHseSrvDesc, 0, sizeof(hseSrvDescriptor_t));
+    pHseSrvDesc->srvId = HSE_SRV_ID_EXPORT_KEY;
+
+    export_key_srv->targetKeyHandle  = key_handle;
+    export_key_srv->pKeyInfo         = NULL_HOST_ADDR;
+    pHseSrvDesc->hseSrv.exportKeyReq = *export_key_srv;
+
+    hseSrvResponse = HSE_Send(muIf, muChannelIdx, gSyncTxOption, pHseSrvDesc);
+
+    return ele_hseb_to_psa_status(hseSrvResponse);
+}
+
 psa_status_t ele_hseb_opaque_export_public_key(const psa_key_attributes_t *attributes,
                                                const uint8_t *key_buffer,
                                                size_t key_buffer_size,
@@ -734,7 +752,58 @@ psa_status_t ele_hseb_opaque_export_public_key(const psa_key_attributes_t *attri
                                                size_t data_size,
                                                size_t *data_length)
 {
-    return PSA_ERROR_NOT_SUPPORTED;
+    psa_status_t status              = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_type_t key_type          = psa_get_key_type(attributes);
+    psa_ecc_family_t ecc_family      = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
+    hseKeyHandle_t hseb_key_handle   = { 0 };
+    hseExportKeySrv_t export_key_srv = { 0 };
+
+    /* ECC keys supported for now, RSA public key export is not yet implemented */
+    if ((!PSA_KEY_TYPE_IS_ECC_KEY_PAIR(key_type)) &&
+        (!PSA_KEY_TYPE_IS_ECC_PUBLIC_KEY(key_type))) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (data_size > (size_t) UINT16_MAX) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    *data_length = data_size; /* We use data_length as in/out param for HSEB */
+
+    export_key_srv.pKey[0]    = (HOST_ADDR) data;
+    export_key_srv.pKeyLen[0] = (HOST_ADDR) data_length;
+
+    export_key_srv.keyContainer.authKeyHandle = HSE_INVALID_KEY_HANDLE;
+    export_key_srv.cipher.cipherKeyHandle = HSE_INVALID_KEY_HANDLE;
+
+    if (PSA_KEY_TYPE_IS_ECC(key_type)) {
+        if (PSA_ECC_FAMILY_IS_WEIERSTRASS(ecc_family)) {
+            export_key_srv.keyFormat.eccKeyFormat = HSE_KEY_FORMAT_ECC_PUB_UNCOMPRESSED;
+        } else {
+            export_key_srv.keyFormat.eccKeyFormat = HSE_KEY_FORMAT_ECC_PUB_RAW;
+        }
+    } else if (PSA_KEY_TYPE_IS_RSA(key_type)) {
+        /* To be implemented in MCUX-89255 */
+        return PSA_ERROR_NOT_SUPPORTED;
+    } else {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    ele_hseb_read_key_handle_from_buffer(key_buffer, &hseb_key_handle);
+
+    status = hseb_export_ecc_public_key_req(&export_key_srv, hseb_key_handle);
+    if (PSA_SUCCESS != status) {
+        *data_length = 0u;
+    }
+
+    if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    return status;
 }
 
 psa_status_t ele_hseb_opaque_destroy_key(const psa_key_attributes_t *attributes,
