@@ -235,6 +235,8 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
         *ciphertext_length = plaintext_length + tag_length;
     }
 
+    (void)caam_handle;
+
     return status;
 }
 
@@ -496,6 +498,8 @@ psa_status_t caam_internal_aead_decrypt(mcux_psa_caam_key_type_t caam_key_type,
          */
         status = PSA_ERROR_INVALID_SIGNATURE;
     }
+
+    (void)caam_handle;
 
     return status;
 }

@@ -9,6 +9,12 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 string(TOUPPER ${CONFIG_SOC} MCUX_DEVICE)
 
+if(CONFIG_PSA_CRYPTO_DRIVER_CAAM)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ psa_crypto_driver)
+    target_link_libraries(app PUBLIC McuxPsaCryptoDriverCaam)
+    zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverCaam,INTERFACE_INCLUDE_DIRECTORIES>")
+endif()
+
 if(CONFIG_MCUX_PSA_CRYPTO_DRIVER_ELS_PKC AND NOT CONFIG_BUILD_WITH_TFM)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ psa_crypto_driver)
     target_link_libraries(app PUBLIC McuxPsaCryptoDriverElsPkc)

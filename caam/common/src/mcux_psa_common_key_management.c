@@ -12,13 +12,23 @@
 #include "psa_util_internal.h"
 
 #include "mbedtls/private_access.h"
-#include "ctr_drbg.h"
-#include "ecdsa.h"
-#include "ecp.h"
-
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform.h"
+#include "mbedtls/build_info.h"
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "mbedtls/private/ecdsa.h"
+#include "mbedtls/private/ecp.h"
+#else
+#include "mbedtls/ecdsa.h"
+#include "mbedtls/ecp.h"
+#endif
 #include "mbedtls/psa_util.h"
+#include "ctr_drbg.h"
+#include <string.h>
+
+/* Forward declarations for PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY-gated functions.
+ * mbedtls_ecp_group_id is available from mbedtls/ecp.h above. */
+psa_ecc_family_t mbedtls_ecc_group_to_psa(mbedtls_ecp_group_id grpid, size_t *bits);
 
 #include "mcux_psa_common_key_management.h"
 

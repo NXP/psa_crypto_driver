@@ -3,6 +3,24 @@
  #
  # SPDX-License-Identifier: BSD-3-Clause
  #
+
+if (CONFIG_PSA_CRYPTO_DRIVER_CAAM)
+target_include_directories(
+    McuxPsaCryptoDriverCaam
+    PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/.
+    zephyr/.
+)
+target_sources(
+    McuxPsaCryptoDriverCaam
+    PRIVATE
+    #baremetal/osal_mutex.c
+    #frtos/osal_mutex.c
+    zephyr/osal_mutex.c
+    zephyr/threading_alt.c
+)
+endif() # CONFIG_PSA_CRYPTO_DRIVER_CAAM
+
 if(CONFIG_PSA_CRYPTO_DRIVER_DCP)
 target_include_directories(
     McuxPsaCryptoDriverDcp

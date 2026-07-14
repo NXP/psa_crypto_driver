@@ -8,6 +8,115 @@ if(NOT CONFIG_BUILD_WITH_TFM)
 	find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 endif()
 
+if (CONFIG_PSA_CRYPTO_DRIVER_CAAM)
+	message ("psa-crypto-driver-caam module is included")
+
+	zephyr_library_named(McuxPsaCryptoDriverCaam)
+
+	zephyr_compile_definitions(
+		PSA_CRYPTO_DRIVER_CAAM
+		PSA_CRYPTO_DRIVER_THREAD_EN
+		CACHE_MODE_WRITE_THROUGH
+	)
+
+	### IP Drivers ###
+	target_include_directories(
+		McuxPsaCryptoDriverCaam
+		PUBLIC
+		# Caam drivers 
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/caam
+	)
+
+	# hal_nxp already compiles fsl_caam, uncommenting this while it does creates double definition problem
+	if(NOT CONFIG_ENTROPY_MCUX_CAAM)
+		target_sources(
+			McuxPsaCryptoDriverCaam
+			PRIVATE
+			${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/caam/fsl_caam.c
+		)
+	endif()
+
+	### MbedTLS ###
+	target_include_directories(
+		McuxPsaCryptoDriverCaam
+		PUBLIC
+		# PSA crypto headers
+		${ZEPHYR_BASE}/modules/mbedtls/configs
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/library
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/psa
+		${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/mbedtls
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/core
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/include/mbedtls
+		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/include/mbedtls/private
+	)
+	
+	# PSA Driver 
+	## Include paths
+	target_include_directories(
+		McuxPsaCryptoDriverCaam
+		PUBLIC
+		${PSA_CRYPTO_DRIVER_PATH}/caam/
+		${PSA_CRYPTO_DRIVER_PATH}/caam/include
+		${PSA_CRYPTO_DRIVER_PATH}/caam/common/include
+		${PSA_CRYPTO_DRIVER_PATH}/osal/
+		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
+	)
+	## Sources 
+	target_sources(
+		McuxPsaCryptoDriverCaam
+		PRIVATE
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/caam_crypto_primitives.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/caam.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_common_aead.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_common_asymmetric_encryption.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_common_asymmetric_signature.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_common_cipher.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_common_init.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_common_key_generation.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_common_mac.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_entropy.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_hash.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_init.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/src/mcux_psa_caam_utils.c
+
+		# Include
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_common_aead.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_common_asymmetric_encryption.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_common_asymmetric_signature.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_common_cipher.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_common_init.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_common_key_generation.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_common_mac.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_entropy.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_hash.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_init.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/include/mcux_psa_caam_utils.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/common/src/mcux_psa_common_key_management.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/common/src/mcux_psa_mbedtls_origin.c
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/common/include/mcux_psa_common_key_management.h
+        ${PSA_CRYPTO_DRIVER_PATH}/caam/common/include/mcux_psa_mbedtls_origin.h
+	)
+	
+	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
+
+	# The CAAM driver uses the legacy mbedTLS C API (mbedtls_mpi_*, mbedtls_ecp_*,
+	# mbedtls_ecdsa_*).  These symbols are compiled into the 'builtin' target only
+	# when MBEDTLS_ECP_C / MBEDTLS_BIGNUM_C are defined.  With mbedTLS 4.x /
+	# TF-PSA-Crypto they are stubbed out unless we opt back in via the legacy
+	# config header below.
+	zephyr_compile_options(
+		-include ${PSA_CRYPTO_DRIVER_PATH}/caam/caam_ecp_legacy_config.h
+	)
+
+	target_link_libraries(McuxPsaCryptoDriverCaam PUBLIC mbedTLS tfpsacrypto builtin)
+	target_link_libraries(McuxPsaCryptoDriverCaam PUBLIC zephyr_interface)
+
+endif() # CONFIG_PSA_CRYPTO_DRIVER_CAAM
+
 if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 	message ("psa-crypto-driver-casper_hashcrypt module is included.")
 

@@ -49,6 +49,7 @@ static inline psa_status_t caam_ecc_key_type(mcux_psa_caam_key_type_t caam_key_t
     return PSA_SUCCESS;
 }
 
+#if defined(PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE)
 static psa_status_t caam_internal_ecc_generate_key(mcux_psa_caam_key_type_t caam_key_type,
                                                    const psa_key_attributes_t *attributes,
                                                    uint8_t *key_buffer,
@@ -144,6 +145,7 @@ static psa_status_t caam_internal_ecc_generate_key(mcux_psa_caam_key_type_t caam
 
     return err;
 }
+#endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
 
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER < 0x04000000)
 static inline psa_status_t psa_to_caam_rsa_key_type(mcux_psa_caam_key_type_t caam_key_type,
@@ -314,6 +316,7 @@ static inline psa_status_t caam_fifost_key_type(mcux_psa_caam_key_type_t caam_ke
     return PSA_SUCCESS;
 }
 
+#if defined(PSA_WANT_KEY_TYPE_AES)
 static psa_status_t caam_internal_aes_generate_key_transparent(
     const psa_key_attributes_t *attributes,
     uint8_t *key_buffer,
@@ -452,6 +455,7 @@ static psa_status_t caam_internal_aes_generate_key_blacken(mcux_psa_caam_key_typ
 
     return err;
 }
+#endif /* PSA_WANT_KEY_TYPE_AES */
 
 psa_status_t caam_common_generate_key(mcux_psa_caam_key_type_t caam_key_type,
                                       const psa_key_attributes_t *attributes,
@@ -510,12 +514,21 @@ psa_status_t caam_common_generate_key(mcux_psa_caam_key_type_t caam_key_type,
                                                                  key_buffer,
                                                                  key_buffer_size,
                                                                  key_buffer_length);
+            } else {
+                err = caam_internal_aes_generate_key_blacken(caam_key_type,
+                                                             attributes,
+                                                             key_buffer,
+                                                             key_buffer_size,
+                                                             key_buffer_length);
             }
         } else
 #endif /*  PSA_WANT_KEY_TYPE_AES */
         {
         }
     }
+
+    (void)key_algo;
+    (void)key_type;
 
     return err;
 }
@@ -581,6 +594,9 @@ psa_status_t caam_common_export_public_key(const psa_key_attributes_t *attribute
     {
         *data_length = 0;
     }
+
+    (void)key_type;
+    (void)key_bits;
     return err;
 }
 
@@ -615,14 +631,12 @@ size_t caam_common_size_function(psa_key_type_t key_type, size_t key_bits)
         {
         }
     } else if (PSA_KEY_TYPE_IS_UNSTRUCTURED(key_type)) {
-#if defined(PSA_WANT_KEY_TYPE_AES)
-        if (key_type == PSA_KEY_TYPE_AES) {
-            ret = CAAM_ENCAP_DATA_SIZE(CAAM_OPAQUE_ALIGN(key_bytes));
-        } else
+#if defined(PSA_WANT_KEY_TYPE_AES) || defined(PSA_WANT_KEY_TYPE_HMAC)
+        ret = CAAM_ENCAP_DATA_SIZE(CAAM_OPAQUE_ALIGN(key_bytes));
 #endif /*  PSA_WANT_KEY_TYPE_AES */
-        {
-        }
     }
+
+    (void)key_bytes;
 
     return ret;
 }

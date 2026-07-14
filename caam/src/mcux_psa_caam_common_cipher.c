@@ -21,6 +21,7 @@
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
 #include "mbedtls/platform.h"
+#include "fsl_caam.h"
 
 static inline psa_status_t caam_cipher_key_type(mcux_psa_caam_key_type_t caam_key_type,
                                                 caam_key_type_t *aes_key_type)
@@ -558,6 +559,8 @@ psa_status_t caam_internal_cipher_encrypt(mcux_psa_caam_key_type_t caam_key_type
         }
     }
 
+    (void)caamHandle;
+
     return status;
 }
 
@@ -1077,6 +1080,8 @@ psa_status_t caam_internal_cipher_decrypt(mcux_psa_caam_key_type_t caam_key_type
             *output_length = expected_op_length;
         }
     }
+
+    (void)caamHandle;
 
     return status;
 }

@@ -109,6 +109,7 @@ static inline psa_status_t caam_ecc_key_type(mcux_psa_caam_key_type_t caam_key_t
     return PSA_SUCCESS;
 }
 
+#if defined(PSA_WANT_ALG_ECDSA) || defined(PSA_WANT_ALG_ECDSA_ANY)
 static psa_status_t caam_common_internal_ecc_sign(mcux_psa_caam_key_type_t caam_key_type,
                                                   const psa_key_attributes_t *attributes,
                                                   const uint8_t *key,
@@ -319,7 +320,9 @@ static psa_status_t caam_common_internal_ecc_verify(mcux_psa_caam_key_type_t caa
 
     return err;
 }
+#endif /* PSA_WANT_ALG_ECDSA || PSA_WANT_ALG_ECDSA_ANY */
 
+#if defined(PSA_WANT_ALG_RSA_PKCS1V15_SIGN) || defined(PSA_WANT_ALG_RSA_PKCS1V15_SIGN_RAW)
 static psa_status_t caam_common_internal_rsa_pkcs1_5_sign(mcux_psa_caam_key_type_t caam_key_type,
                                                           const psa_key_attributes_t *attributes,
                                                           const uint8_t *key,
@@ -502,7 +505,9 @@ static psa_status_t caam_common_internal_rsa_pkcs1_5_verify(mcux_psa_caam_key_ty
 
     return err;
 }
+#endif /* PSA_WANT_ALG_RSA_PKCS1V15_SIGN || PSA_WANT_ALG_RSA_PKCS1V15_SIGN_RAW */
 
+#if defined(PSA_WANT_ALG_RSA_PSS)
 static psa_status_t caam_common_internal_rsa_pss_sign(mcux_psa_caam_key_type_t caam_key_type,
                                                       const psa_key_attributes_t *attributes,
                                                       const uint8_t *key,
@@ -660,7 +665,13 @@ static psa_status_t caam_common_internal_rsa_pss_verify(mcux_psa_caam_key_type_t
 
     return err;
 }
+#endif /* PSA_WANT_ALG_RSA_PSS */
 
+#if defined(PSA_WANT_ALG_ECDSA) || \
+    defined(PSA_WANT_ALG_ECDSA_ANY) || \
+    defined(PSA_WANT_ALG_RSA_PKCS1V15_SIGN) || \
+    defined(PSA_WANT_ALG_RSA_PKCS1V15_SIGN_RAW) || \
+    defined(PSA_WANT_ALG_RSA_PSS)
 static psa_status_t caam_common_internal_sign_msg(mcux_psa_caam_key_type_t caam_key_type,
                                                   const psa_key_attributes_t *attributes,
                                                   const uint8_t *key,
@@ -760,6 +771,7 @@ static psa_status_t caam_common_internal_verify_msg(mcux_psa_caam_key_type_t caa
 
     return err;
 }
+#endif /* PSA_WANT_ALG_ECDSA || PSA_WANT_ALG_ECDSA_ANY) || PSA_WANT_ALG_RSA_PKCS1V15_SIGN || PSA_WANT_ALG_RSA_PKCS1V15_SIGN_RAW || PSA_WANT_ALG_RSA_PSS */
 
 psa_status_t caam_common_asymmetric_sign_hash(mcux_psa_caam_key_type_t caam_key_type,
                                               const psa_key_attributes_t *attributes,
@@ -822,6 +834,8 @@ psa_status_t caam_common_asymmetric_sign_hash(mcux_psa_caam_key_type_t caam_key_
     {
     }
 
+    (void)key_type;
+
     return status;
 }
 
@@ -879,6 +893,8 @@ psa_status_t caam_common_asymmetric_verify_hash(mcux_psa_caam_key_type_t caam_ke
 #endif /* PSA_WANT_ALG_RSA_PSS */
     {
     }
+
+    (void)key_type;
 
     return status;
 }
@@ -948,6 +964,8 @@ psa_status_t caam_common_asymmetric_sign_message(mcux_psa_caam_key_type_t caam_k
     {
     }
 
+    (void)key_type;
+
     return status;
 }
 
@@ -1008,6 +1026,8 @@ psa_status_t caam_common_asymmetric_verify_message(mcux_psa_caam_key_type_t caam
 #endif /* PSA_WANT_ALG_RSA_PSS */
     {
     }
+
+    (void)key_type;
 
     return status;
 }

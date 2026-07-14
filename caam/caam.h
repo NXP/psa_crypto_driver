@@ -37,11 +37,7 @@
 #endif
 #endif /* PSA_CRYPTO_DRIVER_CAAM */
 
-/*
- * Location specific details go in this file which is also exposed to application writers
- * to iunclude when using key from a particular location.
- */
-#include "mcux_psa_defines.h"
+#define PSA_CRYPTO_CAAM_LOCATION 0x000001
 
 #include "caam_crypto_primitives.h"
 #include "mcux_psa_caam_common_aead.h"

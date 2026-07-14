@@ -17,8 +17,19 @@
 #include "mcux_psa_caam_init.h"
 #include "mbedtls/error.h"
 #include "mcux_psa_caam_common_key_generation.h"
-#include "mbedtls/psa_util.h"
 #include "psa_util_internal.h"
+#include "mbedtls/platform.h"
+#include "mbedtls/build_info.h"
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
+#include "mbedtls/private/ecdsa.h"
+#include "mbedtls/private/ecp.h"
+#else
+#include "mbedtls/ecdsa.h"
+#include "mbedtls/ecp.h"
+#endif
+#include "mbedtls/psa_util.h"
+
+mbedtls_ecp_group_id mbedtls_ecc_group_from_psa(psa_ecc_family_t family, size_t bits);
 
 static inline psa_status_t caam_cesc_key_type(mcux_psa_caam_key_type_t caam_key_type,
                                               caam_desc_type_t *desc_key_type)

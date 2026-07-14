@@ -132,6 +132,7 @@ psa_status_t caam_common_internal_rsa_encrypt(mcux_psa_caam_key_type_t caam_key_
     return err;
 }
 
+#if defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
 static psa_status_t caam_common_internal_rsa_encrypt_pkcs1_5(mcux_psa_caam_key_type_t caam_key_type,
                                                              const psa_key_attributes_t *attributes,
                                                              const uint8_t *key_buffer,
@@ -163,7 +164,9 @@ static psa_status_t caam_common_internal_rsa_encrypt_pkcs1_5(mcux_psa_caam_key_t
                                             output_size,
                                             output_length);
 }
+#endif
 
+#if defined(PSA_WANT_ALG_RSA_OAEP)
 static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type_t caam_key_type,
                                                           const psa_key_attributes_t *attributes,
                                                           const uint8_t *key_buffer,
@@ -285,6 +288,7 @@ static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type
 
     return err;
 }
+#endif
 
 static inline psa_status_t caam_rsa_key_type(mcux_psa_caam_key_type_t caam_key_type,
                                              caam_rsa_encryption_type_t *rsa_key_type)
@@ -454,6 +458,7 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
     return err;
 }
 
+#if defined(PSA_WANT_ALG_RSA_PKCS1V15_CRYPT)
 static psa_status_t caam_common_internal_rsa_decrypt_pkcs1_5(mcux_psa_caam_key_type_t caam_key_type,
                                                              const psa_key_attributes_t *attributes,
                                                              const uint8_t *key_buffer,
@@ -477,7 +482,10 @@ static psa_status_t caam_common_internal_rsa_decrypt_pkcs1_5(mcux_psa_caam_key_t
                                             output_size,
                                             output_length);
 }
+#endif
 
+
+#if defined(PSA_WANT_ALG_RSA_OAEP)
 static psa_status_t caam_common_internal_rsa_decrypt_oaep(mcux_psa_caam_key_type_t caam_key_type,
                                                           const psa_key_attributes_t *attributes,
                                                           const uint8_t *key_buffer,
@@ -612,6 +620,7 @@ static psa_status_t caam_common_internal_rsa_decrypt_oaep(mcux_psa_caam_key_type
 
     return PSA_SUCCESS;
 }
+#endif
 
 /** \defgroup psa_asym_encrypt PSA driver entry points for rsa cipher
  *
@@ -672,6 +681,8 @@ psa_status_t caam_common_asymmetric_encrypt(mcux_psa_caam_key_type_t caam_key_ty
     {
     }
 
+    (void)key_type;
+
     return status;
 }
 
@@ -726,6 +737,8 @@ psa_status_t caam_common_asymmetric_decrypt(mcux_psa_caam_key_type_t caam_key_ty
 #endif /* PSA_WANT_ALG_RSA_OAEP */
     {
     }
+
+    (void)key_type;
 
     return status;
 }
