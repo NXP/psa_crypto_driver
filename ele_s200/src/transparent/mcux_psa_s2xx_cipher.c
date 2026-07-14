@@ -159,6 +159,9 @@ psa_status_t ele_s2xx_transparent_cipher_encrypt(const psa_key_attributes_t *att
     }
 
     /* For CBC and ECB No padding, input length has to be multiple of cipher block length */
+    /* coverity[misra_c_2012_rule_10_1_violation]: PSA macro performs bitwise ops on unsigned type as required */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
+    /* coverity[misra_c_2012_rule_10_7_violation]: composite expression implicitly converted as required */
     if ((alg == PSA_ALG_CBC_NO_PADDING || alg == PSA_ALG_ECB_NO_PADDING) &&
         (0u != (input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type))))
     {
@@ -268,6 +271,9 @@ psa_status_t ele_s2xx_transparent_cipher_decrypt(const psa_key_attributes_t *att
     }
 
     /* Input length has to be multiple of block size for decrypt operation */
+    /* coverity[misra_c_2012_rule_10_1_violation]: PSA macro performs bitwise ops on unsigned type as required */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
+    /* coverity[misra_c_2012_rule_10_7_violation]: composite expression implicitly converted as required */
     if ((alg == PSA_ALG_CBC_NO_PADDING || alg == PSA_ALG_ECB_NO_PADDING) &&
         (0u != (input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type))))
     {
@@ -275,6 +281,9 @@ psa_status_t ele_s2xx_transparent_cipher_decrypt(const psa_key_attributes_t *att
     }
 
     /* Find the IV length for key type and algorithm */
+    /* coverity[misra_c_2012_rule_10_1_violation]: PSA macro performs bitwise ops on unsigned type as required */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
+    /* coverity[misra_c_2012_rule_10_6_violation]: composite expression assigned to wider type as required */
     iv_length = PSA_CIPHER_IV_LENGTH(key_type, alg);
 
     /* Input buffer -> IV + INPUT.

@@ -338,6 +338,7 @@ psa_status_t ele_s2xx_opaque_import_key(const psa_key_attributes_t *attributes,
         tunnelCtx.bufferSize = key_buffer_size;
 
         /* Pass the blob */
+        /* coverity[misra_c_2012_rule_11_8_violation]: data is const but tunnel API requires non-const buffer */
         if (sss_sscp_tunnel(&tunnelCtx, (uint8_t *)data, data_length, &resultState) !=
             kStatus_SSS_Success)
         {
@@ -851,6 +852,8 @@ psa_status_t ele_s2xx_opaque_generate_key(const psa_key_attributes_t *attributes
 {
     psa_status_t status           = PSA_SUCCESS;
     psa_key_type_t type           = psa_get_key_type(attributes);
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA_KEY_TYPE_ECC_GET_FAMILY uses signed 0xff mask */
     psa_ecc_family_t ecc_family   = PSA_KEY_TYPE_ECC_GET_FAMILY(type);
     size_t bits                   = psa_get_key_bits(attributes);
     psa_key_lifetime_t lifetime   = psa_get_key_lifetime(attributes);

@@ -23,6 +23,7 @@
 /* For exporting public keys, we will directly use the internal export wrapper,
  * so that we don't call the public psa_export_public_key() API.
  */
+/* coverity[misra_c_2012_rule_8_5_violation]: external declaration required to access internal PSA function */
 extern psa_status_t psa_export_public_key_internal(
     const psa_key_attributes_t *attributes,
     const uint8_t *key_buffer,
@@ -52,6 +53,7 @@ static psa_status_t translate_psa_asym_to_ele_asym(const psa_key_attributes_t *a
     }
     else if (true == PSA_ALG_IS_ECDSA(alg))
     {
+        /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
         sign_hash_alg = PSA_ALG_SIGN_GET_HASH(alg);
         status        = PSA_SUCCESS;
 
@@ -94,6 +96,8 @@ static psa_status_t validate_key_bitlen_for_hash_sign(const psa_key_attributes_t
                                                       psa_algorithm_t alg,
                                                       size_t hash_length)
 {
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
+    /* coverity[misra_c_2012_rule_10_6_violation]: composite expression assigned to wider type as required */
     size_t hash_alg_bitlen   = PSA_BYTES_TO_BITS(PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg)));
     size_t hash_input_bitlen = 0u;
     size_t key_bitlen        = psa_get_key_bits(attributes);
@@ -110,6 +114,7 @@ static psa_status_t validate_key_bitlen_for_hash_sign(const psa_key_attributes_t
      */
     if (NISTP521_BITLEN == key_bitlen)
     {
+        /* coverity[misra_c_2012_rule_14_3_violation]: condition depends on compile-time constant intentionally */
         key_bitlen = PSA_BYTES_TO_BITS(PSA_HASH_LENGTH(PSA_ALG_SHA_512));
     }
 
@@ -152,6 +157,8 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
 
     /* Check if we support ECC family */
     status = PSA_SUCCESS;
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA macro result cast to wider essential type as needed */
     switch (PSA_KEY_TYPE_ECC_GET_FAMILY(key_type))
     {
         case PSA_ECC_FAMILY_SECP_R1:
@@ -179,6 +186,7 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
          * if at all needed (e.g. signature verification with a keypair).
          */
         key_part      = kSSS_KeyPart_Private;
+        /* coverity[misra_c_2012_rule_11_8_violation]: cast removes const qualifier intentionally to pass to SSS API */
         key_data      = (uint8_t *)key_buffer;
         key_data_size = PSA_BITS_TO_BYTES(key_bits);
     }
@@ -188,6 +196,7 @@ static psa_status_t asymmetric_sign_setkey(const psa_key_attributes_t *attribute
         key_part        = kSSS_KeyPart_Public;
         allocation_size = allocation_size * 2u;
 
+        /* coverity[misra_c_2012_rule_11_8_violation]: cast removes const qualifier intentionally to pass to SSS API */
         key_data      = (uint8_t *)key_buffer + 1;
         key_data_size = PSA_BITS_TO_BYTES(key_bits) * 2u;
     }
@@ -233,6 +242,7 @@ psa_status_t ele_s2xx_transparent_sign_hash(const psa_key_attributes_t *attribut
     }
 
     /* Hash sign/verify only with randomized ECDSA on S200 */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
     if (false == PSA_ALG_IS_RANDOMIZED_ECDSA(alg))
     {
         return PSA_ERROR_NOT_SUPPORTED;
@@ -278,6 +288,7 @@ psa_status_t ele_s2xx_transparent_sign_hash(const psa_key_attributes_t *attribut
     }
 
     *signature_length = signature_size;
+    /* coverity[misra_c_2012_rule_11_8_violation]: cast removes const qualifier intentionally to pass to SSS API */
     status = ele_s2xx_common_sign_digest((uint8_t *)hash, hash_length, signature, signature_length, &sssKey, ele_alg);
     if (PSA_SUCCESS != status)
     {
@@ -308,6 +319,8 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
     sss_sscp_object_t sssKey                 = {0};
     sss_sscp_object_t sssKey_public_exported = {0};
     sss_algorithm_t ele_alg                  = {0};
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA macro result cast to wider essential type as needed */
     psa_ecc_family_t family                  = PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(attributes));
 
     /* For exporting the public part of the key in case of ECC keypair */
@@ -323,6 +336,7 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
     }
 
     /* Hash sign/verify only with randomized ECDSA on S200 */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
     if (false == PSA_ALG_IS_RANDOMIZED_ECDSA(alg))
     {
         return PSA_ERROR_NOT_SUPPORTED;
@@ -425,14 +439,18 @@ psa_status_t ele_s2xx_transparent_verify_hash(const psa_key_attributes_t *attrib
         }
 
         /* Finally, verify with the exported public key */
+        /* coverity[misra_c_2012_rule_11_8_violation]: cast removes const qualifier intentionally to pass to SSS API */
         status = ele_s2xx_common_verify_digest((uint8_t *)hash, hash_length,
+                                               /* coverity[misra_c_2012_rule_11_8_violation]: cast removes const qualifier intentionally */
                                                (uint8_t *)signature, signature_length,
                                                &sssKey_public_exported, ele_alg);
     }
     else
     {
         /* We already have the public key, we can use it directly */
+        /* coverity[misra_c_2012_rule_11_8_violation]: cast removes const qualifier intentionally to pass to SSS API */
         status = ele_s2xx_common_verify_digest((uint8_t *)hash, hash_length,
+                                               /* coverity[misra_c_2012_rule_11_8_violation]: cast removes const qualifier intentionally */
                                                (uint8_t *)signature, signature_length,
                                                &sssKey, ele_alg);
     }

@@ -117,6 +117,8 @@ psa_status_t ele_s2xx_transparent_mac_compute(const psa_key_attributes_t *attrib
         return status;
     }
 
+    /* coverity[misra_c_2012_rule_10_1_violation]: PSA macro performs bitwise ops on unsigned type as required */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
     mac_size = PSA_MAC_LENGTH(key_type, key_bits, alg);
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)

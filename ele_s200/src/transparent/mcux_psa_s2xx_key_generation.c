@@ -113,6 +113,8 @@ psa_status_t ele_s2xx_transparent_export_public_key(const psa_key_attributes_t *
 #if defined(ELE200_EXTENDED_FEATURES)
     psa_status_t status           = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_type_t type           = psa_get_key_type(attributes);
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA macro result cast to wider essential type as needed */
     psa_ecc_family_t family       = PSA_KEY_TYPE_ECC_GET_FAMILY(type);
     size_t bits                   = psa_get_key_bits(attributes);
     sss_cipher_type_t cipher_type = {0};
@@ -217,6 +219,8 @@ psa_status_t ele_s2xx_transparent_key_agreement(const psa_key_attributes_t *attr
     psa_status_t status             = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_type_t type             = psa_get_key_type(attributes);
     size_t bits                     = psa_get_key_bits(attributes);
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA macro result cast to wider essential type as needed */
     psa_ecc_family_t family         = PSA_KEY_TYPE_ECC_GET_FAMILY(type);
     sss_sscp_object_t sssKey        = {0u};
     sss_sscp_object_t sssKey_peer   = {0u};

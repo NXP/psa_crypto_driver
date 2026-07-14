@@ -41,6 +41,7 @@ psa_status_t ele_s2xx_common_aead(const uint8_t *nonce, size_t nonce_length,
     }
 
     /* RUN AEAD */
+    /* coverity[misra_c_2012_rule_11_8_violation]: nonce parameter is const but third-party API requires non-const */
     if ((sss_sscp_aead_one_go(&ctx, input, output, input_size, (uint8_t *)nonce, nonce_length,
                               additional_data, additional_data_length, tag, tag_length)) !=
         kStatus_SSS_Success)
@@ -118,6 +119,7 @@ psa_status_t ele_s2xx_common_cipher(sss_sscp_object_t *sssKey,
     }
 
     /* Run encryption */
+    /* coverity[misra_c_2012_rule_11_8_violation]: iv parameter is const but third-party API requires non-const */
     if (sss_sscp_cipher_one_go(&ctx, (uint8_t *)iv,
                                iv_length, input,
                                output, input_length) != kStatus_SSS_Success)
@@ -329,7 +331,7 @@ int ele_s2xx_util_ct_memcmp(const void *a,
          * This avoids IAR compiler warning:
          * 'the order of volatile accesses is undefined ..' */
         unsigned char x = A[i], y = B[i];
-        diff |= (uint32_t) (x ^ y);
+        diff |= (uint32_t)x ^ (uint32_t)y;
     }
 
 #if (INT_MAX < INT32_MAX)
@@ -347,7 +349,9 @@ int ele_s2xx_util_ct_memcmp(const void *a,
      * This ensures that the value returned by the function is non-zero iff
      * diff is non-zero.
      */
-    return (int) ((diff & 0xffff) | (diff >> 16));
+    uint32_t result = (diff & 0xffffU) | (diff >> 16U);
+    /* coverity[misra_c_2012_rule_10_8_violation]: intentional cast of unsigned result to signed int return type */
+    return (int)result;
 #endif
 }
 
@@ -391,7 +395,9 @@ size_t ele_s2xx_get_ecc_keypair_size(size_t key_bits)
 psa_status_t translate_psa_ecc_family_to_ele_cipher_type(const psa_key_attributes_t *attributes,
                                                          sss_cipher_type_t *cipher_type)
 {
-    psa_status_t status         = PSA_SUCCESS;
+    psa_status_t status = PSA_SUCCESS;
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA macro uses signed literal 0xff with unsigned type */
     psa_ecc_family_t ecc_family = PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(attributes));
 
     switch (ecc_family)
@@ -437,6 +443,9 @@ psa_status_t translate_psa_algorithm_to_ele_key_property(psa_algorithm_t alg,
     {
         *prop |= kSSS_KeyProp_CryptoAlgo_AES;
     }
+    /* coverity[misra_c_2012_rule_12_2_violation] */
+    /* coverity[misra_c_2012_rule_10_1_violation] */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macros contain signed/unsigned type mismatches and shift issues */
     else if (PSA_ALG_CCM == PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg) || PSA_ALG_GCM == PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg) ||
              ALG_NXP_ALL_AEAD == alg)
     {
@@ -446,6 +455,7 @@ psa_status_t translate_psa_algorithm_to_ele_key_property(psa_algorithm_t alg,
     {
         *prop |= kSSS_KeyProp_CryptoAlgo_MAC;
     }
+    /* coverity[misra_c_2012_rule_7_2_violation]: PSA macro contains unsigned literal without U suffix */
     else if (true == PSA_ALG_IS_ANY_HKDF(alg) || true == PSA_ALG_IS_ECDH(alg) ||
              ALG_S200_ECBKDF_OR_CKDF == alg || ALG_S200_ECDH_CKDF == alg)
     {

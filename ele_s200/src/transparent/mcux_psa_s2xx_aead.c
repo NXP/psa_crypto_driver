@@ -27,6 +27,9 @@
 static psa_status_t translate_psa_aead_to_ele_aead(psa_algorithm_t alg, psa_key_type_t key_type, sss_algorithm_t *ele_alg)
 {
     psa_status_t status                             = PSA_ERROR_NOT_SUPPORTED;
+    /* coverity[misra_c_2012_rule_12_2_violation]: shift operator used within PSA macro is well-defined for this type */
+    /* coverity[misra_c_2012_rule_10_1_violation]: PSA macro performs bitwise ops on unsigned type as required */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA macro operands have compatible essential types */
     psa_algorithm_t default_alg                     = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
     size_t tag_length                               = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
     size_t valid_tag_lengths[VALID_TAG_LENGTH_SIZE] = {0u};
@@ -310,6 +313,7 @@ psa_status_t ele_s2xx_transparent_aead_decrypt(const psa_key_attributes_t *attri
     *plaintext_length = 0;
 
     /* Tag is at the end of ciphertext */
+    /* coverity[misra_c_2012_rule_11_8_violation]: cast removes const qualifier intentionally to pass to SSS API */
     tag = (uint8_t *)(ciphertext + cipher_length);
 
     if (mcux_mutex_lock(&ele_hwcrypto_mutex) != 0)

@@ -80,6 +80,8 @@ static psa_status_t ele_s2xx_cipher_arg_validation(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_7_2_violation]: PSA_ALG_IS_VENDOR_DEFINED uses 2147483648U literal without U suffix */
     /* Check permissions for EL2GO keys, as those checks were skipped in common layer */
     if (true == PSA_ALG_IS_VENDOR_DEFINED(psa_get_key_algorithm(attributes)))
     {
@@ -124,6 +126,9 @@ static psa_status_t ele_s2xx_cipher_arg_validation(
     }
 
     /* For CBC and ECB No padding, input length has to be multiple of cipher block length */
+    /* coverity[misra_c_2012_rule_10_1_violation] */
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_7_violation]: PSA_BLOCK_CIPHER_BLOCK_LENGTH macro contains shift/type issues */
     if ((alg == PSA_ALG_CBC_NO_PADDING || alg == PSA_ALG_ECB_NO_PADDING) &&
         (0u != (input_length % PSA_BLOCK_CIPHER_BLOCK_LENGTH(psa_get_key_type(attributes)))))
     {
@@ -263,6 +268,9 @@ psa_status_t ele_s2xx_opaque_cipher_decrypt(
     }
 
     /* Find the IV length for key type and algorithm */
+    /* coverity[misra_c_2012_rule_10_1_violation] */
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_6_violation]: PSA_CIPHER_IV_LENGTH macro contains shift/type issues */
     iv_length = PSA_CIPHER_IV_LENGTH(key_type, alg);
 
     /* Input buffer -> IV + INPUT.

@@ -35,6 +35,8 @@ static psa_status_t translate_psa_asym_to_ele_asym(psa_algorithm_t alg,
     }
     else if (true == PSA_ALG_IS_ECDSA(alg))
     {
+        /* coverity[misra_c_2012_rule_10_4_violation] */
+        /* coverity[misra_c_2012_rule_10_6_violation]: PSA_ALG_SIGN_GET_HASH macro contains signed/unsigned type issues */
         sign_hash_alg = PSA_ALG_SIGN_GET_HASH(alg);
         status        = PSA_SUCCESS;
 
@@ -77,6 +79,8 @@ static psa_status_t validate_key_bitlen_for_hash_sign(const psa_key_attributes_t
                                                       psa_algorithm_t alg,
                                                       size_t hash_length)
 {
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_6_violation]: PSA_ALG_SIGN_GET_HASH macro contains signed/unsigned type issues */
     size_t hash_alg_bitlen   = PSA_BYTES_TO_BITS(PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg)));
     size_t hash_input_bitlen = 0u;
     size_t key_bitlen        = psa_get_key_bits(attributes);
@@ -134,6 +138,8 @@ static psa_status_t validate_key_bitlen_for_message_sign(const psa_key_attribute
          * so we know that the hash length is
          * PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg)).
          */
+        /* coverity[misra_c_2012_rule_10_4_violation] */
+        /* coverity[misra_c_2012_rule_10_6_violation]: PSA_ALG_SIGN_GET_HASH macro contains signed/unsigned type issues */
         status = validate_key_bitlen_for_hash_sign(attributes, alg, PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg)));
     }
     else if (PSA_ALG_PURE_EDDSA == alg)
@@ -170,6 +176,8 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
     psa_key_location_t location   = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
     sss_cipher_type_t cipher_type = {0u};
     psa_key_type_t type           = psa_get_key_type(attributes);
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA_KEY_TYPE_ECC_GET_FAMILY uses signed 0xff mask */
     psa_ecc_family_t ecc_family   = PSA_KEY_TYPE_ECC_GET_FAMILY(type);
 
     status = translate_psa_asym_to_ele_asym(alg, &ele_alg);
@@ -189,6 +197,7 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
         /* EL2GO is a special case and it supports only SECP ECDSA for
          * sign/verify hash.
          */
+        /* coverity[misra_c_2012_rule_10_4_violation]: PSA_ALG_IS_RANDOMIZED_ECDSA uses 0x100UL bitmask */
         if (ecc_family != PSA_ECC_FAMILY_SECP_R1 || false == PSA_ALG_IS_RANDOMIZED_ECDSA(alg))
         {
             return PSA_ERROR_NOT_SUPPORTED;
@@ -196,6 +205,7 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
     }
 
     /* Hash sign/verify only with randomized ECDSA or Ed25519ph on S200 */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA_ALG_IS_RANDOMIZED_ECDSA uses 0x100UL bitmask */
     if (false == PSA_ALG_IS_RANDOMIZED_ECDSA(alg) && alg != PSA_ALG_ED25519PH)
     {
         return PSA_ERROR_NOT_SUPPORTED;
@@ -241,6 +251,7 @@ psa_status_t ele_s2xx_opaque_sign_hash(const psa_key_attributes_t *attributes,
     }
 
     *signature_length = signature_size;
+    /* coverity[misra_c_2012_rule_11_8_violation]: hash is const but sign API requires non-const digest buffer */
     status = ele_s2xx_common_sign_digest((uint8_t *)hash,
                                          hash_length,
                                          signature,
@@ -275,6 +286,8 @@ psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
     psa_key_location_t location   = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
     sss_cipher_type_t cipher_type = {0u};
     psa_key_type_t type           = psa_get_key_type(attributes);
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA_KEY_TYPE_ECC_GET_FAMILY uses signed 0xff mask */
     psa_ecc_family_t ecc_family   = PSA_KEY_TYPE_ECC_GET_FAMILY(type);
 
     status = translate_psa_asym_to_ele_asym(alg, &ele_alg);
@@ -294,6 +307,7 @@ psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
         /* EL2GO is a special case and it supports only SECP ECDSA for
          * sign/verify hash.
          */
+        /* coverity[misra_c_2012_rule_10_4_violation]: PSA_ALG_IS_RANDOMIZED_ECDSA uses 0x100UL bitmask */
         if (ecc_family != PSA_ECC_FAMILY_SECP_R1 || false == PSA_ALG_IS_RANDOMIZED_ECDSA(alg))
         {
             return PSA_ERROR_NOT_SUPPORTED;
@@ -301,6 +315,7 @@ psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
     }
 
     /* Hash sign/verify only with randomized ECDSA or Ed25519ph on S200 */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA_ALG_IS_RANDOMIZED_ECDSA uses 0x100UL bitmask */
     if (false == PSA_ALG_IS_RANDOMIZED_ECDSA(alg) && alg != PSA_ALG_ED25519PH)
     {
         return PSA_ERROR_NOT_SUPPORTED;
@@ -339,6 +354,7 @@ psa_status_t ele_s2xx_opaque_verify_hash(const psa_key_attributes_t *attributes,
         goto exit;
     }
 
+    /* coverity[misra_c_2012_rule_11_8_violation]: hash/signature are const but verify API requires non-const buffers */
     status = ele_s2xx_common_verify_digest((uint8_t *)hash,
                                            hash_length,
                                            (uint8_t *)signature,
@@ -377,6 +393,8 @@ psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes
     const uint8_t *input_internal                  = input;
     size_t input_length_internal                   = input_length;
     psa_key_type_t type                            = psa_get_key_type(attributes);
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA_KEY_TYPE_ECC_GET_FAMILY uses signed 0xff mask */
     psa_ecc_family_t ecc_family                    = PSA_KEY_TYPE_ECC_GET_FAMILY(type);
     psa_key_location_t location                    = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
@@ -419,6 +437,7 @@ psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes
     }
 
     /* Message sign/verify only with randomized ECDSA, Ed25519, or Ed25519ph */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA_ALG_IS_RANDOMIZED_ECDSA uses 0x100UL bitmask */
     if ((false == PSA_ALG_IS_RANDOMIZED_ECDSA(alg)) &&
         (PSA_ALG_PURE_EDDSA != alg) &&
         (PSA_ALG_ED25519PH != alg))
@@ -444,6 +463,8 @@ psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes
     /* Pre-hash for hash-and-sign algorithms */
     if (true == PSA_ALG_IS_ECDSA(alg) || PSA_ALG_ED25519PH == alg)
     {
+        /* coverity[misra_c_2012_rule_10_4_violation] */
+        /* coverity[misra_c_2012_rule_10_6_violation]: PSA_ALG_SIGN_GET_HASH macro contains signed/unsigned type issues */
         status = ele_s2xx_transparent_hash_compute(PSA_ALG_SIGN_GET_HASH(alg),
                                                    input_internal,
                                                    input_length_internal,
@@ -471,6 +492,7 @@ psa_status_t ele_s2xx_opaque_sign_message(const psa_key_attributes_t *attributes
     }
 
     *signature_length = signature_size;
+    /* coverity[misra_c_2012_rule_11_8_violation]: input_internal is const but sign API requires non-const digest buffer */
     status = ele_s2xx_common_sign_digest((uint8_t *)input_internal,
                                          input_length_internal,
                                          signature,
@@ -508,6 +530,8 @@ psa_status_t ele_s2xx_opaque_verify_message(const psa_key_attributes_t *attribut
     const uint8_t *input_internal                  = input;
     size_t input_length_internal                   = input_length;
     psa_key_type_t type                            = psa_get_key_type(attributes);
+    /* coverity[misra_c_2012_rule_10_4_violation] */
+    /* coverity[misra_c_2012_rule_10_8_violation]: PSA_KEY_TYPE_ECC_GET_FAMILY uses signed 0xff mask */
     psa_ecc_family_t ecc_family                    = PSA_KEY_TYPE_ECC_GET_FAMILY(type);
     psa_key_location_t location                    = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
@@ -550,6 +574,7 @@ psa_status_t ele_s2xx_opaque_verify_message(const psa_key_attributes_t *attribut
     }
 
     /* Message sign/verify only with randomized ECDSA, Ed25519, or Ed25519ph */
+    /* coverity[misra_c_2012_rule_10_4_violation]: PSA_ALG_IS_RANDOMIZED_ECDSA uses 0x100UL bitmask */
     if ((false == PSA_ALG_IS_RANDOMIZED_ECDSA(alg)) &&
         (PSA_ALG_PURE_EDDSA != alg) &&
         (PSA_ALG_ED25519PH != alg))
@@ -575,6 +600,8 @@ psa_status_t ele_s2xx_opaque_verify_message(const psa_key_attributes_t *attribut
     /* Pre-hash for hash-and-sign algorithms */
     if (true == PSA_ALG_IS_ECDSA(alg) || PSA_ALG_ED25519PH == alg)
     {
+        /* coverity[misra_c_2012_rule_10_4_violation] */
+        /* coverity[misra_c_2012_rule_10_6_violation]: PSA_ALG_SIGN_GET_HASH macro contains signed/unsigned type issues */
         status = ele_s2xx_transparent_hash_compute(PSA_ALG_SIGN_GET_HASH(alg),
                                                    input_internal,
                                                    input_length_internal,
@@ -601,6 +628,7 @@ psa_status_t ele_s2xx_opaque_verify_message(const psa_key_attributes_t *attribut
         goto exit;
     }
 
+    /* coverity[misra_c_2012_rule_11_8_violation]: input_internal/signature are const but verify API requires non-const */
     status = ele_s2xx_common_verify_digest((uint8_t *)input_internal,
                                            input_length_internal,
                                            (uint8_t *)signature,

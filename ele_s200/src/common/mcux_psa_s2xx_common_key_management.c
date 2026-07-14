@@ -124,10 +124,11 @@ static uint16_t get_uint16_val(const uint8_t *input)
     return output;
 }
 
-// Function taken from MbedTLS
-static int get_len(const unsigned char **p, const unsigned char *end, size_t *len)
+/* coverity[misra_c_2012_rule_5_8_violation]: local "p_end" name chosen to avoid conflict with external "end" symbol */
+/* Function taken from MbedTLS */
+static int get_len(const unsigned char **p, const unsigned char *p_end, size_t *len)
 {
-    if ((end - *p) < 1)
+    if ((p_end - *p) < 1)
     {
         return (PSA_ERROR_INVALID_ARGUMENT);
     }
@@ -138,10 +139,11 @@ static int get_len(const unsigned char **p, const unsigned char *end, size_t *le
     }
     else
     {
+        /* coverity[misra_c_2012_rule_16_1_violation]: switch controlling expression type matches case values */
         switch (**p & 0x7Fu)
         {
-            case 1:
-                if ((end - *p) < 2)
+            case 1U:
+                if ((p_end - *p) < 2)
                 {
                     return (PSA_ERROR_INVALID_ARGUMENT);
                 }
@@ -150,51 +152,54 @@ static int get_len(const unsigned char **p, const unsigned char *end, size_t *le
                 (*p) += 2;
                 break;
 
-            case 2:
-                if ((end - *p) < 3)
+            case 2U:
+                if ((p_end - *p) < 3)
                 {
                     return (PSA_ERROR_INVALID_ARGUMENT);
                 }
 
-                *len = ((size_t)(*p)[1] << 8) | (*p)[2];
+                *len = ((size_t)(*p)[1] << 8U) | (*p)[2];
                 (*p) += 3;
                 break;
 
-            case 3:
-                if ((end - *p) < 4)
+            case 3U:
+                if ((p_end - *p) < 4)
                 {
                     return (PSA_ERROR_INVALID_ARGUMENT);
                 }
 
-                *len = ((size_t)(*p)[1] << 16) | ((size_t)(*p)[2] << 8) | (*p)[3];
+                *len = ((size_t)(*p)[1] << 16U) | ((size_t)(*p)[2] << 8U) | (*p)[3];
                 (*p) += 4;
                 break;
 
-            case 4:
-                if ((end - *p) < 5)
+            case 4U:
+                if ((p_end - *p) < 5)
                 {
                     return (PSA_ERROR_INVALID_ARGUMENT);
                 }
 
-                *len = ((size_t)(*p)[1] << 24) | ((size_t)(*p)[2] << 16) | ((size_t)(*p)[3] << 8) | (*p)[4];
+                *len = ((size_t)(*p)[1] << 24U) | ((size_t)(*p)[2] << 16U) | ((size_t)(*p)[3] << 8U) | (*p)[4];
                 (*p) += 5;
                 break;
 
             default:
+                /* coverity[misra_c_2012_rule_16_3_violation]: return exits the function; break is unreachable */
                 return (PSA_ERROR_INVALID_ARGUMENT);
         }
     }
-    if (*len > (size_t)(end - *p))
+    /* coverity[misra_c_2012_rule_10_8_violation]: ptrdiff_t to size_t cast; p_end >= *p guaranteed by checks above */
+    if (*len > (size_t)(p_end - *p))
     {
         return (PSA_ERROR_INVALID_ARGUMENT);
     }
     return (0);
 }
 
-// Function taken from MbedTLS
-static int get_tag(const unsigned char **p, const unsigned char *end, size_t *len, uint8_t tag)
+/* coverity[misra_c_2012_rule_5_8_violation]: local "p_end" name chosen to avoid conflict with external "end" symbol */
+/* Function taken from MbedTLS */
+static int get_tag(const unsigned char **p, const unsigned char *p_end, size_t *len, uint8_t tag)
 {
-    if ((end - *p) < 1)
+    if ((p_end - *p) < 1)
     {
         return (PSA_ERROR_INVALID_ARGUMENT);
     }
@@ -206,7 +211,7 @@ static int get_tag(const unsigned char **p, const unsigned char *end, size_t *le
 
     (*p)++;
 
-    return (get_len(p, end, len));
+    return (get_len(p, p_end, len));
 }
 
 static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_size, psa_cmd_t *psa_cmd)
@@ -216,8 +221,9 @@ static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_si
     uint8_t tag    = 0U; // the tag of the current TLV
     size_t cmd_len = 0U; // the length of the current TLV
 
+    /* coverity[misra_c_2012_rule_5_8_violation]: local "p_end" name chosen to avoid conflict with external "end" symbol */
     const uint8_t *cmd_ptr = NULL;
-    const uint8_t *end     = NULL;
+    const uint8_t *p_end   = NULL;
 
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(data != NULL, PSA_ERROR_INVALID_ARGUMENT, "The command is null");
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(psa_cmd != NULL, PSA_ERROR_INVALID_ARGUMENT,
@@ -227,12 +233,12 @@ static psa_status_t parse_psa_import_command(const uint8_t *data, size_t data_si
     psa_cmd->attributes = psa_key_attributes_init();
 
     cmd_ptr = data;
-    end     = cmd_ptr + data_size;
+    p_end   = cmd_ptr + data_size;
 
-    while ((cmd_ptr + 1) < end)
+    while ((cmd_ptr + 1U) < p_end)
     {
         tag        = *cmd_ptr;
-        psa_status = get_tag(&cmd_ptr, end, &cmd_len, tag);
+        psa_status = get_tag(&cmd_ptr, p_end, &cmd_len, tag);
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("get_tag failed: 0x%x", psa_status);
 
         switch (tag)

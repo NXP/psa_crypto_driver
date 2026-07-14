@@ -115,6 +115,7 @@ int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
  * entropy_poll.h for details. This needs to be revised once Mbed TLS adds
  * support for entropy.
  */
+/* coverity[misra_c_2012_rule_8_4_violation]: mbedtls_hardware_poll prototype is defined in mbedtls entropy_poll.h which cannot be included here; the prototype matches the expected signature */
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
     size_t estimate_bits = 0u;
