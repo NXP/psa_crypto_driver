@@ -849,7 +849,7 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -930,7 +930,7 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */

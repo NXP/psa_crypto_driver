@@ -42,9 +42,9 @@ static bool is_hse_ready(void)
 bool g_isCryptoHWInitialized = false;
 
 #if defined(CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS)
-/* coverity[cert_arr30_c_violation] coverity[cert_str31_c_violation] : intentional - vendor-defined catalog macros */
+/* coverity[cert_arr30_c_violation] coverity[cert_str31_c_violation] coverity[overrun-buffer-val] : intentional - vendor-defined catalog macros */
 static const hseKeyGroupCfgEntry_t nvmKeyCatalog[] = { HSE_NVM_KEY_CATALOG_CFG };
-/* coverity[cert_arr30_c_violation] coverity[cert_str31_c_violation] : intentional - vendor-defined catalog macros */
+/* coverity[cert_arr30_c_violation] coverity[cert_str31_c_violation] coverity[overrun-buffer-val] : intentional - vendor-defined catalog macros */
 static const hseKeyGroupCfgEntry_t ramKeyCatalog[] = { HSE_RAM_KEY_CATALOG_CFG };
 #endif
 
