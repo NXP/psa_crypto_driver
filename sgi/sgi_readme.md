@@ -86,6 +86,11 @@ key buffer directly — the same path as `PSA_KEY_LOCATION_LOCAL_STORAGE`.
         * `PSA_ALG_SHA_256`
         * `PSA_ALG_SHA_384`
         * `PSA_ALG_SHA_512`
+        * `PSA_ALG_SHA3_224` (gated by `MCUXCL_FEATURE_HASH_C_SHA3` + `PSA_WANT_ALG_SHA3_224`)
+        * `PSA_ALG_SHA3_256` (gated by `MCUXCL_FEATURE_HASH_C_SHA3` + `PSA_WANT_ALG_SHA3_256`)
+        * `PSA_ALG_SHA3_384` (gated by `MCUXCL_FEATURE_HASH_C_SHA3` + `PSA_WANT_ALG_SHA3_384`)
+        * `PSA_ALG_SHA3_512` (gated by `MCUXCL_FEATURE_HASH_C_SHA3` + `PSA_WANT_ALG_SHA3_512`)
+
 
 ## `PSA_KEY_LOCATION_LOCAL_STORAGE`
 
@@ -95,14 +100,31 @@ key buffer directly — the same path as `PSA_KEY_LOCATION_LOCAL_STORAGE`.
             * AES: `PSA_ALG_ECB_NO_PADDING`, `PSA_ALG_CBC_NO_PADDING`,
               `PSA_ALG_CTR`
     * Authenticated (AEAD)
-        * One-Go:
-            * AES: `PSA_ALG_GCM`, `PSA_ALG_CCM`
+        * One-Go and Multipart:
+            * AES: `PSA_ALG_GCM` (tag length 4, 8, 12-16 bytes)
+            * AES: `PSA_ALG_CCM` (tag length 4-16 bytes, even)
 * MAC
     * One-Go:
-        * `PSA_ALG_CMAC` (AES)
-        * `PSA_ALG_HMAC(PSA_ALG_SHA_256)`
-        * `PSA_ALG_HMAC(PSA_ALG_SHA_384)`
-        * `PSA_ALG_HMAC(PSA_ALG_SHA_512)`
+        * `PSA_ALG_CMAC` (AES, 128/192/256 bit keys)
+        * `PSA_ALG_HMAC` with `PSA_ALG_SHA_224`, `PSA_ALG_SHA_256`,
+          `PSA_ALG_SHA_384`, `PSA_ALG_SHA_512` (each subject to the
+          corresponding `PSA_WANT_ALG_SHA_*`, gated by `PSA_WANT_ALG_HMAC`)
+    * Multipart:
+        * `PSA_ALG_CMAC` (AES, 128/192/256 bit keys)
+        * `PSA_ALG_HMAC` with `PSA_ALG_SHA_224`, `PSA_ALG_SHA_256`,
+          `PSA_ALG_SHA_384`, `PSA_ALG_SHA_512` (each subject to the
+          corresponding `PSA_WANT_ALG_SHA_*`, gated by `PSA_WANT_ALG_HMAC`)
+
 * Asymmetric Cryptography
-    * Sign / Verify Hash:
-        * `PSA_ALG_ECDSA` with `PSA_ECC_FAMILY_SECP_R1` (256, 384 bit)
+    * Sign / Verify Hash (randomized ECDSA only; deterministic ECDSA is not supported):
+        * `PSA_ALG_ECDSA` with `PSA_ECC_FAMILY_SECP_R1`
+          (192, 224, 256, 384, 521 bit, subject to `PSA_WANT_ECC_SECP_R1_*`)
+        * `PSA_ALG_ECDSA` with `PSA_ECC_FAMILY_BRAINPOOL_P_R1`
+          (256, 384, 512 bit, subject to `PSA_WANT_ECC_BRAINPOOL_P_R1_*`)
+        * `PSA_ALG_ECDSA` with `PSA_ECC_FAMILY_SECP_K1`
+          (192, 256 bit, gated by `MCUXCL_FEATURE_ECC_SECPK1_CURVES`)
+    * Key Agreement:
+        * `PSA_ALG_ECDH` (Weierstrass curves: SECP_R1, SECP_K1, BRAINPOOL_P_R1),
+          raw shared secret only
+
+

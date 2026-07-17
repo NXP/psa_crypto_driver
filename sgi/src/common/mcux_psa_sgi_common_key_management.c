@@ -237,7 +237,12 @@ static psa_status_t get_key_type_descriptor(
 
         case PSA_KEY_TYPE_HMAC:
         {
+            /* The shared variable-length HMAC type descriptor carries a
+             * default key size of 0. Copy it and record the actual key byte
+             * length, otherwise consumers (e.g. mcuxClMac_compute for HMAC)
+             * would operate on a zero-length key and produce an incorrect MAC. */
             *out_type_desc = mcuxClKey_TypeDescriptor_Hmac_variableLength;
+            out_type_desc->size = (mcuxClKey_Size_t) key_buffer_size;
         }
         break;
 

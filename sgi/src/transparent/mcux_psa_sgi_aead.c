@@ -42,13 +42,15 @@ static inline psa_status_t check_tag_length(const psa_algorithm_t alg)
     psa_status_t status = PSA_SUCCESS;
 
     switch (algDefault) {
+#if defined(PSA_WANT_ALG_CCM)
         case PSA_ALG_CCM:
             /* Add checks for valid CCM tag length, otherwise return error*/
             if ((tag_length < 4u) || (tag_length > 16u) || (tag_length % 2u != 0u)) {
                 status = PSA_ERROR_INVALID_ARGUMENT;
             }
             break;
-
+#endif /* PSA_WANT_ALG_CCM */
+#if defined(PSA_WANT_ALG_GCM)
         case PSA_ALG_GCM:
             /* Add checks for valid GCM tag length, otherwise return error*/
             if ((4u != tag_length) && (8u != tag_length) &&
@@ -56,6 +58,7 @@ static inline psa_status_t check_tag_length(const psa_algorithm_t alg)
                 status = PSA_ERROR_INVALID_ARGUMENT;
             }
             break;
+#endif /* PSA_WANT_ALG_GCM */
 
         default:
             status = PSA_ERROR_INVALID_ARGUMENT;
