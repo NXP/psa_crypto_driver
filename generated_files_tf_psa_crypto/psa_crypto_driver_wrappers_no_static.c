@@ -59,6 +59,11 @@
 #include "pkc.h"
 
 #endif
+/* Headers for ele_hseb transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+#include "ele_hseb.h"
+
+#endif
 /* Headers for caam opaque driver */
 #if defined(PSA_CRYPTO_DRIVER_CAAM)
 #include "caam.h"
@@ -108,13 +113,14 @@
 #define DCP_TRANSPARENT_DRIVER_ID (5)
 #define SGI_TRANSPARENT_DRIVER_ID (6)
 #define PKC_TRANSPARENT_DRIVER_ID (7)
-#define CAAM_OPAQUE_DRIVER_ID (8)
-#define CAAM_TRANSPARENT_DRIVER_ID (9)
-#define ELE_S2XX_TRANSPARENT_DRIVER_ID (10)
-#define ELE_S2XX_OPAQUE_DRIVER_ID (11)
-#define ELE_S4XX_OPAQUE_DRIVER_ID (12)
-#define ELE_S4XX_TRANSPARENT_DRIVER_ID (13)
-#define ELS_PKC_TRANSPARENT_DRIVER_ID (14)
+#define ELE_HSEB_TRANSPARENT_DRIVER_ID (8)
+#define CAAM_OPAQUE_DRIVER_ID (9)
+#define CAAM_TRANSPARENT_DRIVER_ID (10)
+#define ELE_S2XX_TRANSPARENT_DRIVER_ID (11)
+#define ELE_S2XX_OPAQUE_DRIVER_ID (12)
+#define ELE_S4XX_OPAQUE_DRIVER_ID (13)
+#define ELE_S4XX_TRANSPARENT_DRIVER_ID (14)
+#define ELS_PKC_TRANSPARENT_DRIVER_ID (15)
 
 /* END-driver id */
 
