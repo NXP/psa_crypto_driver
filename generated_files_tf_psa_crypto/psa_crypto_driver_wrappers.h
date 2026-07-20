@@ -61,6 +61,11 @@
 #include "pkc.h"
 
 #endif
+/* Headers for ele_hseb opaque driver */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+#include "ele_hseb.h"
+
+#endif
 /* Headers for ele_hseb transparent driver */
 #if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
 #include "ele_hseb.h"
@@ -115,14 +120,15 @@
 #define DCP_TRANSPARENT_DRIVER_ID (5)
 #define SGI_TRANSPARENT_DRIVER_ID (6)
 #define PKC_TRANSPARENT_DRIVER_ID (7)
-#define ELE_HSEB_TRANSPARENT_DRIVER_ID (8)
-#define CAAM_OPAQUE_DRIVER_ID (9)
-#define CAAM_TRANSPARENT_DRIVER_ID (10)
-#define ELE_S2XX_TRANSPARENT_DRIVER_ID (11)
-#define ELE_S2XX_OPAQUE_DRIVER_ID (12)
-#define ELE_S4XX_OPAQUE_DRIVER_ID (13)
-#define ELE_S4XX_TRANSPARENT_DRIVER_ID (14)
-#define ELS_PKC_TRANSPARENT_DRIVER_ID (15)
+#define ELE_HSEB_OPAQUE_DRIVER_ID (8)
+#define ELE_HSEB_TRANSPARENT_DRIVER_ID (9)
+#define CAAM_OPAQUE_DRIVER_ID (10)
+#define CAAM_TRANSPARENT_DRIVER_ID (11)
+#define ELE_S2XX_TRANSPARENT_DRIVER_ID (12)
+#define ELE_S2XX_OPAQUE_DRIVER_ID (13)
+#define ELE_S4XX_OPAQUE_DRIVER_ID (14)
+#define ELE_S4XX_TRANSPARENT_DRIVER_ID (15)
+#define ELS_PKC_TRANSPARENT_DRIVER_ID (16)
 
 /* END-driver id */
 
@@ -1339,6 +1345,14 @@ static inline psa_status_t psa_driver_wrapper_get_key_buffer_size_from_key_data(
             return( ( *key_buffer_size != 0 ) ?
                     PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            *key_buffer_size = ele_hseb_opaque_size_function( attributes,
+                                                 data,
+                                                 data_length);
+            return( ( *key_buffer_size != 0 ) ?
+                    PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 
         default:
             (void)key_type;
@@ -1486,6 +1500,12 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
                 attributes, key_buffer, key_buffer_size, key_buffer_length );
             break;
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            status = ele_hseb_opaque_generate_key(
+                attributes, key_buffer, key_buffer_size, key_buffer_length );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
@@ -1539,6 +1559,12 @@ static inline psa_status_t psa_driver_wrapper_destroy_key(
                 attributes, key_buffer, key_buffer_size);
             break;
 #endif /* PSA_CRYPTO_DRIVER_CAAM */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            status = ele_hseb_opaque_destroy_key(
+                attributes, key_buffer, key_buffer_size);
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         /* Drivers which may not have any state to change for destruction of key */
@@ -1613,6 +1639,7 @@ static inline psa_status_t psa_driver_wrapper_import_key(
 
 
 
+
 #if (defined(PSA_CRYPTO_DRIVER_ELE_S2XX) )
         case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE:
         case PSA_CRYPTO_LOCATION_S200_KEY_STORAGE_NON_EL2GO:
@@ -1627,6 +1654,18 @@ static inline psa_status_t psa_driver_wrapper_import_key(
                             bits
         ));
 #endif  /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            return( ele_hseb_opaque_import_key(
+                            attributes,
+                            data,
+                            data_length,
+                            key_buffer,
+                            key_buffer_size,
+                            key_buffer_length,
+                            bits
+        ));
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void)status;
@@ -1658,6 +1697,7 @@ static inline psa_status_t psa_driver_wrapper_export_key(
 
         /* Add cases for opaque driver here */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+
 
 
 
@@ -1698,6 +1738,7 @@ static inline psa_status_t psa_driver_wrapper_copy_key(
     switch( location )
     {
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+
 
 
 
