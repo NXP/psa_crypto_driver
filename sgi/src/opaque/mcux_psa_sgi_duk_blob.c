@@ -222,7 +222,7 @@ psa_status_t sgi_ssrk_derive_if_needed(void)
         goto exit_unlock;
     }
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t     session = &sessionDesc;
 
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
@@ -340,7 +340,7 @@ psa_status_t sgi_duk_blob_seal(const psa_key_attributes_t *attributes,
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t     session = &sessionDesc;
 
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX, 0U);
@@ -454,7 +454,7 @@ psa_status_t sgi_duk_blob_unseal(psa_key_attributes_t *attributes,
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t     session = &sessionDesc;
 
 

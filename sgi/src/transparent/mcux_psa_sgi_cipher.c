@@ -1045,7 +1045,7 @@ psa_status_t sgi_transparent_cipher_update(sgi_cipher_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -1111,7 +1111,7 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
     uint32_t output_length_tmp = 0u;
 

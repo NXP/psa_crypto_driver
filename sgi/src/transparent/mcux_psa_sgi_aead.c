@@ -170,7 +170,7 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -327,7 +327,7 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
      * check involving plaintext buffer.
      */
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -428,7 +428,7 @@ static psa_status_t sgi_aead_multipart_common_setup(sgi_aead_operation_t *operat
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -538,7 +538,7 @@ psa_status_t sgi_aead_set_nonce(sgi_aead_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -670,7 +670,7 @@ psa_status_t sgi_aead_update_ad(sgi_aead_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -755,7 +755,7 @@ psa_status_t sgi_aead_update(sgi_aead_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -846,7 +846,7 @@ psa_status_t sgi_aead_finish(sgi_aead_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -943,7 +943,7 @@ psa_status_t sgi_aead_verify(sgi_aead_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */

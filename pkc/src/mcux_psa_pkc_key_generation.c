@@ -168,7 +168,7 @@ static psa_status_t pkc_internal_generate_rsa_key(const psa_key_attributes_t *at
     }
 
     /* Setup one session to be used by all functions called */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
@@ -365,7 +365,7 @@ static psa_status_t pkc_internal_generate_ecp_key(const psa_key_attributes_t *at
     }
 
     /* Setup one session to be used by all functions called */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
     MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLKEY_GENERATEKEYPAIR_WEIERECC_WACPU_SIZE,
@@ -582,7 +582,7 @@ psa_status_t pkc_key_agreement(const psa_key_attributes_t *attributes,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */

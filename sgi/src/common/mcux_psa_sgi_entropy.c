@@ -90,7 +90,7 @@ psa_status_t sgi_get_entropy(uint32_t flags,
 #else
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */

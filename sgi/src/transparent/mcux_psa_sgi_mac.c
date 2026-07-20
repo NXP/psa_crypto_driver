@@ -135,7 +135,7 @@ static psa_status_t sgi_mac_compute_hmac(const psa_key_attributes_t *attributes,
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -254,7 +254,7 @@ psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -351,7 +351,7 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -450,7 +450,7 @@ psa_status_t sgi_mac_update(sgi_mac_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -513,7 +513,7 @@ psa_status_t sgi_mac_sign_finish(sgi_mac_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
@@ -583,7 +583,7 @@ psa_status_t sgi_mac_verify_finish(sgi_mac_operation_t *operation,
     }
 
     /* Initialize session */
-    mcuxClSession_Descriptor_t sessionDesc;
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
