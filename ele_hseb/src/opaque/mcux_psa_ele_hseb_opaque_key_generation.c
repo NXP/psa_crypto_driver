@@ -65,6 +65,7 @@ static psa_status_t hseb_import_symmetric_key(const psa_key_attributes_t *attrib
                                               uint8_t *key_buffer,
                                               size_t key_buffer_size,
                                               size_t *key_buffer_length,
+                                              size_t *bits,
                                               bool is_nvm);
 
 static psa_status_t hseb_import_ecc_key(const psa_key_attributes_t *attributes,
@@ -73,6 +74,7 @@ static psa_status_t hseb_import_ecc_key(const psa_key_attributes_t *attributes,
                                         uint8_t *key_buffer,
                                         size_t key_buffer_size,
                                         size_t *key_buffer_length,
+                                        size_t *bits,
                                         bool is_nvm);
 
 static uint8_t muIf = 0U;
@@ -221,7 +223,7 @@ static psa_status_t hseb_generate_ecc_key(const psa_key_attributes_t *attributes
     hseEccCurveId_t hse_curve_id     = { 0 };
     hseKeyGenerateSrv_t key_gen_srv  = { 0 };
 
-    status = psa_to_hseb_curve(attributes, &hse_curve_id);
+    status = psa_to_hseb_curve(key_type, ecc_family, key_bits, &hse_curve_id);
     if (PSA_SUCCESS != status) {
         goto exit;
     }
@@ -441,12 +443,12 @@ static psa_status_t hseb_import_symmetric_key(const psa_key_attributes_t *attrib
                                               uint8_t *key_buffer,
                                               size_t key_buffer_size,
                                               size_t *key_buffer_length,
+                                              size_t *bits,
                                               bool is_nvm)
 {
     psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
     psa_algorithm_t alg       = psa_get_key_algorithm(attributes);
     psa_key_type_t key_type   = psa_get_key_type(attributes);
-    size_t key_bits           = psa_get_key_bits(attributes);
     psa_key_usage_t key_usage = psa_get_key_usage_flags(attributes);
 
     uint16_t hse_key_bits             = 0u;
@@ -457,8 +459,30 @@ static psa_status_t hseb_import_symmetric_key(const psa_key_attributes_t *attrib
     hseImportKeySrv_t import_key_srv  = { 0 };
     uint16_t hse_data_length          = 0u;
     hseKeyInfo_t key_info             = { 0 };
+    size_t derived_bits               = 0u;
 
-    status = translate_unstructured_key_parameters(key_bits, &hse_key_bits, key_type,
+    if (mcux_psa_mul_size_t_wrapcheck(data_length, 8u)) {
+        /* Wrap would occur */
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+    derived_bits = PSA_BYTES_TO_BITS(data_length);
+
+    /*
+     * PSA Crypto Driver API: key size determination on import.
+     * If the caller did not specify a bit size (*bits == 0) we use PSA_BYTES_TO_BITS(data_length).
+     * Otherwise we validate the provided bits value against the data length.
+     */
+    if (0u == *bits) {
+        *bits = derived_bits;
+    } else {
+        if (*bits != derived_bits) {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            goto exit;
+        }
+    }
+
+    status = translate_unstructured_key_parameters(*bits, &hse_key_bits, key_type,
                                                    &hse_key_type, alg, &cipher_mask);
     if (PSA_SUCCESS != status) {
         goto exit;
@@ -485,14 +509,14 @@ static psa_status_t hseb_import_symmetric_key(const psa_key_attributes_t *attrib
     import_key_srv.keyContainer.authKeyHandle = HSE_INVALID_KEY_HANDLE;
 
     status = hseb_import_raw_key_req(&import_key_srv, &key_info, &target_key_handle, is_nvm);
-    if (PSA_SUCCESS != status) {
-        goto exit;
+    if (PSA_SUCCESS == status) {
+        ele_hseb_write_key_handle_to_buffer(key_buffer, key_buffer_length,
+                                            &target_key_handle);
     }
-
-    ele_hseb_write_key_handle_to_buffer(key_buffer, key_buffer_length,
-                                        &target_key_handle);
-    status = PSA_SUCCESS;
 exit:
+    if (PSA_SUCCESS != status) {
+        *bits = 0u;
+    }
     return status;
 }
 
@@ -503,18 +527,19 @@ static psa_status_t hseb_import_ecc_key(const psa_key_attributes_t *attributes,
                                         uint8_t *key_buffer,
                                         size_t key_buffer_size,
                                         size_t *key_buffer_length,
+                                        size_t *bits,
                                         bool is_nvm)
 {
     psa_status_t status         = PSA_ERROR_CORRUPTION_DETECTED;
     psa_key_type_t key_type     = psa_get_key_type(attributes);
     psa_ecc_family_t ecc_family = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
-    size_t key_bits             = psa_get_key_bits(attributes);
     psa_key_usage_t key_usage   = psa_get_key_usage_flags(attributes);
 
     hseKeyHandle_t target_key_handle  = { 0 };
     hseImportKeySrv_t import_key_srv  = { 0 };
     uint16_t hse_data_length          = 0u;
     hseKeyInfo_t key_info             = { 0 };
+    size_t derived_bits               = 0u;
 
     psa_to_hseb_key_usage(key_usage, &key_info.keyFlags);
     key_info.keyFlags |= HSE_KF_ACCESS_EXPORTABLE; /* Make sure pubkey is exportable */
@@ -525,22 +550,60 @@ static psa_status_t hseb_import_ecc_key(const psa_key_attributes_t *attributes,
     }
     hse_data_length = (uint16_t) data_length;
 
-    if (((PSA_ECC_FAMILY_TWISTED_EDWARDS == ecc_family) ||
-         (PSA_ECC_FAMILY_MONTGOMERY == ecc_family)) &&
-        (255u == key_bits)) {
-        /* For these two curves, PSA spec wants to use 255, HSE-B wants to use 256 */
-        key_info.keyBitLen = 256u;
+    if (mcux_psa_mul_size_t_wrapcheck(data_length, 8u)) {
+        /* Wrap would occur on PSA_BYTES_TO_BITS(data_length) */
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
+    /* When *bits is 0 the size must be derived from data_length; when non-zero
+     * the provided value is validated against it.
+     */
+    if (PSA_ECC_FAMILY_IS_WEIERSTRASS(ecc_family)) {
+        if (PSA_KEY_TYPE_IS_KEY_PAIR(key_type)) {
+            derived_bits = PSA_BYTES_TO_BITS(data_length);
+        } else {
+            /* Uncompressed public key: 0x04 || x || y */
+            if ((data_length < 1u) || (((data_length - 1u) % 2u) != 0u)) {
+                status = PSA_ERROR_INVALID_ARGUMENT;
+                goto exit;
+            }
+            derived_bits = PSA_BYTES_TO_BITS((data_length - 1u) / 2u);
+        }
     } else {
-        if (key_bits > (size_t) UINT16_MAX) {
+        /* Montgomery / Twisted Edwards public and private keys. For these two
+         * curves, the 25519 variants must have the bits value set to 255. We
+         * do not support 448. So we just -1 the bits and validate in the next steps.
+         */
+        derived_bits = PSA_BYTES_TO_BITS(data_length) - 1u;
+    }
+
+    if (0u == *bits) {
+        *bits = derived_bits;
+    } else {
+        if (*bits != derived_bits) {
             status = PSA_ERROR_INVALID_ARGUMENT;
             goto exit;
         }
-        key_info.keyBitLen = (uint16_t) key_bits;
     }
 
-    status = psa_to_hseb_curve(attributes, &key_info.specific.eccCurveId);
+    status = psa_to_hseb_curve(key_type, ecc_family, *bits,
+                               &key_info.specific.eccCurveId);
     if (PSA_SUCCESS != status) {
         goto exit;
+    }
+
+    if (((PSA_ECC_FAMILY_TWISTED_EDWARDS == ecc_family) ||
+         (PSA_ECC_FAMILY_MONTGOMERY == ecc_family)) &&
+        (255u == *bits)) {
+        /* For these two curves, PSA spec wants to use 255, HSE-B wants to use 256 */
+        key_info.keyBitLen = 256u;
+    } else {
+        if (*bits > (size_t) UINT16_MAX) {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            goto exit;
+        }
+        key_info.keyBitLen = (uint16_t) *bits;
     }
 
     /* Plain (unencrypted) import - no cipher or auth container */
@@ -605,6 +668,9 @@ static psa_status_t hseb_import_ecc_key(const psa_key_attributes_t *attributes,
                                             &target_key_handle);
     }
 exit:
+    if (PSA_SUCCESS != status) {
+        *bits = 0u;
+    }
     return status;
 }
 
@@ -633,12 +699,12 @@ psa_status_t ele_hseb_opaque_import_key(const psa_key_attributes_t *attributes,
         if (true == PSA_KEY_TYPE_IS_UNSTRUCTURED(key_type)) {
             status = hseb_import_symmetric_key(attributes, data, data_length,
                                                key_buffer, key_buffer_size,
-                                               key_buffer_length,
+                                               key_buffer_length, bits,
                                                is_nvm);
         } else if (true == PSA_KEY_TYPE_IS_ECC(key_type)) {
             status = hseb_import_ecc_key(attributes, data, data_length, key_buffer,
                                          key_buffer_size, key_buffer_length,
-                                         is_nvm);
+                                         bits, is_nvm);
         } else if ((true == PSA_KEY_TYPE_IS_RSA(key_type)) &&
                    (true == is_nvm)) {
             /* RSA keys must be NVM keys, fail otherwise; HSEB limitation */

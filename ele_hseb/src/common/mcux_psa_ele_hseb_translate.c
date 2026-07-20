@@ -187,15 +187,13 @@ psa_status_t psa_to_hseb_mac_scheme(psa_algorithm_t alg,
     return status;
 }
 
-psa_status_t psa_to_hseb_curve(const psa_key_attributes_t *attributes,
+psa_status_t psa_to_hseb_curve(psa_key_type_t key_type,
+                               psa_ecc_family_t ecc_family,
+                               size_t key_bits,
                                hseEccCurveId_t *curve_id)
 {
-    psa_status_t status         = PSA_SUCCESS;
-    psa_key_type_t key_type     = psa_get_key_type(attributes);
-    psa_ecc_family_t ecc_family = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
-    size_t key_bits             = psa_get_key_bits(attributes);
-
-    *curve_id = HSE_EC_CURVE_NONE;
+    psa_status_t status = PSA_SUCCESS;
+    *curve_id           = HSE_EC_CURVE_NONE;
 
     if (PSA_ECC_FAMILY_SECP_R1 == ecc_family) {
         switch (key_bits) {

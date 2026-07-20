@@ -277,7 +277,8 @@ static psa_status_t setkey_ecc(const psa_key_attributes_t *attributes,
     size_t key_bit_length        = psa_get_key_bits(attributes);
     hseEccCurveId_t curve_id     = HSE_EC_CURVE_NONE;
 
-    status = psa_to_hseb_curve(attributes, &curve_id);
+    status = psa_to_hseb_curve(key_type, PSA_KEY_TYPE_ECC_GET_FAMILY(key_type),
+                               key_bit_length, &curve_id);
     if (PSA_SUCCESS != status) {
         return PSA_ERROR_NOT_SUPPORTED;
     }

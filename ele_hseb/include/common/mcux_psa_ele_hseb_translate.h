@@ -75,17 +75,20 @@ psa_status_t psa_to_hseb_mac_scheme(psa_algorithm_t alg,
 /**
  * \brief Translate PSA key attributes to an HSE-B ECC curve identifier.
  *
- * Derives the ECC curve from the key type and key size encoded in
- * \p attributes and maps it to the corresponding \c hseEccCurveId_t value
- * understood by HSE-B.
+ * Derives the ECC curve from the provided PSA values and maps it to the
+ * corresponding \c hseEccCurveId_t value understood by HSE-B.
  *
- * \param[in]  attributes Key attributes containing the ECC key type and size.
+ * \param[in]  key_type   The key type.
+ * \param[in]  ecc_family The ECC family.
+ * \param[in]  key_bits   The key bits.
  * \param[out] curve_id   Translated HSE-B ECC curve identifier.
  *
  * \retval PSA_SUCCESS on success or PSA_ERROR_NOT_SUPPORTED if the curve
  *         is not supported by HSE-B.
  */
-psa_status_t psa_to_hseb_curve(const psa_key_attributes_t *attributes,
+psa_status_t psa_to_hseb_curve(psa_key_type_t key_type,
+                               psa_ecc_family_t ecc_family,
+                               size_t key_bits,
                                hseEccCurveId_t *curve_id);
 
 /**
