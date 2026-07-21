@@ -79,6 +79,11 @@
 #include "caam.h"
 
 #endif
+/* Headers for ela_csec transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_ELA_CSEC)
+#include "ela_csec.h"
+
+#endif
 /* Headers for ele_s2xx transparent driver */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
 #include "ele_s2xx.h"
@@ -122,11 +127,12 @@
 #define ELE_HSEB_TRANSPARENT_DRIVER_ID (9)
 #define CAAM_OPAQUE_DRIVER_ID (10)
 #define CAAM_TRANSPARENT_DRIVER_ID (11)
-#define ELE_S2XX_TRANSPARENT_DRIVER_ID (12)
-#define ELE_S2XX_OPAQUE_DRIVER_ID (13)
-#define ELE_S4XX_OPAQUE_DRIVER_ID (14)
-#define ELE_S4XX_TRANSPARENT_DRIVER_ID (15)
-#define ELS_PKC_TRANSPARENT_DRIVER_ID (16)
+#define ELA_CSEC_TRANSPARENT_DRIVER_ID (12)
+#define ELE_S2XX_TRANSPARENT_DRIVER_ID (13)
+#define ELE_S2XX_OPAQUE_DRIVER_ID (14)
+#define ELE_S4XX_OPAQUE_DRIVER_ID (15)
+#define ELE_S4XX_TRANSPARENT_DRIVER_ID (16)
+#define ELS_PKC_TRANSPARENT_DRIVER_ID (17)
 
 /* END-driver id */
 
@@ -245,6 +251,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+
 
 
 
