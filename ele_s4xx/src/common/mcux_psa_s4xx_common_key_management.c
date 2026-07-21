@@ -179,6 +179,7 @@ static psa_status_t mcux_write_rsa_keypair_from_asn(psa_key_type_t key_type,
                                       rsa_key->pub_exp_len);
         if (ret < 0) {
 #if defined(USE_MALLOC)
+            free(rsa_key->pub_exp);
             free(rsa_key->modulus);
 #endif
             status = PSA_ERROR_BAD_STATE;
