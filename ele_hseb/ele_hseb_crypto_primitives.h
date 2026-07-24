@@ -37,6 +37,7 @@ typedef struct {
     uint8_t              chunk[16];  /*!< @brief An incomplete AES block of input data. */
     size_t               chunk_length; /*!< @brief The current length of the cached AES block. */
     bool                 need_full_block; /*!< @brief Flag for whether or not the current algorithm requires full-block-length inputs. */
-} ele_hseb_transparent_cipher_operation_t;
+} ele_hseb_transparent_cipher_operation_t, ele_hseb_opaque_cipher_operation_t,
+ele_hseb_cipher_operation_t;
 
 #endif /* ELE_HSEB_CRYPTO_PRIMITIVES_H */

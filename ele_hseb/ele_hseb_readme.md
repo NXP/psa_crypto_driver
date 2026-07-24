@@ -67,11 +67,11 @@ limitations.
 | Category                      | Algorithm / Hash                                            | Key Info                                                        | LOCAL_STORAGE      | ELE_HSEB (opaque)   |
 | ----------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------- | ------------------ | ------------------- |
 | **Hash**                      | SHA_1/224/256/384/512/512_224/512_256, SHA3_224/256/384/512 | keyless                                                         | one-go + multipart | (n/a)               |
-| **ECB_NO_PADDING**            | AES                                                         | -                                                               | one-go + multipart | not supported       |
-| **CBC_NO_PADDING**            | AES                                                         | -                                                               | one-go + multipart | not supported       |
-| **CTR**                       | AES                                                         | -                                                               | one-go + multipart | not supported       |
-| **CFB**                       | AES                                                         | -                                                               | one-go + multipart | not supported       |
-| **OFB**                       | AES                                                         | -                                                               | one-go + multipart | not supported       |
+| **ECB_NO_PADDING**            | AES                                                         | -                                                               | one-go + multipart | one-go + multipart  |
+| **CBC_NO_PADDING**            | AES                                                         | -                                                               | one-go + multipart | one-go + multipart  |
+| **CTR**                       | AES                                                         | -                                                               | one-go + multipart | one-go + multipart  |
+| **CFB**                       | AES                                                         | -                                                               | one-go + multipart | one-go + multipart  |
+| **OFB**                       | AES                                                         | -                                                               | one-go + multipart | one-go + multipart  |
 | **CCM**                       | AES                                                         | -                                                               | one-go only        | not supported       |
 | **GCM**                       | AES                                                         | -                                                               | one-go only        | not supported       |
 | **CMAC**                      | AES                                                         | -                                                               | one-go + multipart | not supported       |
