@@ -377,10 +377,10 @@ endif()
 
 	# Adding OSAL for Zephyr Mutexes
 	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
-	
+
 if( NOT CONFIG_BUILD_WITH_TFM)
 
-	# We must ensure we link this library into zephyr_interface, 
+	# We must ensure we link this library into zephyr_interface,
 	# otherwise we won't get compile options defined in Zephyr
 	target_link_libraries(McuxPsaCryptoDriverSgiPkc PUBLIC zephyr_interface)
 endif()
@@ -413,7 +413,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 		McuxPsaCryptoDriverEleS4xx
 		PRIVATE
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_crypto_internal.h
-		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_nvm_manager.c	
+		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_nvm_manager.c
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_nvm_manager.h
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_crypto.h
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/ele_crypto/ele_crypto.c
@@ -437,7 +437,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 
 
 	### PSA Crypto Driver ###
-	
+
 	# PSA driver include paths
 	target_include_directories(
 		McuxPsaCryptoDriverEleS4xx
@@ -472,7 +472,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_init.c
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_key_generation.c
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_mac.c
-        
+
         # Include
 		${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/ele_s4xx_crypto_primitives.h
         ${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/common/mcux_psa_s4xx_common_init.h
@@ -496,7 +496,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 	# Adding OSAL for Zephyr Mutexes
 	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
 
-	# We must ensure we link this library into zephyr_interface, 
+	# We must ensure we link this library into zephyr_interface,
 	# otherwise we won't get compile options defined in Zephyr
 	target_link_libraries(McuxPsaCryptoDriverEleS4xx PUBLIC zephyr_interface)
 
@@ -604,7 +604,7 @@ else()
 	zephyr_library_named(McuxPsaCryptoDriverElsPkc)
 	set(NXP_MODULE_CRYPTO_PATH ${ZEPHYR_MBEDTLS_MODULE_DIR}/../)
 	set(NXP_MODULE_ELS_PKC_PATH ${ZEPHYR_ELS_PKC_MODULE_DIR})
-	
+
 	zephyr_compile_definitions(
 		# MBEDTLS_MCUX_USE_TRNG_AS_ENTROPY_SEED
 		PSA_CRYPTO_DRIVER_ELS_PKC
