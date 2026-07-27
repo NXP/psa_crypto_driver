@@ -42,6 +42,22 @@ target_sources(
 )
 endif() #CONFIG_PSA_CRYPTO_DRIVER_DCP
 
+if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S2XX)
+target_include_directories(
+    McuxPsaCryptoDriverEleS2xx
+    PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/.
+        zephyr/.
+)
+
+target_sources(
+    McuxPsaCryptoDriverEleS2xx
+    PRIVATE
+        zephyr/osal_mutex.c
+        zephyr/threading_alt.c
+)
+endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S2XX
+
 if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 target_include_directories(
     McuxPsaCryptoDriverEleS4xx

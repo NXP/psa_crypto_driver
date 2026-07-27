@@ -388,6 +388,89 @@ endif()
 
 endif() # CONFIG_PSA_CRYPTO_DRIVER_SGI_PKC #
 
+if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S2XX)
+
+	zephyr_library_named(McuxPsaCryptoDriverEleS2xx)
+
+	target_link_options(
+		McuxPsaCryptoDriverEleS2xx
+		PRIVATE
+		${TOOLCHAIN_LD_FLAGS}
+	)
+
+	zephyr_compile_definitions(
+		PSA_CRYPTO_DRIVER_ELE_S2XX
+		PSA_CRYPTO_DRIVER_THREAD_EN
+	)
+
+	target_include_directories(
+		McuxPsaCryptoDriverEleS2xx
+		PUBLIC
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/common/
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/opaque/
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/transparent/
+		${PSA_CRYPTO_DRIVER_PATH}/osal/
+		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
+		${PSA_CRYPTO_DRIVER_PATH}/utils
+	)
+	target_sources(
+		McuxPsaCryptoDriverEleS2xx
+		PUBLIC
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/ele_s2xx.h
+	)
+	target_sources(
+		McuxPsaCryptoDriverEleS2xx
+		PRIVATE
+		# Header files
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/ele_s2xx_crypto_primitives.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/common/mcux_psa_s2xx_common_compute.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/common/mcux_psa_s2xx_common_init.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/common/mcux_psa_s2xx_common_key_management.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/common/mcux_psa_s2xx_entropy.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/common/mcux_psa_s2xx_key_locations.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/opaque/mcux_psa_s2xx_opaque_aead.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/opaque/mcux_psa_s2xx_opaque_asymmetric_signature.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/opaque/mcux_psa_s2xx_opaque_cipher.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/opaque/mcux_psa_s2xx_opaque_key_generation.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/opaque/mcux_psa_s2xx_opaque_mac.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/transparent/mcux_psa_s2xx_aead.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/transparent/mcux_psa_s2xx_asymmetric_signature.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/transparent/mcux_psa_s2xx_cipher.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/transparent/mcux_psa_s2xx_hash.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/transparent/mcux_psa_s2xx_init.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/transparent/mcux_psa_s2xx_key_generation.h
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/include/transparent/mcux_psa_s2xx_mac.h
+		# Implementation files
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/common/mcux_psa_s2xx_common_compute.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/common/mcux_psa_s2xx_common_init.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/common/mcux_psa_s2xx_common_key_management.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/common/mcux_psa_s2xx_entropy.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/opaque/mcux_psa_s2xx_opaque_aead.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/opaque/mcux_psa_s2xx_opaque_asymmetric_signature.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/opaque/mcux_psa_s2xx_opaque_cipher.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/opaque/mcux_psa_s2xx_opaque_key_generation.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/opaque/mcux_psa_s2xx_opaque_mac.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/transparent/mcux_psa_s2xx_aead.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/transparent/mcux_psa_s2xx_asymmetric_signature.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/transparent/mcux_psa_s2xx_cipher.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/transparent/mcux_psa_s2xx_hash.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/transparent/mcux_psa_s2xx_init.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/transparent/mcux_psa_s2xx_key_generation.c
+		${PSA_CRYPTO_DRIVER_PATH}/ele_s200/src/transparent/mcux_psa_s2xx_mac.c
+		# Utilities
+		${PSA_CRYPTO_DRIVER_PATH}/utils/mcux_psa_util_wrapcheck_static_inline.h
+	)
+
+	# Get the Zephyr mutex OSAL
+	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/osal)
+
+	# We must ensure we link this library into zephyr_interface
+	target_link_libraries(McuxPsaCryptoDriverEleS2xx PUBLIC zephyr_interface)
+
+endif() # CONFIG_PSA_CRYPTO_DRIVER_ELE_S2XX #
+
 if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 	message ("psa-crypto-driver-ele_s4xx module is included.")
 

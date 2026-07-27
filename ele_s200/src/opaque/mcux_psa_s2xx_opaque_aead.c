@@ -32,6 +32,11 @@ static psa_status_t translate_psa_aead_to_ele_aead(psa_algorithm_t alg, psa_key_
     size_t tag_length                               = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
     size_t valid_tag_lengths[VALID_TAG_LENGTH_SIZE] = {0u};
 
+    /* Prevent having unused variables in case the PSA_WANTs are disabled */
+    (void) default_alg;
+    (void) tag_length;
+    (void) valid_tag_lengths;
+
 #if defined(PSA_WANT_KEY_TYPE_AES)
     if (PSA_KEY_TYPE_AES == key_type)
     {

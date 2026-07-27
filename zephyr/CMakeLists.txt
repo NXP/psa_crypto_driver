@@ -27,6 +27,12 @@ if(CONFIG_PSA_CRYPTO_DRIVER_DCP)
     zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverDcp,INTERFACE_INCLUDE_DIRECTORIES>")
 endif()
 
+if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S2XX)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ psa_crypto_driver)
+    target_link_libraries(app PUBLIC McuxPsaCryptoDriverEleS2xx)
+    zephyr_include_directories("$<TARGET_PROPERTY:McuxPsaCryptoDriverEleS2xx,INTERFACE_INCLUDE_DIRECTORIES>")
+endif()
+
 if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../ psa_crypto_driver)
     target_link_libraries(app PUBLIC McuxPsaCryptoDriverEleS4xx)

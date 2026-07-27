@@ -1,6 +1,6 @@
 # psa-crypto-driver configuration options
 
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -44,6 +44,13 @@ config PSA_CRYPTO_DRIVER_DCP
 	default n
 	help
 	    Enables DCP support in psa-crypto-driver component.
+
+config PSA_CRYPTO_DRIVER_ELE_S2XX
+	bool "Enables ELE S2XX support in psa-crypto-driver"
+	depends on MBEDTLS_PSA_CRYPTO_C && MCUX_DEVICE_HAS_ELE_S200
+	default n
+	help
+	    Enables ELE S2XX support in psa-crypto-driver component.
 
 config PSA_CRYPTO_DRIVER_ELE_S4xx
 	bool "Enables ELE S4xx support in psa-crypto-driver"

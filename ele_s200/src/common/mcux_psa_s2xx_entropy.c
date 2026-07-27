@@ -100,6 +100,7 @@ exit:
 }
 /** @} */ // end of psa_entropy
 
+#if !defined(__ZEPHYR__)
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
 int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
                                  size_t *estimate_bits,
@@ -108,6 +109,7 @@ int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
     return ele_get_entropy((uint32_t)flags, estimate_bits, output, output_size);
 }
 #endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) */
+#endif /* !__ZEPHYR__ */
 
 /*
  * FixMe: This function is required to integrate into Mbed TLS as the PSA

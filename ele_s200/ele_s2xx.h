@@ -50,11 +50,14 @@
 #define PSA_ALG_S200_ECBKDF_OR_CKDF ALG_S200_ECBKDF_OR_CKDF
 #define PSA_ALG_S200_ECDH_CKDF      ALG_S200_ECDH_CKDF
 
+#if !defined(__ZEPHYR__)
 /*
  * Location specific details go in this file which is also exposed to application writers
  * to include when using key from a particular location.
+ * Note: For Zephyr OS, we must define these in respective SoC defconf.
  */
 #include "mcux_psa_defines.h"
+#endif
 
 #include "mcux_psa_s2xx_entropy.h"
 

@@ -29,6 +29,9 @@ static psa_status_t translate_psa_cipher_to_ele_cipher(const psa_key_attributes_
     psa_status_t status     = PSA_ERROR_NOT_SUPPORTED;
     psa_key_type_t key_type = psa_get_key_type(attributes);
 
+    /* Prevent having unused variables in case the PSA_WANTs are disabled */
+    (void) key_type;
+
 #if defined(PSA_WANT_KEY_TYPE_AES)
     if (PSA_KEY_TYPE_AES == key_type)
     {
