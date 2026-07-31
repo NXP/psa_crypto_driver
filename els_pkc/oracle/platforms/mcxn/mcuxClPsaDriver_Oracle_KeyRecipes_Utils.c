@@ -10,6 +10,7 @@
 
 #include <mbedtls/platform.h>
 #include <string.h>
+#include <assert.h>
 
 #include "mcuxClPsaDriver_Oracle_ElsUtils.h"
 #include "mcuxClPsaDriver_Functions.h"

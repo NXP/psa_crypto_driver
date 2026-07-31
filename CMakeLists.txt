@@ -718,8 +718,12 @@ endif()
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/transparent
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/inc
-		${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/platforms/rw61x
+		# EL2Go key recipes: pick the oracle platform for the target SoC
+		$<$<BOOL:${CONFIG_SOC_SERIES_RW6XX}>:${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/platforms/rw61x>
+		$<$<BOOL:${CONFIG_SOC_FAMILY_MCXN}>:${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/platforms/mcxn>
+		$<$<BOOL:${CONFIG_SOC_SERIES_IMXRT7XX}>:${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/platforms/mimxrt>
 		${CMAKE_CURRENT_LIST_DIR}/osal
+
 		${CMAKE_CURRENT_LIST_DIR}/osal/zephyr
 		#include the psa-driver inlcude path from clib
 		${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/inc
@@ -740,10 +744,9 @@ if(NOT CONFIG_BUILD_WITH_TFM)
 		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/builtin/src
 		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/drivers/pqcp/src
 		${ZEPHYR_BASE}/../modules/crypto/tf-psa-crypto/dispatch
-		# cmsis required to build els_pkc
-		${NXP_MODULE_ELS_PKC_PATH}/src/platforms/rw61x/cmsis_cortex_m_5_5_1/inc
 	)
 endif()
+
 
 	target_sources(
 		McuxPsaCryptoDriverElsPkc
@@ -751,7 +754,11 @@ endif()
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle.c
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle_ElsUtils.c
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/src/mcuxClPsaDriver_Oracle_Utils.c
+		# EL2Go key recipes helper: MCXN oracle platform ships an extra source
+		# file (rw61x does not have this).
+		$<$<BOOL:${CONFIG_SOC_FAMILY_MCXN}>:${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/platforms/mcxn/mcuxClPsaDriver_Oracle_KeyRecipes_Utils.c>
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/common/mcux_psa_els_pkc_common_init.c
+
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/common/mcux_psa_els_pkc_entropy.c
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_aead.c
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/src/opaque/mcux_psa_els_pkc_opaque_asymmetric_signature.c
