@@ -34,7 +34,9 @@
 
 static inline psa_status_t check_tag_length(const psa_algorithm_t alg)
 {
+#if defined(PSA_WANT_ALG_CCM) || defined(PSA_WANT_ALG_GCM)
     uint32_t tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
+#endif /* PSA_WANT_ALG_CCM || PSA_WANT_ALG_GCM */
 
     /* Recover default algorithm (could be CCM with changed tag size) */
     psa_algorithm_t algDefault = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg);
@@ -50,6 +52,7 @@ static inline psa_status_t check_tag_length(const psa_algorithm_t alg)
             }
             break;
 #endif /* PSA_WANT_ALG_CCM */
+
 #if defined(PSA_WANT_ALG_GCM)
         case PSA_ALG_GCM:
             /* Add checks for valid GCM tag length, otherwise return error*/
