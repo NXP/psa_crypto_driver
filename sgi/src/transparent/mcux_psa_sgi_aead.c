@@ -415,6 +415,7 @@ static psa_status_t sgi_aead_multipart_common_setup(sgi_aead_operation_t *operat
     operation->key_type = psa_get_key_type(attributes);
     operation->ad_remaining = 0u;
     operation->body_remaining = 0u;
+    operation->lengths_set = 0u;
 
     if (PSA_SUCCESS != check_tag_length(alg)) {
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -536,6 +537,11 @@ psa_status_t sgi_aead_set_nonce(sgi_aead_operation_t *operation,
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
+    if ((PSA_ALG_CCM == PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg)) &&
+        (0u == operation->lengths_set)) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
     if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
@@ -649,6 +655,7 @@ psa_status_t sgi_aead_set_lengths(sgi_aead_operation_t *operation,
     /* Update the operation's status */
     operation->ad_remaining = ad_length;
     operation->body_remaining = plaintext_length;
+    operation->lengths_set = 1u;
 
     return PSA_SUCCESS;
 }
@@ -793,6 +800,16 @@ psa_status_t sgi_aead_update(sgi_aead_operation_t *operation,
 
     operation->body_started = 1u;
 
+    /* Track plaintext already emitted so the remaining count reflects only the
+       bytes still to be produced. sgi_aead_verify() uses body_remaining to size
+       its output buffer, and in a multipart flow update() may have already
+       emitted part or all of the plaintext. */
+    if ((size_t) output_length_tmp <= operation->body_remaining) {
+        operation->body_remaining -= (size_t) output_length_tmp;
+    } else {
+        operation->body_remaining = 0u;
+    }
+
     status = PSA_SUCCESS;
 
 cleanup:
@@ -936,8 +953,8 @@ psa_status_t sgi_aead_verify(sgi_aead_operation_t *operation,
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
-    /* Validate the given buffer sizes */
-    if (plaintext_size == 0u) {
+    /* Validate the given output buffer size. */
+    if (plaintext_size < operation->body_remaining) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 

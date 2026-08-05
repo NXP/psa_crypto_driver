@@ -84,10 +84,11 @@ typedef struct {
     uint8_t is_encrypt;
     uint32_t tag_length;
 
-    uint32_t body_started;
+    uint8_t  body_started;
     uint32_t ad_remaining;
     uint32_t body_remaining;
-    uint32_t nonce_set;
+    uint8_t  nonce_set;
+    uint8_t  lengths_set;
 } sgi_aead_operation_t;
 
 typedef struct {
