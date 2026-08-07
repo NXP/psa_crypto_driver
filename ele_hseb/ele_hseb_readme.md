@@ -76,8 +76,11 @@ limitations.
 | **GCM**                       | AES                                                         | -                                                               | one-go only        | not supported       |
 | **CMAC**                      | AES                                                         | -                                                               | one-go + multipart | not supported       |
 | **HMAC**                      | SHA_1/224/256/384/512/512_224/512_256                       | HMAC key, [128, 1024] bits                                      | one-go + multipart | not supported       |
-| **RSA sign (PKCS1V15 + PSS)** | SHA_1/224/256/384/512/512_224/512_256, SHA3_224/256/384/512 |                                                                 | supported          | not supported       |
-| **ECDSA**                     | SHA_1/224/256/384/512/512_224/512_256, SHA3_224/256/384/512 | SECP_R1: 256/384/521 bits; BRAINPOOL_P_R1: 256/320/384/512 bits | supported          | not supported       |
+| **RSA sign (PKCS1V15 + PSS)** | SHA_1/224/256/384/512/512_224/512_256, SHA3_224/256/384/512 |                                                                 | supported          | generated keys only |
+| **ECDSA**                     | SHA_1/224/256/384/512/512_224/512_256, SHA3_224/256/384/512 | SECP_R1: 256/384/521 bits; BRAINPOOL_P_R1: 256/320/384/512 bits | supported          | supported           |
 
 > **HMAC key size constraint:** Only key bit sizes in the range [128, 1024] are
 > supported (see [Hardware Limitations](#hardware-limitations)).
+
+> **RSA opaque keys:** Imported RSA opaque keys are currently not supported.
+> Opaque RSA keys may be used with keys generated via `psa_generate_key()`.

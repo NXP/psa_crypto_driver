@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -23,6 +23,7 @@
 #include "mcux_psa_ele_hseb_asymmetric_signature.h"
 #include "mcux_psa_ele_hseb_translate.h"
 #include "mcux_psa_ele_hseb_key_management.h"
+#include "mcux_psa_ele_hseb_common_asymmetric_signature.h"
 
 #include "hse_host_ecc.h"
 #include "hse_host_sign.h"
@@ -105,18 +106,6 @@ static int hseb_asn1_get_tag(unsigned char **p,
    END : COPIED AND MODIFIED SOME OF THE ASN1 PARSING FUNCTIONS FROM MBEDTLS
 
  ******************************************************************************/
-
-/* When calling this, the caller should already know that alg is
- * a non-determenistic ECDSA alg.
- */
-static psa_status_t psa_to_hseb_ecdsa(psa_algorithm_t alg,
-                                      hseSignScheme_t *sign_scheme)
-{
-    psa_status_t status = psa_to_ele_hseb_hash(alg,
-                                               &sign_scheme->sch.ecdsa.hashAlgo);
-    sign_scheme->signSch = HSE_SIGN_ECDSA;
-    return status;
-}
 
 static psa_status_t setkey_rsa(const psa_key_attributes_t *attributes,
                                hseKeyHandle_t *key_handle,
@@ -285,7 +274,7 @@ static psa_status_t setkey_ecc(const psa_key_attributes_t *attributes,
 
     if (true == PSA_KEY_TYPE_IS_KEY_PAIR(key_type)) {
         /* PSA represents key pairs only by the private key. We can import
-         * the private ked and HSE will compute the public part
+         * the private key and HSE will compute the public part
          */
         hseb_status = LoadEccPrivateKey(key_handle, false, curve_id,
                                         key_bit_length, key_buffer);
@@ -295,245 +284,6 @@ static psa_status_t setkey_ecc(const psa_key_attributes_t *attributes,
     }
 
     status = ele_hseb_to_psa_status(hseb_status);
-    return status;
-}
-
-static psa_status_t ecdsa_sign(const psa_key_attributes_t *attributes,
-                               const uint8_t *key_buffer,
-                               size_t key_buffer_size,
-                               psa_algorithm_t alg,
-                               const uint8_t *input,
-                               size_t input_length,
-                               uint8_t *signature,
-                               size_t signature_size,
-                               size_t *signature_length,
-                               bool is_input_hashed)
-{
-    psa_status_t status                   = PSA_ERROR_CORRUPTION_DETECTED;
-    hseSrvResponse_t hseb_status          = HSE_SRV_RSP_GENERAL_ERROR;
-    hseSignScheme_t sign_scheme           = { 0 };
-    hseKeyHandle_t key_handle             = { 0 };
-    uint8_t r[PSA_SIGNATURE_MAX_SIZE / 2] = { 0u };
-    size_t rlen                           = sizeof(r);
-    uint8_t s[PSA_SIGNATURE_MAX_SIZE / 2] = { 0u };
-    size_t slen                           = sizeof(s);
-
-    status = psa_to_hseb_ecdsa(alg, &sign_scheme);
-    if (PSA_SUCCESS != status) {
-        goto exit;
-    }
-
-    status = setkey_ecc(attributes, &key_handle, key_buffer, key_buffer_size);
-    if (PSA_SUCCESS != status) {
-        goto exit;
-    }
-
-    hseb_status = EcdsaSign(key_handle, sign_scheme.sch.ecdsa.hashAlgo,
-                            input_length, input, is_input_hashed,
-                            HSE_SGT_OPTION_NONE, (uint32_t *) &rlen, r, (uint32_t *) &slen, s);
-    status = ele_hseb_to_psa_status(hseb_status);
-
-exit:
-    if (PSA_SUCCESS != status) {
-        *signature_length = 0u;
-    } else {
-        /* Copy the signature to the external buffer and set signature length */
-        (void) memcpy(signature, r, rlen);
-        (void) memcpy(signature + rlen, s, slen);
-        *signature_length = rlen + slen;
-    }
-
-    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
-    return status;
-}
-
-static psa_status_t ecdsa_verify(const psa_key_attributes_t *attributes,
-                                 const uint8_t *key_buffer,
-                                 size_t key_buffer_size,
-                                 psa_algorithm_t alg,
-                                 const uint8_t *input,
-                                 size_t input_length,
-                                 const uint8_t *signature,
-                                 size_t signature_length,
-                                 bool is_input_hashed)
-{
-    psa_status_t status          = PSA_ERROR_CORRUPTION_DETECTED;
-    hseSrvResponse_t hseb_status = HSE_SRV_RSP_GENERAL_ERROR;
-    hseSignScheme_t sign_scheme  = { 0 };
-    hseKeyHandle_t key_handle    = { 0 };
-    size_t rlen                  = signature_length / 2u;
-    size_t slen                  = signature_length / 2u;
-    const uint8_t *r             = signature;
-    const uint8_t *s             = signature + rlen;
-
-    if (2u * PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)) != signature_length) {
-        return PSA_ERROR_INVALID_SIGNATURE;
-    }
-
-    status = psa_to_hseb_ecdsa(alg, &sign_scheme);
-    if (PSA_SUCCESS != status) {
-        goto exit;
-    }
-
-    status = setkey_ecc(attributes, &key_handle, key_buffer, key_buffer_size);
-    if (PSA_SUCCESS != status) {
-        goto exit;
-    }
-
-    hseb_status = EcdsaVerify(key_handle, sign_scheme.sch.ecdsa.hashAlgo,
-                              input_length, input, is_input_hashed,
-                              HSE_SGT_OPTION_NONE, (uint32_t *) &rlen, r, (uint32_t *) &slen, s);
-    status = ele_hseb_to_psa_status(hseb_status);
-
-exit:
-    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
-    return status;
-}
-
-static size_t get_salt_length(const psa_key_attributes_t *attributes,
-                              psa_algorithm_t alg)
-{
-    /* PSA requires either saltlength == hashlength OR, if not possible,
-     * largest possible salt length for given parameter combination.
-     */
-    if (psa_get_key_bits(attributes) == 1024u &&
-        PSA_ALG_SHA_512 == PSA_ALG_GET_HASH(alg)) {
-        return 62u;
-    } else {
-        return PSA_HASH_LENGTH(alg);
-    }
-}
-
-static psa_status_t rsa_sign(const psa_key_attributes_t *attributes,
-                             const uint8_t *key_buffer,
-                             size_t key_buffer_size,
-                             psa_algorithm_t alg,
-                             const uint8_t *input,
-                             size_t input_length,
-                             uint8_t *signature,
-                             size_t signature_size,
-                             size_t *signature_length,
-                             bool is_input_hashed)
-{
-    psa_status_t status          = PSA_ERROR_CORRUPTION_DETECTED;
-    hseSrvResponse_t hseb_status = HSE_SRV_RSP_GENERAL_ERROR;
-    hseKeyHandle_t key_handle    = { 0 };
-    hseHashAlgo_t hseb_hash      = { 0 };
-    size_t salt_length           = 0u;
-
-    status = setkey_rsa(attributes, &key_handle, key_buffer, key_buffer_size);
-    if (PSA_SUCCESS != status) {
-        goto exit;
-    }
-
-    *signature_length = signature_size;
-
-    if (true == PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg)) {
-        if (PSA_ALG_RSA_PKCS1V15_SIGN_RAW == alg) {
-            /* HSEB does not support a signature scheme without a specified
-             * hash algorithm.
-             */
-            status = PSA_ERROR_NOT_SUPPORTED;
-            goto exit;
-        } else {
-            status = psa_to_ele_hseb_hash(alg, &hseb_hash);
-            if (PSA_SUCCESS != status) {
-                goto exit;
-            }
-
-            hseb_status = RsaPkcs1v15SignSrv(key_handle, hseb_hash,
-                                             input_length, (uint8_t *) input,
-                                             is_input_hashed,
-                                             HSE_SGT_OPTION_NONE,
-                                             (uint32_t *) signature_length, signature);
-        }
-    } else if (true == PSA_ALG_IS_RSA_PSS(alg)) {
-        status = psa_to_ele_hseb_hash(alg, &hseb_hash);
-        if (PSA_SUCCESS != status) {
-            goto exit;
-        }
-
-        salt_length = get_salt_length(attributes, alg);
-
-        hseb_status = RsaPssSignSrv(key_handle, salt_length, hseb_hash,
-                                    input_length, input, is_input_hashed,
-                                    HSE_SGT_OPTION_NONE,
-                                    (uint32_t *) signature_length, signature);
-    } else {
-        status = PSA_ERROR_NOT_SUPPORTED;
-        goto exit;
-    }
-    status = ele_hseb_to_psa_status(hseb_status);
-
-exit:
-    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
-    return status;
-}
-
-static psa_status_t rsa_verify(const psa_key_attributes_t *attributes,
-                               const uint8_t *key_buffer,
-                               size_t key_buffer_size,
-                               psa_algorithm_t alg,
-                               const uint8_t *input,
-                               size_t input_length,
-                               const uint8_t *signature,
-                               size_t signature_length,
-                               bool is_input_hashed)
-{
-    psa_status_t status          = PSA_ERROR_CORRUPTION_DETECTED;
-    hseSrvResponse_t hseb_status = HSE_SRV_RSP_GENERAL_ERROR;
-    hseKeyHandle_t key_handle    = { 0 };
-    hseHashAlgo_t hseb_hash      = { 0 };
-    size_t salt_length           = 0u;
-
-    if (PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)) != signature_length) {
-        return PSA_ERROR_INVALID_SIGNATURE;
-    }
-
-    status = setkey_rsa(attributes, &key_handle, key_buffer, key_buffer_size);
-    if (PSA_SUCCESS != status) {
-        goto exit;
-    }
-
-    if (true == PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg)) {
-        if (PSA_ALG_RSA_PKCS1V15_SIGN_RAW == alg) {
-            /* HSEB does not support a signature scheme without a specified
-             * hash algorithm.
-             */
-            status = PSA_ERROR_NOT_SUPPORTED;
-            goto exit;
-        } else {
-            status = psa_to_ele_hseb_hash(alg, &hseb_hash);
-            if (PSA_SUCCESS != status) {
-                goto exit;
-            }
-
-            hseb_status = RsaPkcs1v15VerSrv(key_handle, hseb_hash, input_length,
-                                            input, is_input_hashed,
-                                            HSE_SGT_OPTION_NONE,
-                                            (uint32_t *) &signature_length, signature);
-        }
-    } else if (true == PSA_ALG_IS_RSA_PSS(alg)) {
-        status = psa_to_ele_hseb_hash(alg, &hseb_hash);
-        if (PSA_SUCCESS != status) {
-            goto exit;
-        }
-
-        salt_length = get_salt_length(attributes, alg);
-
-        hseb_status = RsaPssVerSrv(key_handle, salt_length, hseb_hash,
-                                   input_length, input, is_input_hashed,
-                                   HSE_SGT_OPTION_NONE, (uint32_t *) &signature_length,
-                                   signature);
-    } else {
-        status = PSA_ERROR_NOT_SUPPORTED;
-        goto exit;
-    }
-    status = ele_hseb_to_psa_status(hseb_status);
-
-
-exit:
-    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
     return status;
 }
 
@@ -547,10 +297,11 @@ psa_status_t ele_hseb_transparent_sign_message(const psa_key_attributes_t *attri
                                                size_t signature_size,
                                                size_t *signature_length)
 {
-    psa_status_t status     = PSA_ERROR_CORRUPTION_DETECTED;
-    size_t output_size      = 0u;
-    psa_key_type_t key_type = psa_get_key_type(attributes);
-    size_t key_bits         = psa_get_key_bits(attributes);
+    psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
+    size_t output_size        = 0u;
+    psa_key_type_t key_type   = psa_get_key_type(attributes);
+    size_t key_bits           = psa_get_key_bits(attributes);
+    hseKeyHandle_t key_handle = { 0 };
 
     /* Check if correct alg. Per PSA spec, the PKCS1V15_SIGN_RAW variant may
      * only be used with psa_sign_hash() and psa_verify_hash() functions.
@@ -584,9 +335,14 @@ psa_status_t ele_hseb_transparent_sign_message(const psa_key_attributes_t *attri
     if (true == PSA_KEY_TYPE_IS_ECC(key_type)) {
         if (true == PSA_ALG_IS_ECDSA(alg) &&
             false == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg)) {
-            status = ecdsa_sign(attributes, key_buffer, key_buffer_size, alg,
-                                input, input_length, signature, signature_size,
-                                signature_length, false);
+            status = setkey_ecc(attributes, &key_handle, key_buffer,
+                                key_buffer_size);
+            if (PSA_SUCCESS == status) {
+                status = ele_hseb_common_ecdsa_sign(key_handle, alg,
+                                                    input, input_length,
+                                                    signature, signature_size,
+                                                    signature_length, false);
+            }
         } else if (true == PSA_ALG_IS_HASH_EDDSA(alg) ||
                    PSA_ALG_PURE_EDDSA == alg) {
             /* EdDSA / PureEdDSA to be supported once key import
@@ -598,9 +354,14 @@ psa_status_t ele_hseb_transparent_sign_message(const psa_key_attributes_t *attri
     } else if (true == PSA_KEY_TYPE_IS_RSA(key_type)) {
         if (true == PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg) ||
             true == PSA_ALG_IS_RSA_PSS(alg)) {
-            status = rsa_sign(attributes, key_buffer, key_buffer_size, alg,
-                              input, input_length, signature, signature_size,
-                              signature_length, false);
+            status = setkey_rsa(attributes, &key_handle, key_buffer,
+                                key_buffer_size);
+            if (PSA_SUCCESS == status) {
+                status = ele_hseb_common_rsa_sign(key_handle, attributes, alg,
+                                                  input, input_length,
+                                                  signature, signature_size,
+                                                  signature_length, false);
+            }
         } else {
             status = PSA_ERROR_NOT_SUPPORTED;
         }
@@ -611,6 +372,8 @@ psa_status_t ele_hseb_transparent_sign_message(const psa_key_attributes_t *attri
     if (PSA_SUCCESS != status) {
         *signature_length = 0u;
     }
+
+    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
 
     if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -628,8 +391,9 @@ psa_status_t ele_hseb_transparent_verify_message(const psa_key_attributes_t *att
                                                  const uint8_t *signature,
                                                  size_t signature_length)
 {
-    psa_status_t status     = PSA_ERROR_CORRUPTION_DETECTED;
-    psa_key_type_t key_type = psa_get_key_type(attributes);
+    psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_type_t key_type   = psa_get_key_type(attributes);
+    hseKeyHandle_t key_handle = { 0 };
 
     /* Check if correct alg. Per PSA spec, the PKCS1V15_SIGN_RAW variant may
      * only be used with psa_sign_hash() and psa_verify_hash() functions.
@@ -658,9 +422,14 @@ psa_status_t ele_hseb_transparent_verify_message(const psa_key_attributes_t *att
     if (true == PSA_KEY_TYPE_IS_ECC(key_type)) {
         if (true == PSA_ALG_IS_ECDSA(alg) &&
             false == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg)) {
-            status = ecdsa_verify(attributes, key_buffer, key_buffer_size, alg,
-                                  input, input_length, signature,
-                                  signature_length, false);
+            status = setkey_ecc(attributes, &key_handle, key_buffer,
+                                key_buffer_size);
+            if (PSA_SUCCESS == status) {
+                status = ele_hseb_common_ecdsa_verify(key_handle, attributes,
+                                                      alg, input, input_length,
+                                                      signature, signature_length,
+                                                      false);
+            }
         } else if (true == PSA_ALG_IS_HASH_EDDSA(alg) ||
                    PSA_ALG_PURE_EDDSA == alg) {
             /* EdDSA / PureEdDSA to be supported once key import
@@ -672,15 +441,22 @@ psa_status_t ele_hseb_transparent_verify_message(const psa_key_attributes_t *att
     } else if (true == PSA_KEY_TYPE_IS_RSA(key_type)) {
         if (true == PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg) ||
             true == PSA_ALG_IS_RSA_PSS(alg)) {
-            status = rsa_verify(attributes, key_buffer, key_buffer_size, alg,
-                                input, input_length, signature,
-                                signature_length, false);
+            status = setkey_rsa(attributes, &key_handle, key_buffer,
+                                key_buffer_size);
+            if (PSA_SUCCESS == status) {
+                status = ele_hseb_common_rsa_verify(key_handle, attributes, alg,
+                                                    input, input_length,
+                                                    signature, signature_length,
+                                                    false);
+            }
         } else {
             status = PSA_ERROR_NOT_SUPPORTED;
         }
     } else {
         status = PSA_ERROR_NOT_SUPPORTED;
     }
+
+    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
 
     if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -699,10 +475,11 @@ psa_status_t ele_hseb_transparent_sign_hash(const psa_key_attributes_t *attribut
                                             size_t signature_size,
                                             size_t *signature_length)
 {
-    psa_status_t status     = PSA_ERROR_CORRUPTION_DETECTED;
-    size_t output_size      = 0u;
-    psa_key_type_t key_type = psa_get_key_type(attributes);
-    size_t key_bits         = psa_get_key_bits(attributes);
+    psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
+    size_t output_size        = 0u;
+    psa_key_type_t key_type   = psa_get_key_type(attributes);
+    size_t key_bits           = psa_get_key_bits(attributes);
+    hseKeyHandle_t key_handle = { 0 };
 
     /* Check if correct alg. Per PSA spec, the PURE_EDDSA variant may
      * only be used with psa_sign_message() and psa_verify_message() functions.
@@ -736,9 +513,14 @@ psa_status_t ele_hseb_transparent_sign_hash(const psa_key_attributes_t *attribut
     if (true == PSA_KEY_TYPE_IS_ECC(key_type)) {
         if (true == PSA_ALG_IS_ECDSA(alg) &&
             false == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg)) {
-            status = ecdsa_sign(attributes, key_buffer, key_buffer_size, alg,
-                                hash, hash_length, signature, signature_size,
-                                signature_length, true);
+            status = setkey_ecc(attributes, &key_handle, key_buffer,
+                                key_buffer_size);
+            if (PSA_SUCCESS == status) {
+                status = ele_hseb_common_ecdsa_sign(key_handle, alg,
+                                                    hash, hash_length,
+                                                    signature, signature_size,
+                                                    signature_length, true);
+            }
         } else if (true == PSA_ALG_IS_HASH_EDDSA(alg)) {
             /* EdDSA to be supported once key import for HSEB is supported */
             status = PSA_ERROR_NOT_SUPPORTED;
@@ -761,6 +543,8 @@ psa_status_t ele_hseb_transparent_sign_hash(const psa_key_attributes_t *attribut
         *signature_length = 0u;
     }
 
+    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
+
     if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
@@ -777,8 +561,9 @@ psa_status_t ele_hseb_transparent_verify_hash(const psa_key_attributes_t *attrib
                                               const uint8_t *signature,
                                               size_t signature_length)
 {
-    psa_status_t status     = PSA_ERROR_CORRUPTION_DETECTED;
-    psa_key_type_t key_type = psa_get_key_type(attributes);
+    psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_type_t key_type   = psa_get_key_type(attributes);
+    hseKeyHandle_t key_handle = { 0 };
 
     /* Check if correct alg. Per PSA spec, the PURE_EDDSA variant may
      * only be used with psa_sign_message() and psa_verify_message() functions.
@@ -807,9 +592,14 @@ psa_status_t ele_hseb_transparent_verify_hash(const psa_key_attributes_t *attrib
     if (true == PSA_KEY_TYPE_IS_ECC(key_type)) {
         if (true == PSA_ALG_IS_ECDSA(alg) &&
             false == PSA_ALG_IS_DETERMINISTIC_ECDSA(alg)) {
-            status = ecdsa_verify(attributes, key_buffer, key_buffer_size, alg,
-                                  hash, hash_length, signature,
-                                  signature_length, true);
+            status = setkey_ecc(attributes, &key_handle, key_buffer,
+                                key_buffer_size);
+            if (PSA_SUCCESS == status) {
+                status = ele_hseb_common_ecdsa_verify(key_handle, attributes,
+                                                      alg, hash, hash_length,
+                                                      signature, signature_length,
+                                                      true);
+            }
         } else if (true == PSA_ALG_IS_HASH_EDDSA(alg)) {
             /* EdDSA to be supported once key import for HSEB is supported */
             status = PSA_ERROR_NOT_SUPPORTED;
@@ -827,6 +617,8 @@ psa_status_t ele_hseb_transparent_verify_hash(const psa_key_attributes_t *attrib
     } else {
         status = PSA_ERROR_NOT_SUPPORTED;
     }
+
+    (void) ele_hseb_delete_key(&key_handle, HSE_ERASE_NOT_USED);
 
     if (mcux_mutex_unlock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;

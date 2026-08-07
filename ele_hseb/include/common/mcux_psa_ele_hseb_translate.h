@@ -134,6 +134,21 @@ hseCipherBlockMode_t psa_to_hseb_cipher_mode(psa_algorithm_t alg);
  */
 hseAesBlockModeMask_t cipher_mode_to_cipher_mask(hseCipherBlockMode_t hse_cipher_mode);
 
+/**
+ * \brief Map a PSA ECDSA algorithm to an HSE sign scheme.
+ *
+ * The caller must have already verified that \p alg is a non-deterministic
+ * ECDSA algorithm before calling this function.
+ *
+ * \param[in]  alg         PSA ECDSA algorithm.
+ * \param[out] sign_scheme HSE sign scheme to populate.
+ *
+ * \retval PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *         failure.
+ */
+psa_status_t psa_to_ele_hseb_ecdsa(psa_algorithm_t alg,
+                                   hseSignScheme_t *sign_scheme);
+
 #ifdef __cplusplus
 }
 #endif

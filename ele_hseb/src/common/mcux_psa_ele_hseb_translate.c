@@ -340,3 +340,12 @@ hseAesBlockModeMask_t cipher_mode_to_cipher_mask(hseCipherBlockMode_t hse_cipher
     }
     return mask;
 }
+
+psa_status_t psa_to_ele_hseb_ecdsa(psa_algorithm_t alg,
+                                   hseSignScheme_t *sign_scheme)
+{
+    psa_status_t status = psa_to_ele_hseb_hash(alg,
+                                               &sign_scheme->sch.ecdsa.hashAlgo);
+    sign_scheme->signSch = HSE_SIGN_ECDSA;
+    return status;
+}

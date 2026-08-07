@@ -528,12 +528,14 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb)
                 ele_hseb/ele_hseb.h
                 ele_hseb/ele_hseb_crypto_primitives.h
                 ele_hseb/ele_hseb_crypto_composites.h
+                ele_hseb/include/common/mcux_psa_ele_hseb_common_asymmetric_signature.h
                 ele_hseb/include/common/mcux_psa_ele_hseb_common_init.h
                 ele_hseb/include/common/mcux_psa_ele_hseb_entropy.h
                 ele_hseb/include/common/mcux_psa_ele_hseb_translate.h
                 ele_hseb/include/common/mcux_psa_ele_hseb_key_management.h
                 ele_hseb/include/common/mcux_psa_ele_hseb_utils.h
                 ele_hseb/include/common/mcux_psa_ele_hseb_key_locations.h
+                ele_hseb/src/common/mcux_psa_ele_hseb_common_asymmetric_signature.c
                 ele_hseb/src/common/mcux_psa_ele_hseb_common_init.c
                 ele_hseb/src/common/mcux_psa_ele_hseb_entropy.c
                 ele_hseb/src/common/mcux_psa_ele_hseb_translate.c
@@ -552,7 +554,9 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb)
                 ele_hseb/src/transparent/mcux_psa_ele_hseb_mac.c
                 ele_hseb/src/transparent/mcux_psa_ele_hseb_aead.c
                 ele_hseb/include/opaque/mcux_psa_ele_hseb_opaque_key_generation.h
+                ele_hseb/include/opaque/mcux_psa_ele_hseb_opaque_asymmetric_signature.h
                 ele_hseb/src/opaque/mcux_psa_ele_hseb_opaque_key_generation.c
+                ele_hseb/src/opaque/mcux_psa_ele_hseb_opaque_asymmetric_signature.c
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
