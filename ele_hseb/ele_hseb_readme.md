@@ -62,118 +62,22 @@ limitations.
 * For PSA_KEY_TYPE_HMAC, the only supported key bit sizes are in the range
   [128, 1024].
 
-# Supported Algorithms
-Below is a list of algorithms supported by the current version of the ELE HSEB
-port. Key types and sizes are also specified where relevant.
+# Supported Algorithms by Location
 
-* Keyless algorithms
-    * Hash
-        * One-Go
-            * PSA_ALG_SHA_1
-            * PSA_ALG_SHA_224
-            * PSA_ALG_SHA_256
-            * PSA_ALG_SHA_384
-            * PSA_ALG_SHA_512
-            * PSA_ALG_SHA_512_224
-            * PSA_ALG_SHA_512_256
-            * PSA_ALG_SHA3_224
-            * PSA_ALG_SHA3_256
-            * PSA_ALG_SHA3_384
-            * PSA_ALG_SHA3_512
-        * Multipart
-            * PSA_ALG_SHA_1
-            * PSA_ALG_SHA_224
-            * PSA_ALG_SHA_256
-            * PSA_ALG_SHA_384
-            * PSA_ALG_SHA_512
-            * PSA_ALG_SHA_512_224
-            * PSA_ALG_SHA_512_256
-            * PSA_ALG_SHA3_224
-            * PSA_ALG_SHA3_256
-            * PSA_ALG_SHA3_384
-            * PSA_ALG_SHA3_512
+| Category                      | Algorithm / Hash                                            | Key Info                                                        | LOCAL_STORAGE      | ELE_HSEB (opaque)   |
+| ----------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------- | ------------------ | ------------------- |
+| **Hash**                      | SHA_1/224/256/384/512/512_224/512_256, SHA3_224/256/384/512 | keyless                                                         | one-go + multipart | (n/a)               |
+| **ECB_NO_PADDING**            | AES                                                         | -                                                               | one-go + multipart | not supported       |
+| **CBC_NO_PADDING**            | AES                                                         | -                                                               | one-go + multipart | not supported       |
+| **CTR**                       | AES                                                         | -                                                               | one-go + multipart | not supported       |
+| **CFB**                       | AES                                                         | -                                                               | one-go + multipart | not supported       |
+| **OFB**                       | AES                                                         | -                                                               | one-go + multipart | not supported       |
+| **CCM**                       | AES                                                         | -                                                               | one-go only        | not supported       |
+| **GCM**                       | AES                                                         | -                                                               | one-go only        | not supported       |
+| **CMAC**                      | AES                                                         | -                                                               | one-go + multipart | not supported       |
+| **HMAC**                      | SHA_1/224/256/384/512/512_224/512_256                       | HMAC key, [128, 1024] bits                                      | one-go + multipart | not supported       |
+| **RSA sign (PKCS1V15 + PSS)** | SHA_1/224/256/384/512/512_224/512_256, SHA3_224/256/384/512 |                                                                 | supported          | not supported       |
+| **ECDSA**                     | SHA_1/224/256/384/512/512_224/512_256, SHA3_224/256/384/512 | SECP_R1: 256/384/521 bits; BRAINPOOL_P_R1: 256/320/384/512 bits | supported          | not supported       |
 
-* `PSA_KEY_LOCATION_LOCAL_STORAGE`
-    * Cipher
-        * Unauthenticated
-            * One-Go
-                * PSA_ALG_ECB_NO_PADDING
-                * PSA_ALG_CBC_NO_PADDING
-                * PSA_ALG_CTR
-                * PSA_ALG_CFB
-                * PSA_ALG_OFB
-            * Multipart
-                * PSA_ALG_ECB_NO_PADDING
-                * PSA_ALG_CBC_NO_PADDING
-                * PSA_ALG_CTR
-                * PSA_ALG_CFB
-                * PSA_ALG_OFB
-        * Authenticated
-            * One-Go
-                * PSA_ALG_CCM
-                * PSA_ALG_GCM
-    * MAC
-        * One-Go
-            * PSA_ALG_CMAC
-            * PSA_ALG_HMAC(PSA_ALG_SHA_1)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_224)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_256)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_384)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_512)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_512_224)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_512_256)
-        * Multipart
-            * PSA_ALG_CMAC
-            * PSA_ALG_HMAC(PSA_ALG_SHA_1)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_224)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_256)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_384)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_512)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_512_224)
-            * PSA_ALG_HMAC(PSA_ALG_SHA_512_256)
-    * Asymmetric Signature
-        * RSA
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_1)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_224)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_256)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_384)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_512)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_512_224)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_512_256)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA3_224)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA3_256)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA3_384)
-            * PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA3_512)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA_1)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA_224)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA_256)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA_384)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA_512)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA_512_224)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA_512_256)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA3_224)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA3_256)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA3_384)
-            * PSA_ALG_RSA_PSS(PSA_ALG_SHA3_512)
-        * ECC
-            * Supported curves
-                * PSA_ECC_FAMILY_SECP_R1
-                    * Key sizes :  256, 384, 521
-                * PSA_ECC_FAMILY_BRAINPOOL_P_R1
-                    * Key sizes :  256, 320, 384, 512
-            * Supported aglorithms
-                * PSA_ALG_ECDSA(PSA_ALG_SHA_1)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA_224)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA_256)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA_384)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA_512)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA_512_224)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA_512_256)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA3_224)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA3_256)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA3_384)
-                * PSA_ALG_ECDSA(PSA_ALG_SHA3_512)
-
-* `PSA_KEY_LOCATION_ELE_HSEB`
-Currently, only key generation and import is implemented and no operations
-with such keys are possible.
+> **HMAC key size constraint:** Only key bit sizes in the range [128, 1024] are
+> supported (see [Hardware Limitations](#hardware-limitations)).
