@@ -444,6 +444,22 @@ static inline psa_status_t psa_driver_wrapper_sign_message(
                 return( status );
             break;
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            status = ele_hseb_opaque_sign_message(
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_size,
+                        signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -626,6 +642,19 @@ static inline psa_status_t psa_driver_wrapper_verify_message(
 //                return( status );
             break;
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            return (ele_hseb_opaque_verify_message(
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_length ) );
+            break;
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -862,6 +891,18 @@ static inline psa_status_t psa_driver_wrapper_sign_hash(
                                                signature_size,
                                                signature_length ) );
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            return( ele_hseb_opaque_sign_hash( attributes,
+                                   key_buffer,
+                                   key_buffer_size,
+                                   alg,
+                                   hash,
+                                   hash_length,
+                                   signature,
+                                   signature_size,
+                                   signature_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -1083,6 +1124,17 @@ static inline psa_status_t psa_driver_wrapper_verify_hash(
                                                  signature,
                                                  signature_length ) );
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            return( ele_hseb_opaque_verify_hash( attributes,
+                                     key_buffer,
+                                     key_buffer_size,
+                                     alg,
+                                     hash,
+                                     hash_length,
+                                     signature,
+                                     signature_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
