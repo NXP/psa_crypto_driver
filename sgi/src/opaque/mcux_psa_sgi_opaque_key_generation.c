@@ -117,6 +117,13 @@ static psa_status_t sgi_opaque_duk_import_key(const psa_key_attributes_t *attrib
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
+    /* Reject keys whose bit-length exceeds the PSA key-size ceiling. The PSA
+     * core enforces "bits > PSA_MAX_KEY_BITS" from the value the driver import
+     * entry reports */
+    if (expected_plain > PSA_BITS_TO_BYTES(PSA_MAX_KEY_BITS)) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     if (data_length == SGI_DUK_BLOB_SIZE(expected_plain)) {
         if (key_buffer_size < expected_plain) {
             return PSA_ERROR_BUFFER_TOO_SMALL;

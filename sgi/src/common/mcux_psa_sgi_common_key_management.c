@@ -288,6 +288,13 @@ psa_status_t sgi_create_key_descriptor(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    /* Reject keys whose bit-length exceeds the PSA key-size ceiling. The PSA
+     * core enforces "bits > PSA_MAX_KEY_BITS" from the value the driver import
+     * entry reports */
+    if (key_buffer_size > PSA_BITS_TO_BYTES(PSA_MAX_KEY_BITS)) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
     /* Configure key data pointers */
