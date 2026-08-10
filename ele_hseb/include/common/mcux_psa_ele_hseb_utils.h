@@ -29,6 +29,9 @@
 extern "C" {
 #endif
 
+/** \brief HSE bool_t is typedef'd to uint8_t; takes care of bool-to-bool_t conversion */
+#define HSE_BOOL_TO_UINT(bool_val) ((bool_val) ? 1u   : 0u)
+
 /**
  * \brief Given a chunk size, an already used chunk length and some input size,
  *        return the remainder of the input length that does not fit into chunk

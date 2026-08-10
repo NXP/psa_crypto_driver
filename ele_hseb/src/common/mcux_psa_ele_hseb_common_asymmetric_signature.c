@@ -15,6 +15,7 @@
 
 #include "mcux_psa_ele_hseb_common_asymmetric_signature.h"
 #include "mcux_psa_ele_hseb_translate.h"
+#include "mcux_psa_ele_hseb_utils.h"
 
 #include "hse_host_ecc.h"
 #include "hse_host_sign.h"
@@ -57,9 +58,15 @@ psa_status_t ele_hseb_common_ecdsa_sign(hseKeyHandle_t key_handle,
     }
 
     hseb_status = EcdsaSign(key_handle, sign_scheme.sch.ecdsa.hashAlgo,
-                            input_length, input, is_input_hashed,
+                            input_length, input, HSE_BOOL_TO_UINT(is_input_hashed),
                             HSE_SGT_OPTION_NONE, (uint32_t *) &rlen, r, (uint32_t *) &slen, s);
     status = ele_hseb_to_psa_status(hseb_status);
+
+    /* Helps with overflow check and validates output parameters returned by HSEB */
+    if ((rlen > (PSA_SIGNATURE_MAX_SIZE / 2)) ||
+        (slen > (PSA_SIGNATURE_MAX_SIZE / 2))) {
+        status = PSA_ERROR_HARDWARE_FAILURE;
+    }
 
     /* This should already be checked by the caller, but we re-check to be sure.
      * If the caller got us here, we have most likely already overwritten something past the buffer.
@@ -107,7 +114,7 @@ psa_status_t ele_hseb_common_ecdsa_verify(hseKeyHandle_t key_handle,
     }
 
     hseb_status = EcdsaVerify(key_handle, sign_scheme.sch.ecdsa.hashAlgo,
-                              input_length, input, is_input_hashed,
+                              input_length, input, HSE_BOOL_TO_UINT(is_input_hashed),
                               HSE_SGT_OPTION_NONE, (uint32_t *) &rlen, r, (uint32_t *) &slen, s);
     status = ele_hseb_to_psa_status(hseb_status);
 
@@ -147,7 +154,7 @@ psa_status_t ele_hseb_common_rsa_sign(hseKeyHandle_t key_handle,
 
             hseb_status = RsaPkcs1v15SignSrv(key_handle, hseb_hash,
                                              input_length, (uint8_t *) input,
-                                             is_input_hashed,
+                                             HSE_BOOL_TO_UINT(is_input_hashed),
                                              HSE_SGT_OPTION_NONE,
                                              (uint32_t *) signature_length, signature);
         }
@@ -160,7 +167,7 @@ psa_status_t ele_hseb_common_rsa_sign(hseKeyHandle_t key_handle,
         salt_length = ele_hseb_get_rsa_pss_salt_length(attributes, alg);
 
         hseb_status = RsaPssSignSrv(key_handle, salt_length, hseb_hash,
-                                    input_length, input, is_input_hashed,
+                                    input_length, input, HSE_BOOL_TO_UINT(is_input_hashed),
                                     HSE_SGT_OPTION_NONE,
                                     (uint32_t *) signature_length, signature);
     } else {
@@ -205,7 +212,7 @@ psa_status_t ele_hseb_common_rsa_verify(hseKeyHandle_t key_handle,
             }
 
             hseb_status = RsaPkcs1v15VerSrv(key_handle, hseb_hash, input_length,
-                                            input, is_input_hashed,
+                                            input, HSE_BOOL_TO_UINT(is_input_hashed),
                                             HSE_SGT_OPTION_NONE,
                                             (uint32_t *) &signature_length, signature);
         }
@@ -218,7 +225,7 @@ psa_status_t ele_hseb_common_rsa_verify(hseKeyHandle_t key_handle,
         salt_length = ele_hseb_get_rsa_pss_salt_length(attributes, alg);
 
         hseb_status = RsaPssVerSrv(key_handle, salt_length, hseb_hash,
-                                   input_length, input, is_input_hashed,
+                                   input_length, input, HSE_BOOL_TO_UINT(is_input_hashed),
                                    HSE_SGT_OPTION_NONE, (uint32_t *) &signature_length,
                                    signature);
     } else {

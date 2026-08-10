@@ -205,11 +205,15 @@ static psa_status_t setkey_rsa(const psa_key_attributes_t *attributes,
         }
         d = p;
 
-        /* RSA key pairs cannot be placed into RAM key catalogs, so we use
-         * the NVM key catalog for this kind of key
-         */
-        hseb_status = LoadRsaPair(key_handle, true, key_bits, n,
-                                  e_length, e, d);
+        if (e_length <= UINT16_MAX) {
+            /* RSA key pairs cannot be placed into RAM key catalogs, so we use
+             * the NVM key catalog for this kind of key
+             */
+            hseb_status = LoadRsaPair(key_handle, true, key_bits, n,
+                                      e_length, e, d);
+        } else {
+            hseb_status = HSE_SRV_RSP_INVALID_PARAM;
+        }
     } else { /* Public Key */
              /* We need both parts of the public key.
               * RSAPublicKey ::= SEQUENCE {
@@ -245,9 +249,12 @@ static psa_status_t setkey_rsa(const psa_key_attributes_t *attributes,
         }
         e = p;
 
-        hseb_status = LoadRsaPublicKey(key_handle, false, key_bits, n,
-                                       e_length, e);
-
+        if (e_length <= UINT16_MAX) {
+            hseb_status = LoadRsaPublicKey(key_handle, false, key_bits, n,
+                                           e_length, e);
+        } else {
+            hseb_status = HSE_SRV_RSP_INVALID_PARAM;
+        }
     }
     status = ele_hseb_to_psa_status(hseb_status);
 
