@@ -459,7 +459,8 @@ static psa_status_t execute_ckdf_step(mbedtls_svc_key_id_t key_id,
                                          "No usable keyslot found");
 
     if (step->ckdf.source == SOURCE_KEY_ID) {
-       get_slot_from_key_id(step->ckdf.source_key_id, &source_key_slot, true);
+       psa_status = get_slot_from_key_id(step->ckdf.source_key_id, &source_key_slot, true);
+       PSA_DRIVER_SUCCESS_OR_EXIT_MSG("No keyslot found for CKDF source key ID");
     } else {
        source_key_slot = step->ckdf.source_key_slot;
     }
@@ -709,6 +710,8 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ExecuteElsKeyIn(const psa_key_attribut
     }
     else // EL2GO Blob
     {
+        PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(import_op_data != NULL, PSA_ERROR_INVALID_ARGUMENT,
+                                             "import_op_data is NULL for EL2GO blob path");
         PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(target_key_slot != NULL, PSA_ERROR_INVALID_ARGUMENT,
                                              "target_key_slot is NULL");
 
