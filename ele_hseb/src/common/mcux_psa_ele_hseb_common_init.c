@@ -9,7 +9,9 @@
 #include "hse_mu.h"
 #include "hse_interface.h"
 #include "hse_host_format_key_catalogs.h"
+#include "hse_host_import_key.h"
 #include "hse_keys_allocator.h"
+#include <string.h>
 
 #if defined(CONFIG_ELE_HSEB_CUSTOM_CONFIG_HEADER)
 #include CONFIG_ELE_HSEB_CUSTOM_CONFIG_HEADER
@@ -28,6 +30,56 @@ mcux_mutex_t ele_hseb_hwcrypto_mutex;
 /******************************************************************************/
 /******************** CRYPTO_InitHardware *************************************/
 /******************************************************************************/
+
+#if defined(CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS)
+/**
+ * @brief Sync the host NVM key mirror with HSE-B internal state after a PoR.
+ * @details HKF_Init() rebuilds the mirror topology but marks all slots empty.
+ *          This function probes every NVM slot via HSE_SRV_ID_GET_KEY_INFO and
+ *          marks occupied slots with HKF_MarkAsAllocated(), restoring the mirror
+ *          to match the persisted HSE-B internal state.
+ *          Call this once after HKF_Init(), when the catalog was already formatted.
+ */
+static hseSrvResponse_t sync_nvm_key_mirror(const hseKeyGroupCfgEntry_t *pNvmCatalog)
+{
+    hseSrvResponse_t status = HSE_SRV_RSP_OK;
+    hseKeyGroupIdx_t group_id;
+    hseKeySlotIdx_t  slot_id;
+
+    for (group_id = 0u;; ++group_id) {
+        if (pNvmCatalog[group_id].muMask        == 0u &&
+            pNvmCatalog[group_id].groupOwner    == 0u &&
+            pNvmCatalog[group_id].keyType       == 0u &&
+            pNvmCatalog[group_id].numOfKeySlots == 0u &&
+            pNvmCatalog[group_id].maxKeyBitLen  == 0u) {
+            /* Zero-terminator reached */
+            break;
+        }
+
+        for (slot_id = 0u; slot_id < pNvmCatalog[group_id].numOfKeySlots; ++slot_id) {
+            hseKeyHandle_t handle = GET_KEY_HANDLE(HSE_KEY_CATALOG_ID_NVM, group_id, slot_id);
+            hseKeyInfo_t   keyInfo;
+            hseSrvResponse_t rsp;
+
+            (void) memset(&keyInfo, 0, sizeof(keyInfo));
+            rsp = GetKeyInfo(handle, &keyInfo);
+
+            if (HSE_SRV_RSP_OK == rsp) {
+                /* Slot is occupied - mark it in the host mirror */
+                (void) HKF_MarkAsAllocated(handle);
+            } else if (HSE_SRV_RSP_KEY_EMPTY == rsp) {
+                /* Slot is empty - mirror is already correct */
+            } else {
+                status = rsp;
+                goto exit;
+            }
+        }
+    }
+
+exit:
+    return status;
+}
+#endif /* CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS */
 
 static bool is_key_catalog_formatted(void)
 {
@@ -60,6 +112,7 @@ status_t CRYPTO_InitHardware(void)
 #if defined(CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS)
     hseSrvResponse_t result_fmt = HSE_SRV_RSP_GENERAL_ERROR;
     hseSrvResponse_t result_hkf = HSE_SRV_RSP_GENERAL_ERROR;
+    hseSrvResponse_t result_sync = HSE_SRV_RSP_GENERAL_ERROR;
 #endif
 
     if (true == g_isCryptoHWInitialized) {
@@ -97,9 +150,15 @@ status_t CRYPTO_InitHardware(void)
             /* Catalog is formatted, we assume an OK */
             result_fmt = HSE_SRV_RSP_OK;
         }
+        /* We set up the runtime mirror. HKF_Init() sets up the mirror and
+         * sync_nvm_key_mirror() syncs the NVM runtime catalog mirror with
+         * already-occupied key slots (persistent keys).
+         */
         result_hkf = HKF_Init(nvmKeyCatalog, ramKeyCatalog);
+        result_sync = sync_nvm_key_mirror(nvmKeyCatalog);
         if (HSE_SRV_RSP_OK != result_fmt ||
-            HSE_SRV_RSP_OK != result_hkf) {
+            HSE_SRV_RSP_OK != result_hkf ||
+            HSE_SRV_RSP_OK != result_sync) {
             result = kStatus_Fail;
             break;
         }
