@@ -14,8 +14,10 @@
  */
 #include "mcux_psa_pkc_key_generation.h"
 #include "mcux_psa_sgi_common_key_management.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 #define RSA_PUBLIC_EXP_BYTE_LENGTH (3u)
+#define RSA_MAX_KEYSIZE MCUXCLKEY_SIZE_4096
 
 /* Named constants for point formats */
 #define ECC_POINT_FORMAT_UNCOMPRESSED 0x04u
@@ -104,6 +106,10 @@ static size_t der_encode_integer(uint8_t *buffer, const uint8_t *value, size_t v
 
     /* Value */
     (void) memcpy(&buffer[offset], val_ptr, len);
+    if (mcux_psa_add_size_t_wrapcheck(offset, len))
+    {
+        return 0;
+    }
     offset += len;
 
     return offset;
@@ -149,18 +155,20 @@ static psa_status_t pkc_internal_generate_rsa_key(const psa_key_attributes_t *at
                                                   size_t *key_buffer_length)
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-    size_t key_bits = psa_get_key_bits(attributes);
-    size_t key_bytes = PSA_BITS_TO_BYTES(key_bits);
+    size_t key_bits;
+    size_t key_bytes;
     mcuxClKey_Type_t key_type_priv;
     mcuxClKey_Type_t key_type_pub;
     size_t privKeyDataSize;
 
+    key_bits = psa_get_key_bits(attributes);
     /* Validate key size BEFORE any session work */
     if ((key_bits != MCUXCLKEY_SIZE_2048) &&
         (key_bits != MCUXCLKEY_SIZE_3072) &&
         (key_bits != MCUXCLKEY_SIZE_4096)) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
+    key_bytes = PSA_BITS_TO_BYTES(key_bits);
 
     status = get_rsa_key_types(key_bits, &key_type_priv, &key_type_pub, &privKeyDataSize);
     if (PSA_SUCCESS != status) {
@@ -261,42 +269,53 @@ static psa_status_t pkc_internal_generate_rsa_key(const psa_key_attributes_t *at
 
     /* Encode to ASN.1 DER format (PKCS#1 RSAPrivateKey) */
     size_t der_offset = 0;
-
     /* Reserve space for SEQUENCE header */
+    static const uint8_t zero = 0x00u;
+    const struct { const uint8_t *val; size_t len; } fields[] = {
+        { pModulus, modulusLen },    /* n     */
+        { pubExp,   sizeof(pubExp) },/* e     */
+        { pPrivExp, privExpLen },    /* d     */
+        { &zero,    1u },            /* p     */
+        { &zero,    1u },            /* q     */
+        { &zero,    1u },            /* dp    */
+        { &zero,    1u },            /* dq    */
+        { &zero,    1u },            /* qInv  */
+    };
+    size_t encoded_size;
+    /* Reserve SEQUENCE header + version (0). required (checked above) proves
+       the buffer holds all of this, so der_offset stays <= key_buffer_size. */
     size_t seq_start = der_offset;
-    der_offset += 10u; /* Reserve max header size */
-
-    /* Version (0) */
+    der_offset += 10u;               /* Reserve max header size*/
     key_buffer[der_offset++] = 0x02; /* INTEGER tag */
     key_buffer[der_offset++] = 0x01; /* length */
     key_buffer[der_offset++] = 0x00; /* version 0 */
 
-    /* Modulus (n) */
-    der_offset += der_encode_integer(&key_buffer[der_offset], pModulus, modulusLen);
-
-    /* Public exponent (e) */
-    der_offset += der_encode_integer(&key_buffer[der_offset], pubExp, sizeof(pubExp));
-
-    /* Private exponent (d) */
-    der_offset += der_encode_integer(&key_buffer[der_offset], pPrivExp, privExpLen);
-
-    /* For complete PKCS#1, add p, q, dp, dq, qInv (use zeros as placeholder) */
-    uint8_t zero = 0;
-    der_offset += der_encode_integer(&key_buffer[der_offset], &zero, 1); /* p */
-    der_offset += der_encode_integer(&key_buffer[der_offset], &zero, 1); /* q */
-    der_offset += der_encode_integer(&key_buffer[der_offset], &zero, 1); /* dp */
-    der_offset += der_encode_integer(&key_buffer[der_offset], &zero, 1); /* dq */
-    der_offset += der_encode_integer(&key_buffer[der_offset], &zero, 1); /* qInv */
-
-    /* Calculate content length */
+    for (size_t i = 0u; i < (sizeof(fields) / sizeof(fields[0])); i++) {
+        if(der_offset > key_buffer_size)
+        {
+            status = PSA_ERROR_BUFFER_TOO_SMALL;
+            goto exit;
+        }
+        encoded_size = der_encode_integer(&key_buffer[der_offset],
+                                         fields[i].val, fields[i].len);
+        if (mcux_psa_add_size_t_wrapcheck(der_offset, encoded_size))
+        {
+            status = PSA_ERROR_CORRUPTION_DETECTED;
+            goto exit;
+        }
+        der_offset += encoded_size;
+    }
+    if (mcux_psa_sub_size_t_wrapcheck(der_offset, seq_start + 10))
+    {
+        status = PSA_ERROR_CORRUPTION_DETECTED;
+        goto exit;
+    }
     size_t content_len = der_offset - seq_start - 10u;
 
     /* Write SEQUENCE header */
     size_t header_pos = seq_start;
     key_buffer[header_pos++] = 0x30; /* SEQUENCE tag */
     size_t len_size = der_encode_length(&key_buffer[header_pos], content_len);
-    header_pos += len_size;
-
     /* Shift content if needed */
     size_t actual_header_size = 1u + len_size;
     if (actual_header_size < 10u) {
