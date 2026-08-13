@@ -12,6 +12,11 @@
 #ifndef MCUX_PSA_UTIL_WRAPCHECK_STATIC_INLINE_H
 #define MCUX_PSA_UTIL_WRAPCHECK_STATIC_INLINE_H
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+
 /******************************************************************************/
 /*                                  uint32_t                                  */
 /******************************************************************************/
