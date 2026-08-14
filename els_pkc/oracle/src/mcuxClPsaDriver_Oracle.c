@@ -45,14 +45,12 @@ psa_status_t mcuxClPsaDriver_Oracle_GetBuiltinKeyBufferSize(mbedtls_svc_key_id_t
  then use rw61x specific plat builtin keys */
 #if defined(PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER)
         case TFM_BUILTIN_KEY_ID_EL2GO_CONN_AUTH:
-            *key_buffer_size = mcuxClPsaDriver_Oracle_Utils_GetRecipeSize(&recipe_el2goconn_auth_prk);
-            status           = PSA_SUCCESS;
+            status = mcuxClPsaDriver_Oracle_Utils_GetRecipeSize(&recipe_el2goconn_auth_prk, key_buffer_size);
             break;
 #endif /*PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER*/
 #ifdef TFM_PARTITION_INITIAL_ATTESTATION
         case TFM_BUILTIN_KEY_ID_IAK:
-            *key_buffer_size = mcuxClPsaDriver_Oracle_Utils_GetRecipeSize(&recipe_el2goattest_auth_prk);
-            status           = PSA_SUCCESS;
+            status = mcuxClPsaDriver_Oracle_Utils_GetRecipeSize(&recipe_el2goattest_auth_prk, key_buffer_size);
             break;
 #endif // TFM_PARTITION_INITIAL_ATTESTATION
         default:

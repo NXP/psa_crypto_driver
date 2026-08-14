@@ -75,8 +75,8 @@ psa_status_t get_el2goem_mk_dd(uint8_t* dd)
             data_to_hash_as_uint32[i] = *(rkth + i);
         }
 
-        // Add lifecycle
-        data_to_hash[rkth_size] = lifecycle;
+        data_to_hash[rkth_size] = (uint8_t)(lifecycle & 0xFFU);
+
         
         // Calculate the hash.
         psa_algorithm_t alg = PSA_ALG_SHA_256;

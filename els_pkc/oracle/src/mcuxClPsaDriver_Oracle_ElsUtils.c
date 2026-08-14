@@ -45,6 +45,11 @@ bool mcuxClPsaDriver_Oracle_ElsUtils_IsFreeKeySlot(mcuxClEls_KeyIndex_t keyIdx, 
 
 mcuxClEls_KeyIndex_t mcuxClPsaDriver_Oracle_ElsUtils_GetFreeKeySlot(uint32_t requiredKeyslots)
 {
+    if (MCUXCLELS_KEY_SLOTS < requiredKeyslots)
+    {
+        return MCUXCLELS_KEY_SLOTS;
+    }
+
     for (mcuxClEls_KeyIndex_t keyIdx = 0; keyIdx <= (MCUXCLELS_KEY_SLOTS - requiredKeyslots); keyIdx++)
     {
         bool is_valid_keyslot = true;

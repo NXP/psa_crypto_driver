@@ -17,6 +17,8 @@
 #include "mcux_psa_els_pkc_opaque_key_generation.h"
 #include "mcuxClPsaDriver_Oracle.h"
 #include "mcuxClPsaDriver_Oracle_Interface_key_locations.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
+
 #include <string.h>
 
 #if defined(PSA_CRYPTO_DRIVER_THREAD_EN)
@@ -224,6 +226,11 @@ psa_status_t els_pkc_opaque_import_key(const psa_key_attributes_t *attributes,
     if(false == (MCUXCLPSADRIVER_IS_LOCAL_STORAGE(location)) )
     {
         mcuxClKey_Descriptor_t key_descriptor = {0};
+
+        if (key_buffer_size > UINT16_MAX)
+        {
+            return PSA_ERROR_INVALID_ARGUMENT;
+        }
 
         /* prepare the key container as expected by oracle */
         key_descriptor.container.pData    = (uint8_t *)key_buffer;

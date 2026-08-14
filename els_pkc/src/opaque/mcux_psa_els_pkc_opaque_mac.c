@@ -15,6 +15,7 @@
 #include "mcuxClEls.h"
 #include "mcuxClPsaDriver_Functions.h"
 #include "mcux_psa_els_pkc_opaque_mac.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 #include <mbedtls/platform.h>
 #include <string.h>
 #if defined(PSA_CRYPTO_DRIVER_THREAD_EN)
@@ -49,8 +50,21 @@ psa_status_t els_pkc_opaque_mac_compute(const psa_key_attributes_t *attributes,
 
     uint8_t *padded_input = NULL;
     if (PSA_ALG_IS_HMAC(alg)) {
+        if (mcux_psa_add_size_t_wrapcheck(
+            MCUXCLHMAC_ELS_MIN_PADDING_LENGTH + MCUXCLHMAC_ELS_BLOCK_SIZE - 1u,
+            input_length))
+        {
+#if defined(PSA_CRYPTO_DRIVER_THREAD_EN)
+            mcux_mutex_unlock(&els_pkc_hwcrypto_mutex);
+#endif
+            return PSA_ERROR_INVALID_ARGUMENT;
+        }
         padded_input = mbedtls_calloc(1, MCUXCLHMAC_ELS_INPUTBUFFER_LENGTH(input_length));
+
         if (padded_input == NULL) {
+#if defined(PSA_CRYPTO_DRIVER_THREAD_EN)
+            mcux_mutex_unlock(&els_pkc_hwcrypto_mutex);
+#endif
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
         (void)memcpy(padded_input, input, input_length);

@@ -9,10 +9,10 @@
 #include <mcuxClPsaDriver_Oracle_Utils.h>
 #include <mcuxClPsaDriver_Oracle_ElsUtils.h>
 #include <mcuxClPsaDriver_Oracle_Macros.h>
-
 #include <mbedtls/platform.h>
 
 #include "mcuxClEls_Types.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 #include "stdlib.h"
 
@@ -62,24 +62,32 @@ typedef struct psa_cmd_s
 
 #define CMAC_BLOCK_SIZE 16U
 
+#define CEIL_TO_BLOCKSIZE(len, blocksize) ((((len) + ((blocksize) - 1u)) / (blocksize)) * (blocksize))
+
 css_key_slot_handler_t slot_handler_array[MCUXCLELS_KEY_SLOTS] = {0};
 
-static size_t ceil_to_blocksize(size_t len, size_t blocksize)
-{
-    return ((len + (blocksize - 1u)) / blocksize) * blocksize;
-}
 
 /** @brief Pads the data following iso7816
  *
  */
 static psa_status_t pad_iso7816d4(uint8_t *data, size_t unpadded_length, size_t blocksize, size_t *padded_length)
 {
-    psa_status_t psa_status = PSA_SUCCESS;
+    if (mcux_psa_add_size_t_wrapcheck(unpadded_length, 1) ||
+        mcux_psa_sub_size_t_wrapcheck(blocksize, 1))
+    {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
 
-    *padded_length        = ceil_to_blocksize(unpadded_length + 1u /* always inserted padding 0x80 */, blocksize);
+    *padded_length        = CEIL_TO_BLOCKSIZE(unpadded_length + 1u /* always inserted padding 0x80 */, blocksize);
     data[unpadded_length] = 0x80u;
+
+    if (mcux_psa_sub_size_t_wrapcheck(*padded_length, unpadded_length + 1u))
+    {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+
     (void)memset(&data[unpadded_length + 1u], 0, *padded_length - (unpadded_length + 1u));
-    return psa_status;
+    return PSA_SUCCESS;
 }
 
 /** @brief Unpads the data following iso7816
@@ -318,6 +326,10 @@ static inline size_t get_key_bits(const mcuxClEls_KeyProp_t *prop)
 
 static mcuxClEls_KeyIndex_t get_usable_key_slot(size_t key_bits)
 {
+    if (mcux_psa_add_size_t_wrapcheck(key_bits, 127U))
+    {
+        return MCUXCLELS_KEY_SLOTS;
+    }
     uint32_t required_keyslots = (key_bits + 127U) / 128U;
     return mcuxClPsaDriver_Oracle_ElsUtils_GetFreeKeySlot(required_keyslots);
 }
@@ -876,10 +888,15 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_ValidateBlobSignature(const uint8_t *p
 
     size_t psa_import_blob_tbs_padded_length = 0;
     uint8_t *psa_import_blob_tbs = NULL;
+
+    PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(psa_import_blob_size >= CMAC_BLOCK_SIZE, PSA_ERROR_INVALID_ARGUMENT,
+                                         "Blob size too small to contain CMAC");
+
     // We do allocate enough memory here to also fit the padding into the buffer. This is achieved implicitly because
     // the blob size used here still includes the CMAC. The CMAC, however is excluded from the data to be signed and
     // thus in the copied buffer replaced by the padding.
     psa_import_blob_tbs = mbedtls_calloc(1, psa_import_blob_size);
+
     PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(psa_import_blob_tbs != NULL, PSA_ERROR_INSUFFICIENT_MEMORY,
                                          "Insufficient memory for padded blob allocation");
 
@@ -927,6 +944,8 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(
 
     // Generate ECC key Pair 1 in s50 slot.  Retain it and delete the private key from slot
     mcuxClEls_KeyIndex_t ecc_key1_index = mcuxClPsaDriver_Oracle_ElsUtils_GetFreeKeySlot(2);
+    PSA_DRIVER_ASSERT_OR_RETURN_STATUS_MSG(ecc_key1_index < MCUXCLELS_KEY_SLOTS, PSA_ERROR_BAD_STATE,
+                                         "No free keyslot found");
 
     uint8_t *public_key1 = NULL;
     uint8_t *public_key2 = NULL;
@@ -1001,6 +1020,8 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateSharedSecretECDH(
 #endif
 
     *key_index_shared_secret = mcuxClPsaDriver_Oracle_ElsUtils_GetFreeKeySlot(2);
+    PSA_DRIVER_ASSERT_OR_RETURN_STATUS_MSG(*key_index_shared_secret < MCUXCLELS_KEY_SLOTS, PSA_ERROR_BAD_STATE,
+                                         "No free keyslot found");
    // Execute Key exchange and put the secret in a key slot.If key type is ECC use the key index passed
     psa_status = mcuxClPsaDriver_Oracle_ElsUtils_EccKeyAgreement(ecc_key1_index, public_key1, *key_index_shared_secret, keyProp);
     PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in Key Exchange in ELS");
@@ -1087,6 +1108,8 @@ psa_status_t mcuxClPsaDriver_Oracle_Utils_GenerateKey(
         PSA_DRIVER_SUCCESS_OR_EXIT_MSG("Error in ELS ECDH function execution");
 
         *key_index = get_usable_key_slot(key_bits);
+        PSA_DRIVER_ASSERT_OR_EXIT_STATUS_MSG(*key_index < MCUXCLELS_KEY_SLOTS, PSA_ERROR_BAD_STATE,
+                                             "No usable keyslot found");
 
         psa_status = mcuxClPsaDriver_Oracle_ElsUtils_Ckdf(tmp_idx, *key_index,
                                                           keyProp, dd_data);

@@ -18,6 +18,7 @@
 #include <stddef.h>
 #include "mcuxClEls_Ecc.h"
 #include "mcuxClEls_Kdf.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 // in case the key is derived as a process including several key derivation execution,
 // the intermediate keys will have a temporary storage assigned to them and they will
@@ -188,10 +189,21 @@ extern css_key_slot_handler_t slot_handler_array[MCUXCLELS_KEY_SLOTS];
 /**
  * @brief Calculate the size of a key recipe.
  * @param[in] recipe the recipe to determine the size of
+ * @param[out] key_buffer_size key recipe size
+ *
+ * @retval PSA_SUCCESS                     Calculation was successful
+ * @retval PSA_ERROR_CORRUPTION_DETECTED   Unexpected value was calculated (wrap occurred)
  */
-static inline size_t mcuxClPsaDriver_Oracle_Utils_GetRecipeSize(const key_recipe_t *recipe)
+static inline psa_status_t mcuxClPsaDriver_Oracle_Utils_GetRecipeSize(const key_recipe_t *recipe, size_t *key_buffer_size)
 {
-    return offsetof(key_recipe_t, steps) + recipe->number_of_steps * sizeof(key_recipe_step_t);
+    if (mcux_psa_mul_size_t_wrapcheck(recipe->number_of_steps, sizeof(key_recipe_step_t)))
+    {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+
+    *key_buffer_size = offsetof(key_recipe_t, steps) + recipe->number_of_steps * sizeof(key_recipe_step_t);
+
+    return PSA_SUCCESS;
 }
 
 /**

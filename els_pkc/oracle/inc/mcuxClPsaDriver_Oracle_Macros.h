@@ -63,12 +63,18 @@
     PSA_DRIVER_ERROR(__VA_ARGS__);              \
     goto exit;
 
+
 #define PSA_DRIVER_SUCCESS_OR_EXIT_MSG(...) \
     if (PSA_SUCCESS != psa_status)          \
     {                                       \
         PSA_DRIVER_ERROR(__VA_ARGS__);      \
         goto exit;                          \
     }
+
+#define PSA_DRIVER_RETURN_STATUS_MSG(STATUS, ...) \
+    psa_status = STATUS;                        \
+    PSA_DRIVER_ERROR(__VA_ARGS__);              \
+    return psa_status;
 
 #define PSA_DRIVER_SUCCESS_OR_EXIT() PSA_DRIVER_SUCCESS_OR_EXIT_MSG("psa_status is not success but [0x%x]", psa_status)
 
@@ -80,6 +86,12 @@
     if (!(CONDITION))                                                \
     {                                                                \
         PSA_DRIVER_EXIT_STATUS_MSG(STATUS, __VA_ARGS__);             \
+    }
+
+#define PSA_DRIVER_ASSERT_OR_RETURN_STATUS_MSG(CONDITION, STATUS, ...) \
+    if (!(CONDITION))                                                \
+    {                                                                \
+        PSA_DRIVER_RETURN_STATUS_MSG(STATUS, __VA_ARGS__);             \
     }
 
 #define PSA_DRIVER_ASSERT_BUFFER_SIZE_OR_EXIT_STATUS_MSG(BASE, LENGTH, END, STATUS, ...) \
