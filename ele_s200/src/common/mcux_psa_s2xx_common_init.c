@@ -14,13 +14,7 @@
 /******************************************************************************/
 /*************************** Definitions **************************************/
 /******************************************************************************/
-/**
- * @brief Default session ID for ELE S2XX
- *
- * Using value of 1 to prevent possible issues with software resets,
- * as value of 0 may only be used _once_ with the OPEN SESSION command.
- */
-#define PSA_ELE_S2XX_DEFAULT_SESSION_ID (1u)
+
 
 /******************************************************************************/
 /*************************** Mutex ********************************************/
@@ -191,7 +185,8 @@ status_t CRYPTO_InitHardwareUnsafe(void)
             break;
         }
         /****************** Open ELE Session  ***********************/
-        if (kStatus_SSS_Success != sss_sscp_open_session(&g_ele_ctx.sssSession, PSA_ELE_S2XX_DEFAULT_SESSION_ID, ELE_SUBSYSTEM, &g_ele_ctx.sscpContext))
+        if (kStatus_SSS_Success != sss_sscp_open_session(&g_ele_ctx.sssSession, CONFIG_MCUX_SECURE_SUBSYSTEM_SESSION_ID,
+                                                         ELE_SUBSYSTEM, &g_ele_ctx.sscpContext))
         {
             result = kStatus_Fail;
             break;
