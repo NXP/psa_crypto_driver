@@ -21,6 +21,7 @@
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"
 
+#include <stdint.h>
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
 #else
@@ -97,7 +98,7 @@ static psa_status_t ele_s4xx_transparent_rsa_sign_common(
     generic_rsa_algo_t sig_scheme;
     struct rsa_keypair rsa_key;
     size_t key_bits = psa_get_key_bits(attributes);
-    uint32_t key_bytes = key_bits / 8;
+    uint32_t key_bytes = (uint32_t) ((key_bits / 8) & 0xFFFFFFFFU);
     size_t slen = -1;
     size_t hlen = PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg));
 
@@ -165,7 +166,7 @@ static psa_status_t ele_s4xx_transparent_rsa_sign_common(
     memset(&rsa_key, 0, sizeof(rsa_key));
 
     /* Parse input - We will use mbedtls_rsa_context to parse the context into*/
-    status = mcux_key_buf_to_raw_rsa(key_type, key_buffer, key_length, key_bytes, false, &rsa_key);
+    status = mcux_key_buf_to_raw_rsa(key_type, key_buffer, key_length, (uint32_t)key_bytes, false, &rsa_key);
     if (status != PSA_SUCCESS) {
         return status;
     }
@@ -237,7 +238,7 @@ static psa_status_t ele_s4xx_transparent_rsa_verify_common(
     ele_generic_rsa_t GenericRsaVerif;
     generic_rsa_algo_t sig_scheme;
     size_t key_bits = psa_get_key_bits(attributes);
-    uint32_t key_bytes = key_bits / 8;
+    uint32_t key_bytes = (uint32_t) ((key_bits / 8) & 0xFFFFFFFFU);
     struct rsa_keypair rsa_key;
     size_t hlen = PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg));
 
@@ -278,7 +279,7 @@ static psa_status_t ele_s4xx_transparent_rsa_verify_common(
     memset(&rsa_key, 0, sizeof(rsa_key));
 
     /* Parse input - We will use mbedtls_rsa_context to parse the context into*/
-    status = mcux_key_buf_to_raw_rsa(key_type, key_buffer, key_length, key_bytes, true, &rsa_key);
+    status = mcux_key_buf_to_raw_rsa(key_type, key_buffer, key_length, (uint32_t) key_bytes, true, &rsa_key);
     if (status != PSA_SUCCESS) {
         return status;
     }

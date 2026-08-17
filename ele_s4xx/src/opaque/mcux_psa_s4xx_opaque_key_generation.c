@@ -404,7 +404,7 @@ static psa_status_t export_rsa_public_key(psa_key_type_t key_type,
     uint8_t *pos = data + data_size;
     /* Allocate tmp based on RSA key size */
     int exponent = 65537;
-    uint32_t size = key_bits / 8;
+    uint32_t size = (uint32_t) ((key_bits / 8) & 0xFFFFFFFFU);
 #if defined(USE_MALLOC)
     uint8_t *tmp;
 #else

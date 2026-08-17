@@ -155,6 +155,7 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.s3mu
         select MCUX_COMPONENT_component.ele_crypto
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr
         bool "ELE S4xx SD NVM Manager"
@@ -172,6 +173,7 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.s3mu
         select MCUX_COMPONENT_component.ele_crypto
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa
         bool "ELE S4xx"

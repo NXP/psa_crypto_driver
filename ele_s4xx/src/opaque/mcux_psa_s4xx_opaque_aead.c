@@ -18,6 +18,7 @@
 #include "ele_crypto.h"
 
 #include "mcux_psa_s4xx_init.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
@@ -159,6 +160,10 @@ ele_s4xx_opaque_aead_encrypt(const psa_key_attributes_t *attributes,
     }
 
     /* No check for input and additional data as 0 value for these is allowed */
+
+    if (mcux_psa_add_size_t_wrapcheck(plaintext_length, tag_length)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     /* Output buffer has to be atleast Input buffer size  -> Check for encrypt */
     if (ciphertext_size < (plaintext_length + tag_length)) {

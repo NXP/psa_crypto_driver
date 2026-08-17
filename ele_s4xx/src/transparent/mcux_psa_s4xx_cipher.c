@@ -16,6 +16,7 @@
 
 #include "mcux_psa_s4xx_init.h"
 #include "mcux_psa_s4xx_cipher.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
@@ -233,8 +234,11 @@ psa_status_t ele_s4xx_transparent_cipher_decrypt(
 
 
     /* Input buffer -> IV + INPUT.
-     * So output length would be (input - iv_length)
+     * So output length would be (input - iv_length).
      */
+    if (mcux_psa_sub_size_t_wrapcheck(input_length, iv_length)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
     expected_op_length = input_length - iv_length;
 
     if (output_size < expected_op_length) {

@@ -17,6 +17,7 @@
 #include "mcux_psa_s4xx_init.h"
 #include "mcux_psa_s4xx_asymmetric_encryption.h"
 #include "mcux_psa_s4xx_common_key_management.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"
@@ -75,7 +76,7 @@ static psa_status_t ele_s4xx_transparent_internal_rsa_encrypt(
     ele_generic_rsa_t GenericRsaEncrypt = { 0 };
     struct rsa_keypair rsa_key = { 0 };
     size_t key_bits = psa_get_key_bits(attributes);
-    uint32_t key_bytes = key_bits / 8;
+    uint32_t key_bytes = (uint32_t) ((key_bits / 8) & 0xFFFFFFFFU);
 
     // No check on input as input can be NULL
     if (!output) {
@@ -104,14 +105,17 @@ static psa_status_t ele_s4xx_transparent_internal_rsa_encrypt(
 
     if ((PSA_ALG_IS_RSA_OAEP(alg))) {
         uint32_t hlen = PSA_HASH_LENGTH(PSA_ALG_RSA_OAEP_GET_HASH(alg));
-        /* Chek for overflows */
-        if (input_length + 2 * hlen + 2 < input_length ||
-            output_size < input_length + 2 * hlen + 2) {
+        size_t oaep_overhead = (size_t)(2u * hlen + 2u);
+        /* Check for overflows before using input_length + 2*hlen + 2 */
+        if (mcux_psa_add_size_t_wrapcheck(input_length, oaep_overhead) ||
+            output_size < (input_length + oaep_overhead)) {
             return PSA_ERROR_INVALID_ARGUMENT;
         }
 
-        /* Check for input message length. RFC defines mLen > k - 2hLen - 2 as error */
-        if (input_length > (key_bytes - 2 * hlen - 2)) {
+        /* Check for input message length. RFC defines mLen > k - 2hLen - 2 as error.
+         * Guard the subtraction against unsigned wrap when oaep_overhead > key_bytes. */
+        if (mcux_psa_sub_size_t_wrapcheck(key_bytes, oaep_overhead) ||
+            input_length > (key_bytes - oaep_overhead)) {
             return PSA_ERROR_INVALID_ARGUMENT;
         }
     } else {
@@ -149,7 +153,7 @@ static psa_status_t ele_s4xx_transparent_internal_rsa_encrypt(
     }
     /* Ouput Cipher Text */
     GenericRsaEncrypt.ciphertext = (uint32_t) output;
-    GenericRsaEncrypt.ciphertext_size = (uint16_t) output_size;
+    GenericRsaEncrypt.ciphertext_size = (uint16_t) (output_size & 0xFFFFU);
     /* Label */
     if (PSA_ALG_IS_RSA_OAEP(alg) && label_len) {
         GenericRsaEncrypt.label = (uint32_t) label;
@@ -190,7 +194,7 @@ static psa_status_t ele_s4xx_transparent_internal_rsa_decrypt(
     ele_generic_rsa_t GenericRsaDecrypt = { 0 };
     struct rsa_keypair rsa_key = { 0 };
     size_t key_bits = psa_get_key_bits(attributes);
-    uint32_t key_bytes = key_bits / 8;
+    uint32_t key_bytes = (uint32_t) ((key_bits / 8) & 0xFFFFFFFFU);
 
     /* If user sends a buffer with 0 size, return error */
     if (!output || !output_size) {

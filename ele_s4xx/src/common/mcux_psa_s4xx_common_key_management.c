@@ -54,7 +54,7 @@ psa_status_t ele_get_key_id_from_buf(const psa_key_attributes_t *attributes,
 
     // We are currently using the key id stored in key buffer. This is the one returned by ELE FW
     // When Key DB management comes into picture, we can directly pass the key id from attributes
-    if (key_buffer_size < sizeof(key_id)) {
+    if (key_buffer_size < sizeof(*key_id)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -117,7 +117,7 @@ cleanup:
     mbedtls_mpi_free(&N);
     mbedtls_mpi_free(&E);
 
-    return (int) len;
+    return (int) (len & 0x7FFFFFFFU);
 }
 
 
