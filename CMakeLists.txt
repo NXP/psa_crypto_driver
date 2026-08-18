@@ -353,6 +353,8 @@ endif()
 		PUBLIC
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/pkc/include
+		# Shared PSA util helpers (e.g. mcux_psa_util_wrapcheck_static_inline.h)
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/utils
 	)
 
 	# PKC PSA driver implementation
