@@ -718,6 +718,8 @@ endif()
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/common
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/opaque
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/include/transparent
+		# Shared PSA util helpers (e.g. mcux_psa_util_wrapcheck_static_inline.h)
+		${CMAKE_CURRENT_LIST_DIR}/utils
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle
 		${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/inc
 		# EL2Go key recipes: pick the oracle platform for the target SoC
