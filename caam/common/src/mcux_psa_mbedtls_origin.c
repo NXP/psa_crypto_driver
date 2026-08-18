@@ -24,6 +24,8 @@
  */
 
 #include "mcux_psa_mbedtls_origin.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
+
 #include "psa_crypto_rsa.h"
 
 #include "mbedtls/error.h"
@@ -316,12 +318,19 @@ int rsa_rsassa_pss_sign_encode(int (*f_rng)(void *, unsigned char *, size_t),
          * the key length. This complies with FIPS 186-4 §5.5 (e) and RFC 8017
          * (PKCS#1 v2.2) §9.1.1 step 3. */
         min_slen = hlen - 2;
-        if (olen < hlen + min_slen + 2) {
+        /* Guard hlen+min_slen+2 addition against wrap */
+        if (mcux_psa_add_size_t_wrapcheck(hlen, min_slen + 2U)) {
             return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
-        } else if (olen >= hlen + hlen + 2) {
+        } else if (olen < hlen + min_slen + 2U) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        } else if (olen >= hlen + hlen + 2U) {
             slen = hlen;
         } else {
-            slen = olen - hlen - 2;
+            /* Guard olen-hlen-2U subtraction against wrap */
+            if (mcux_psa_sub_size_t_wrapcheck(olen, hlen + 2U)) {
+                return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+            }
+            slen = olen - hlen - 2U;
         }
     } else if ((saltlen < 0) || (saltlen + hlen + 2 > olen)) {
         return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
@@ -332,7 +341,11 @@ int rsa_rsassa_pss_sign_encode(int (*f_rng)(void *, unsigned char *, size_t),
     memset(output, 0, olen);
 
     /* Note: EMSA-PSS encoding is over the length of N - 1 bits */
-    msb = rsa_key_len * 8 - 1;
+    /* Guard rsa_key_len*8 multiplication against wrap */
+    if (mcux_psa_mul_size_t_wrapcheck(rsa_key_len, 8U)) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+    msb = rsa_key_len * 8U - 1U;
     p += olen - hlen - slen - 2;
     *p++ = 0x01;
 

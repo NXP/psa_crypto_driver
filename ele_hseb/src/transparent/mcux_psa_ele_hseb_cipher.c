@@ -239,7 +239,7 @@ static psa_status_t cipher_start_stream_internal(ele_hseb_transparent_cipher_ope
 
     hseb_status = LoadAesKey(&key_handle,
                              false,
-                             (uint16_t) PSA_BITS_TO_BYTES(operation->key_bits),
+                             (uint16_t)(PSA_BITS_TO_BYTES(operation->key_bits) & 0xFFFFU),
                              operation->key);
     status = ele_hseb_to_psa_status(hseb_status);
     if (PSA_SUCCESS != status) {
@@ -438,7 +438,7 @@ psa_status_t ele_hseb_transparent_cipher_update(ele_hseb_transparent_cipher_oper
 
     hseb_status = LoadAesKey(&key_handle,
                              false,
-                             (uint16_t) PSA_BITS_TO_BYTES(operation->key_bits),
+                             (uint16_t)(PSA_BITS_TO_BYTES(operation->key_bits) & 0xFFFFU),
                              operation->key);
     status = ele_hseb_to_psa_status(hseb_status);
     if (PSA_SUCCESS != status) {
@@ -577,7 +577,7 @@ psa_status_t ele_hseb_transparent_cipher_finish(ele_hseb_transparent_cipher_oper
 
     hseb_status = LoadAesKey(&key_handle,
                              false,
-                             (uint16_t) PSA_BITS_TO_BYTES(operation->key_bits),
+                             (uint16_t)(PSA_BITS_TO_BYTES(operation->key_bits) & 0xFFFFU),
                              operation->key);
     status = ele_hseb_to_psa_status(hseb_status);
     if (PSA_SUCCESS != status) {

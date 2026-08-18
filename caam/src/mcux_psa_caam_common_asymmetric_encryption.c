@@ -18,6 +18,7 @@
 #include "mcux_psa_caam_hash.h"
 #include "mcux_psa_mbedtls_origin.h"
 #include "mcux_psa_caam_utils.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"
@@ -202,8 +203,15 @@ static psa_status_t caam_common_internal_rsa_encrypt_oaep(mcux_psa_caam_key_type
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    /* Guard additions before comparison to avoid unsigned wrap */
+    if (mcux_psa_add_size_t_wrapcheck(2U * hash_size, 2U)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    if (mcux_psa_add_size_t_wrapcheck(input_length, 2U * hash_size + 2U)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
     /* first comparison checks for overflow */
-    if (key_bytes < (input_length +(2u * hash_size) + 2u)) {
+    if (key_bytes < (input_length + (2u * hash_size) + 2u)) {
         return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
     }
 
@@ -392,9 +400,14 @@ psa_status_t caam_common_internal_rsa_decrypt(mcux_psa_caam_key_type_t caam_key_
         err = mcux_alloc_raw_rsa(&rsa_key, key_bytes, MCUX_KEY_TYPE_KEYPAIR, true);
         if (err == PSA_SUCCESS) {
             memcpy((uint8_t *) &rsa_key.priv_exp_len, &key_buffer[key_bytes], sizeof(size_t));
+            if (key_buffer_size < (key_bytes + sizeof(size_t))) {
+                err = PSA_ERROR_INVALID_ARGUMENT;
+            }
+        }
+        if (err == PSA_SUCCESS) {
             err = caam_opaque_decapsulate_key(caam_key_type,
                                               &key_buffer[key_bytes+sizeof(size_t)],
-                                              key_buffer_size - key_bytes-sizeof(size_t),
+                                              key_buffer_size - key_bytes - sizeof(size_t),
                                               rsa_key.priv_exp,
                                               rsa_key.priv_exp_len);
         }

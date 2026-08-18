@@ -140,6 +140,7 @@ menu "PSA Crypto Driver"
         select MCUX_COMPONENT_driver.dcp
         select MCUX_COMPONENT_driver.trng
         select MCUX_COMPONENT_component.osa
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
 
     config MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option
         bool "Use TRNG"
@@ -241,6 +242,7 @@ menu "PSA Crypto Driver"
         bool "CAAM"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.caam
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
 
     config MCUX_COMPONENT_component.psa_crypto_driver.ela_csec
         bool "ELA CSEC"

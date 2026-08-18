@@ -19,6 +19,7 @@
 #include "mcux_psa_mbedtls_origin.h"
 #include "mcux_psa_caam_common_asymmetric_encryption.h"
 #include "mcux_psa_caam_utils.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 #include "psa/crypto.h"
 #include "psa_crypto_rsa.h"
@@ -149,7 +150,11 @@ static psa_status_t caam_common_internal_ecc_sign(mcux_psa_caam_key_type_t caam_
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (signature_size < 2 * key_bytes) {
+    /* Guard multiplication against unsigned wrap */
+    if (mcux_psa_mul_size_t_wrapcheck(key_bytes, 2)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+    if (signature_size < 2U * key_bytes) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 

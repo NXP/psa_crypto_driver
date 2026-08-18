@@ -17,6 +17,7 @@
 #include "mcux_psa_caam_init.h"
 #include "mbedtls/error.h"
 #include "mcux_psa_caam_common_key_generation.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 #include "psa_util_internal.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/build_info.h"
@@ -66,6 +67,9 @@ psa_status_t caam_opaque_encapsulate_key(mcux_psa_caam_key_type_t caam_key_type,
     caam_handle_t caam_handle = { .jobRing = kCAAM_JobRing0 };
     caam_desc_type_t desc_key_type;
 
+    if (mcux_psa_add_size_t_wrapcheck(key_length, 64U)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
     if (CAAM_ENCAP_DATA_SIZE(key_length) > key_buffer_size) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -130,6 +134,9 @@ psa_status_t caam_opaque_decapsulate_key(mcux_psa_caam_key_type_t caam_key_type,
     caam_handle_t caam_handle = { .jobRing = kCAAM_JobRing0 };
     caam_desc_type_t desc_key_type;
 
+    if (mcux_psa_add_size_t_wrapcheck(key_size, 64U)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
     if (CAAM_ENCAP_DATA_SIZE(key_size) > key_buffer_size) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }

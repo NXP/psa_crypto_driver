@@ -31,6 +31,7 @@
 psa_ecc_family_t mbedtls_ecc_group_to_psa(mbedtls_ecp_group_id grpid, size_t *bits);
 
 #include "mcux_psa_common_key_management.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 const uint32_t s_rsa_exponent = RSA_EXPONENT;
 
@@ -187,6 +188,10 @@ psa_status_t mcux_alloc_raw_ecc(struct mcux_ecc_keypair *ecc_key,
     size_t privKeyLen = key_bytes;
 
     if (useAlign) {
+        /* Align to should not wrap */
+        if (mcux_psa_add_size_t_wrapcheck(privKeyLen, 19U)) {
+            return PSA_ERROR_CORRUPTION_DETECTED;
+        }
         privKeyLen = ECC_ALIGN_PRIVATE_KEY_SIZE(privKeyLen);
     }
 
@@ -394,6 +399,10 @@ psa_status_t mcux_alloc_raw_rsa(struct mcux_rsa_keypair *rsa_key,
     size_t privExpLen = key_bytes;
 
     if (useAlign) {
+        /* Align should not wrap */
+        if (mcux_psa_add_size_t_wrapcheck(privExpLen, 19U)) {
+            return PSA_ERROR_CORRUPTION_DETECTED;
+        }
         privExpLen = RSA_ALIGN_PRIVATE_EXPONENT_SIZE(privExpLen);
     }
 

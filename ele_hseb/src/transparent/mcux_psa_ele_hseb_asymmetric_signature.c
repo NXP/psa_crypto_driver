@@ -210,7 +210,7 @@ static psa_status_t setkey_rsa(const psa_key_attributes_t *attributes,
              * the NVM key catalog for this kind of key
              */
             hseb_status = LoadRsaPair(key_handle, true, key_bits, n,
-                                      e_length, e, d);
+                                      (uint16_t)(e_length & 0xFFFFU), e, d);
         } else {
             hseb_status = HSE_SRV_RSP_INVALID_PARAM;
         }
@@ -251,7 +251,7 @@ static psa_status_t setkey_rsa(const psa_key_attributes_t *attributes,
 
         if (e_length <= UINT16_MAX) {
             hseb_status = LoadRsaPublicKey(key_handle, false, key_bits, n,
-                                           e_length, e);
+                                           (uint16_t)(e_length & 0xFFFFU), e);
         } else {
             hseb_status = HSE_SRV_RSP_INVALID_PARAM;
         }

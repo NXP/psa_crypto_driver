@@ -16,6 +16,7 @@
 #include "mcux_psa_caam_common_aead.h"
 #include "mcux_psa_caam_utils.h"
 #include "mcux_psa_common_key_management.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
@@ -157,6 +158,9 @@ psa_status_t caam_internal_aead_encrypt(mcux_psa_caam_key_type_t caam_key_type,
     /* No check for input and additional data as 0 value for these is allowed */
 
     /* Output buffer has to be atleast Input buffer size  -> Check for encrypt */
+    if (mcux_psa_add_size_t_wrapcheck(plaintext_length, tag_length)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
     if (ciphertext_size < (plaintext_length + tag_length)) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }

@@ -14,6 +14,7 @@
  */
 
 #include "mcux_psa_dcp_cipher.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 /* To be able to include the PSA style configuration */
 #include "mbedtls/build_info.h"
@@ -316,6 +317,10 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     m_handle.channel    = kDCP_Channel0;
     m_handle.swapConfig = kDCP_NoSwap;
     m_handle.keySlot    = kDCP_KeySlot0;
+    
+    if (!PSA_ALG_IS_CIPHER(alg)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     /* Check supported algorithm */
     switch (key_type) {
@@ -364,10 +369,6 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     if (key_bits != 128u){
         return PSA_ERROR_NOT_SUPPORTED;
     }
-    
-    if (!PSA_ALG_IS_CIPHER(alg)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
 
     if ((alg == PSA_ALG_ECB_NO_PADDING) && (input_length == 0)) {
         /* PSA specification is not very clear on 0 input for ECB.
@@ -399,6 +400,9 @@ psa_status_t dcp_cipher_decrypt(const psa_key_attributes_t *attributes,
     /* Input buffer -> IV + INPUT.
      * So output length would be (input - iv_length)
      */
+    if (mcux_psa_sub_size_t_wrapcheck(input_length, (size_t)iv_length)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
     expected_op_length = input_length - iv_length;
 
     /* Input length has to be multiple of block size for decrypt operation */

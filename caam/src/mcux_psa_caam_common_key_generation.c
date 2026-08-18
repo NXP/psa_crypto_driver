@@ -17,6 +17,7 @@
 #include "mcux_psa_common_key_management.h"
 #include "mcux_psa_caam_init.h"
 #include "mcux_psa_caam_utils.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 #include "psa_crypto_storage.h"
 #include "mbedtls/psa_util.h"
 #include "mbedtls/platform.h"
@@ -390,6 +391,11 @@ static psa_status_t caam_internal_aes_generate_key_blacken(mcux_psa_caam_key_typ
     }
 #endif
 
+    /* Guard against unsigned wrap before computing CAAM_ENCAP_DATA_SIZE */
+    if (mcux_psa_add_size_t_wrapcheck(key_bytes, 64U)) {
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+
     if (CAAM_ENCAP_DATA_SIZE(key_bytes) > key_buffer_size) {
         err = PSA_ERROR_BUFFER_TOO_SMALL;
     }
@@ -602,8 +608,15 @@ psa_status_t caam_common_export_public_key(const psa_key_attributes_t *attribute
 
 size_t caam_common_size_function(psa_key_type_t key_type, size_t key_bits)
 {
-    size_t ret       = 0;
-    size_t key_bytes = PSA_BITS_TO_BYTES(key_bits);
+    size_t ret = 0;
+    size_t key_bytes;
+    if (mcux_psa_add_size_t_wrapcheck(key_bits, 7U)) {
+        return 0u;
+    }
+    key_bytes = PSA_BITS_TO_BYTES(key_bits);
+    if (mcux_psa_add_size_t_wrapcheck(key_bytes, 64U + 19U)) {
+        return 0u;
+    }
 #if defined(PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE)
     mbedtls_ecp_group_id ecp_grou_id;
     caam_ecc_ecdsel_t ecc_ecdsel;
@@ -611,12 +624,17 @@ size_t caam_common_size_function(psa_key_type_t key_type, size_t key_bits)
 #endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
 
     if (PSA_KEY_TYPE_IS_KEY_PAIR(key_type)) {
+        size_t public_size, private_size;
 #if defined(PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE)
         if (PSA_KEY_TYPE_IS_ECC(key_type)) {
             err = psa_to_caam_ecc_key_algo(key_type, key_bits, &ecc_ecdsel, &ecp_grou_id);
             if (err == PSA_SUCCESS) {
-                ret = CAAM_ECC_PUBLIC_KEY_LENGTH(ecc_ecdsel) + 1u +
-                      CAAM_ENCAP_DATA_SIZE(ECC_ALIGN_PRIVATE_KEY_SIZE(key_bytes));
+                public_size  = CAAM_ECC_PUBLIC_KEY_LENGTH(ecc_ecdsel);
+                private_size = CAAM_ENCAP_DATA_SIZE(ECC_ALIGN_PRIVATE_KEY_SIZE(key_bytes));
+                if (mcux_psa_add_size_t_wrapcheck(public_size + 1U, private_size)) {
+                    return 0u;
+                }
+                ret = public_size + 1U + private_size;
             }
         } else
 #endif /* PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE */
