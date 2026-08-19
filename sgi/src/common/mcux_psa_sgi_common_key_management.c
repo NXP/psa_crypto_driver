@@ -218,6 +218,11 @@ static psa_status_t get_key_type_descriptor(
                 case 16u:
                     *out_type_desc = mcuxClKey_TypeDescriptor_Aes128;
                     break;
+#if defined(MCUXCL_FEATURE_AES192)
+                case 24u:
+                    *out_type_desc = mcuxClKey_TypeDescriptor_Aes192;
+                    break;
+#endif /* MCUXCL_FEATURE_AES192 */
                 case 32u:
                     *out_type_desc = mcuxClKey_TypeDescriptor_Aes256;
                     break;

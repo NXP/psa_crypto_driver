@@ -40,16 +40,16 @@ Each blob carries 12 bytes of metadata:
 
 ### Supported Operations
 
-* `psa_import_key()` — accepts either plaintext key material or a
+* `psa_import_key()` - accepts either plaintext key material or a
   previously exported DUK blob. If a blob is provided it is unsealed to
   recover the plaintext before storing in ITS.
-* `psa_export_key()` — reads the plaintext key from ITS, seals it into a
+* `psa_export_key()` - reads the plaintext key from ITS, seals it into a
   DUK blob, and returns the blob to the caller.
-* `psa_export_public_key()` — derives the public key from the plaintext
+* `psa_export_public_key()` - derives the public key from the plaintext
   ECC private key stored in ITS.
-* `psa_generate_key()` — generates random key material and stores the
+* `psa_generate_key()` - generates random key material and stores the
   plaintext in ITS.
-* `psa_key_derivation_output_key()` — derives key material and stores the
+* `psa_key_derivation_output_key()` - derives key material and stores the
   plaintext in ITS.
 
 ### Blob Wrapping Key
@@ -65,10 +65,10 @@ The blob wrapping key is selected at build time:
 
 Since keys in this location are stored as plaintext in ITS at runtime,
 crypto operations (cipher, AEAD, MAC, sign/verify) use the plaintext
-key buffer directly — the same path as `PSA_KEY_LOCATION_LOCAL_STORAGE`.
+key buffer directly - the same path as `PSA_KEY_LOCATION_LOCAL_STORAGE`.
   # Additional Optional Features
 
-  * **Double cipher with CMAC verification** — When enabled, cipher
+  * **Double cipher with CMAC verification** - When enabled, cipher
     encrypt/decrypt operations are performed twice and verified using
     AES-128-CMAC to detect potential fault injection attacks. This feature is
     enabled through the
@@ -98,11 +98,14 @@ key buffer directly — the same path as `PSA_KEY_LOCATION_LOCAL_STORAGE`.
     * Unauthenticated
         * One-Go:
             * AES: `PSA_ALG_ECB_NO_PADDING`, `PSA_ALG_CBC_NO_PADDING`,
-              `PSA_ALG_CTR`
+              `PSA_ALG_CTR` (128/192/256 bit keys; 192-bit keys are gated by
+              `MCUXCL_FEATURE_AES192`)
     * Authenticated (AEAD)
         * One-Go and Multipart:
-            * AES: `PSA_ALG_GCM` (tag length 4, 8, 12-16 bytes)
-            * AES: `PSA_ALG_CCM` (tag length 4-16 bytes, even)
+            * AES: `PSA_ALG_GCM` (tag length 4, 8, 12-16 bytes;
+              128/192/256 bit keys, 192-bit gated by `MCUXCL_FEATURE_AES192`)
+            * AES: `PSA_ALG_CCM` (tag length 4-16 bytes, even;
+              128/192/256 bit keys, 192-bit gated by `MCUXCL_FEATURE_AES192`)
 * MAC
     * One-Go:
         * `PSA_ALG_CMAC` (AES, 128/192/256 bit keys)
