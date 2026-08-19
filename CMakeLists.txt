@@ -64,6 +64,7 @@ if (CONFIG_PSA_CRYPTO_DRIVER_CAAM)
 		${PSA_CRYPTO_DRIVER_PATH}/caam/common/include
 		${PSA_CRYPTO_DRIVER_PATH}/osal/
 		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
+		${PSA_CRYPTO_DRIVER_PATH}/utils
 	)
 	## Sources 
 	target_sources(
@@ -533,6 +534,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
 		${PSA_CRYPTO_DRIVER_PATH}/ele_s4xx/include/opaque
 		${PSA_CRYPTO_DRIVER_PATH}/osal/
 		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
+		${PSA_CRYPTO_DRIVER_PATH}/utils
 	)
 
 	# PSA driver implementation
@@ -634,6 +636,7 @@ if(CONFIG_PSA_CRYPTO_DRIVER_DCP)
 		${PSA_CRYPTO_DRIVER_PATH}/dcp/include/
 		${PSA_CRYPTO_DRIVER_PATH}/osal/
 		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
+		${PSA_CRYPTO_DRIVER_PATH}/utils
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/../../../zephyr/include/zephyr/arch/
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/osa/
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/osa/config
@@ -727,8 +730,8 @@ endif()
 		$<$<BOOL:${CONFIG_SOC_FAMILY_MCXN}>:${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/platforms/mcxn>
 		$<$<BOOL:${CONFIG_SOC_SERIES_IMXRT7XX}>:${CMAKE_CURRENT_LIST_DIR}/els_pkc/oracle/platforms/mimxrt>
 		${CMAKE_CURRENT_LIST_DIR}/osal
-
 		${CMAKE_CURRENT_LIST_DIR}/osal/zephyr
+		${CMAKE_CURRENT_LIST_DIR}/utils
 		#include the psa-driver inlcude path from clib
 		${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/inc
 		${NXP_MODULE_ELS_PKC_PATH}/src/comps/mcuxClPsaDriver/inc/internal
