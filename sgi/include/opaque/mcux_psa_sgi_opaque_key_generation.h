@@ -88,7 +88,7 @@ psa_status_t sgi_opaque_export_key(const psa_key_attributes_t *attributes,
  *
  * The key_buffer contains the plaintext private key (stored in ITS).
  * Derives the public key via PKC and returns it in uncompressed format
- * (0x04 ∥ X ∥ Y for ECC curves).
+ * (0x04 || X || Y for ECC curves).
  *
  * @param[in]  attributes       Key attributes.
  * @param[in]  key_buffer       Plaintext private key material (from ITS).

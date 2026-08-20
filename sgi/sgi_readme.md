@@ -36,7 +36,14 @@ Each blob carries 12 bytes of metadata:
 * `PSA_KEY_TYPE_AES` (128, 192, 256 bit)
 * `PSA_KEY_TYPE_HMAC` (any PSA-legal size)
 * `PSA_KEY_TYPE_RAW_DATA` (arbitrary length, e.g. BLE IRK)
-* `PSA_KEY_TYPE_ECC_KEY_PAIR` (`PSA_ECC_FAMILY_SECP_R1`: 256, 384 bit)
+* `PSA_KEY_TYPE_ECC_KEY_PAIR` (Weierstrass curves, matching the shared
+  `sgi_ecc_derive_public_key()` helper used by the public-key export path):
+    * `PSA_ECC_FAMILY_SECP_R1` (192, 224, 256, 384, 521 bit, subject to
+      `PSA_WANT_ECC_SECP_R1_*`)
+    * `PSA_ECC_FAMILY_BRAINPOOL_P_R1` (256, 384, 512 bit, subject to
+      `PSA_WANT_ECC_BRAINPOOL_P_R1_*`)
+    * `PSA_ECC_FAMILY_SECP_K1` (192, 256 bit, gated by
+      `MCUXCL_FEATURE_ECC_SECPK1_CURVES`)
 
 ### Supported Operations
 
@@ -46,7 +53,9 @@ Each blob carries 12 bytes of metadata:
 * `psa_export_key()` - reads the plaintext key from ITS, seals it into a
   DUK blob, and returns the blob to the caller.
 * `psa_export_public_key()` - derives the public key from the plaintext
-  ECC private key stored in ITS.
+  ECC private key stored in ITS via the shared secure scalar-multiplication
+  helper `sgi_ecc_derive_public_key()` (Q = d * G), supporting the full
+  Weierstrass curve set listed under Supported Key Types above.
 * `psa_generate_key()` - generates random key material and stores the
   plaintext in ITS.
 * `psa_key_derivation_output_key()` - derives key material and stores the
@@ -125,6 +134,17 @@ key buffer directly - the same path as `PSA_KEY_LOCATION_LOCAL_STORAGE`.
         * `PSA_ALG_ECDSA` with `PSA_ECC_FAMILY_BRAINPOOL_P_R1`
           (256, 384, 512 bit, subject to `PSA_WANT_ECC_BRAINPOOL_P_R1_*`)
         * `PSA_ALG_ECDSA` with `PSA_ECC_FAMILY_SECP_K1`
+          (192, 256 bit, gated by `MCUXCL_FEATURE_ECC_SECPK1_CURVES`)
+    * Export Public Key (`psa_export_public_key`, via the PKC component's
+      `pkc_transparent_export_public_key`): for an ECC key pair the public
+      point is derived on-chip as Q = d * G and returned in SEC1 uncompressed
+      format (`0x04 || X || Y`); for an ECC public key the stored point is
+      copied out. Supported Weierstrass curves:
+        * `PSA_ECC_FAMILY_SECP_R1`
+          (192, 224, 256, 384, 521 bit, subject to `PSA_WANT_ECC_SECP_R1_*`)
+        * `PSA_ECC_FAMILY_BRAINPOOL_P_R1`
+          (256, 384, 512 bit, subject to `PSA_WANT_ECC_BRAINPOOL_P_R1_*`)
+        * `PSA_ECC_FAMILY_SECP_K1`
           (192, 256 bit, gated by `MCUXCL_FEATURE_ECC_SECPK1_CURVES`)
     * Key Agreement:
         * `PSA_ALG_ECDH` (Weierstrass curves: SECP_R1, SECP_K1, BRAINPOOL_P_R1),

@@ -95,6 +95,50 @@ psa_status_t pkc_key_agreement(const psa_key_attributes_t *attributes,
                                uint8_t *shared_secret,
                                size_t shared_secret_size,
                                size_t *shared_secret_length);
+
+/*!
+ * \brief Export the public key from an ECC key or key pair.
+ *
+ * \param[in]  attributes        Attributes of the key to use
+ * \param[in]  key_buffer        Buffer holding the key material
+ * \param[in]  key_buffer_size   Size in bytes of the key_buffer buffer
+ * \param[out] data              Buffer to hold the exported public key
+ * \param[in]  data_size         Size in bytes of the data buffer
+ * \param[out] data_length       Size in bytes of the exported public key
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
+psa_status_t pkc_transparent_export_public_key(const psa_key_attributes_t *attributes,
+                                   const uint8_t *key_buffer,
+                                   size_t key_buffer_size,
+                                   uint8_t *data,
+                                   size_t data_size,
+                                   size_t *data_length);
+
+/*!
+ * \brief Derive the public part of a Weierstrass ECC key pair (lock-free).
+ *
+ * Performs a secret-scalar multiplication (private key * generator point G)
+ * and returns the uncompressed public point (0x04 || X || Y) in \p data.
+ *
+ * This helper does NOT take \ref pkc_hwcrypto_mutex; the caller is responsible
+ * for serialization.
+ *
+ * \param[in]  attributes   Attributes of the key to use
+ * \param[in]  key_buffer   Private scalar in big-endian representation
+ * \param[out] data         Buffer to hold the exported public key
+ * \param[in]  data_size    Size in bytes of the data buffer
+ * \param[out] data_length  Size in bytes of the exported public key
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
+psa_status_t pkc_internal_export_ecp_public_key(const psa_key_attributes_t *attributes,
+                                   const uint8_t *key_buffer,
+                                   uint8_t *data,
+                                   size_t data_size,
+                                   size_t *data_length);
 #ifdef __cplusplus
 }
 #endif

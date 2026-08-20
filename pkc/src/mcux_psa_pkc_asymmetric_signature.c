@@ -14,22 +14,15 @@
  */
 #include "mcux_psa_pkc_asymmetric_signature.h"
 #include "mcux_psa_sgi_common_key_management.h"
+#include "mcux_psa_pkc_key_generation.h"
 
-/* For exporting public keys, we will directly use the internal export wrapper,
- * so that we don't call the public psa_export_public_key() API.
- */
-extern psa_status_t psa_export_public_key_internal(
-    const psa_key_attributes_t *attributes,
-    const uint8_t *key_buffer,
-    size_t key_buffer_size,
-    uint8_t *data,
-    size_t data_size,
-    size_t *data_length);
-
-/* Public key is double length of private key + 1byte for leading byte (0x04) which is indicating uncompressed format.
- * Support for 521 means we might need two additional bytes per ECC coordinate, hence 132 Bytes in total. */
-#define MAX_PUB_KEY_SIZE_IN_BYTES  (132u + 1u)
-#define MAX_PAIR_KEY_SIZE_IN_BYTES (MAX_PUB_KEY_SIZE_IN_BYTES + 66u)
+/* Uncompressed public key = 0x04 tag byte + X and Y coordinates, each up to
+ * MCUXCLECC_WEIERECC_MAX_SIZE_PRIMEP bytes (the largest supported prime field).
+ * The pair buffer additionally holds the private scalar, whose length is also
+ * bounded by MCUXCLECC_WEIERECC_MAX_SIZE_PRIMEP. Using the CL constant keeps
+ * these buffers in sync with the raw point buffer used during export. */
+#define MAX_PUB_KEY_SIZE_IN_BYTES  ((2u * MCUXCLECC_WEIERECC_MAX_SIZE_PRIMEP) + 1u)
+#define MAX_PAIR_KEY_SIZE_IN_BYTES (MAX_PUB_KEY_SIZE_IN_BYTES + MCUXCLECC_WEIERECC_MAX_SIZE_PRIMEP)
 
 psa_status_t pkc_sign_hash(const psa_key_attributes_t *attributes,
                            const uint8_t *key_buffer,
@@ -197,12 +190,11 @@ psa_status_t pkc_verify_hash(const psa_key_attributes_t *attributes,
         /* In PSA, an ECC key pair is represented by the secret value,
          * so we need to also export the public part and position them
          * correctly in memory [pub_x, pub_y, private] */
-        status = psa_export_public_key_internal(attributes,
-                                                key_buffer,
-                                                key_buffer_size,
-                                                public_key_data,
-                                                MAX_PAIR_KEY_SIZE_IN_BYTES,
-                                                &public_key_data_length);
+        status = pkc_internal_export_ecp_public_key(attributes,
+                                       key_buffer,
+                                       public_key_data,
+                                       MAX_PAIR_KEY_SIZE_IN_BYTES,
+                                       &public_key_data_length);
 
         if (PSA_SUCCESS != status) {
             goto exit;

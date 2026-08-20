@@ -11,7 +11,7 @@
  * @file  mcux_psa_sgi_opaque_key_locations.h
  * @brief PSA key location definitions for the SGI opaque driver.
  *
- * Location taxonomy (all values in the PSA vendor range 0x800000–0xFFFFFF):
+ * Location taxonomy (all values in the PSA vendor range 0x800000-0xFFFFFF):
  *
  */
 

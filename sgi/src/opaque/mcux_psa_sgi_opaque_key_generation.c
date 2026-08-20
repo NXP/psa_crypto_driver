@@ -44,7 +44,25 @@
 #include "mcux_psa_sgi_opaque_key_locations.h"
 #include "mcux_psa_sgi_duk_blob.h"
 #include "mcux_psa_sgi_common_init.h"
+#include "mcux_psa_sgi_common_key_management.h" /* sgi_ecc_derive_public_key() */
 #include "mcux_psa_sgi_entropy.h"     /* sgi_get_entropy() */
+
+#include <mcuxClEcc.h>
+
+/* SEC1 uncompressed point format tag (0x04 || X || Y). */
+#define ECC_POINT_FORMAT_UNCOMPRESSED 0x04u
+
+/* Workarea sizing for the on-chip public-key derivation (secured scalar
+ * multiplication Q = d * G) used by sgi_opaque_export_public_key. */
+#define SGI_OPAQUE_EXPORT_PUB_WACPU_SIZE                                      \
+    (MCUXCLECC_ARITHMETICOPERATION_SECURESCALARMULT_WACPU_SIZE)
+#define SGI_OPAQUE_EXPORT_PUB_WAPKC_SIZE                                      \
+    (MCUXCLECC_ARITHMETICOPERATION_SECURESCALARMULT_WAPKC_SIZE_640)
+
+/* Raw derived public key is X||Y, each coordinate up to
+ * MCUXCLECC_WEIERECC_MAX_SIZE_PRIMEP bytes (the largest supported prime field).
+ * The 0x04 SEC1 tag is prepended separately into the caller's output buffer. */
+#define SGI_OPAQUE_EXPORT_MAX_RAW_POINT_SIZE (2u * MCUXCLECC_WEIERECC_MAX_SIZE_PRIMEP)
 
 /* PSA internal - used for public key export from private key */
 extern psa_status_t psa_export_public_key_internal(
@@ -259,15 +277,96 @@ psa_status_t sgi_opaque_export_public_key(const psa_key_attributes_t *attributes
                                           size_t data_size,
                                           size_t *data_length)
 {
-    if (!PSA_KEY_TYPE_IS_ECC(psa_get_key_type(attributes))) {
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    if ((NULL == attributes) || (NULL == key_buffer) || (0u == key_buffer_size) ||
+        (NULL == data) || (0u == data_size) || (NULL == data_length)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    psa_key_type_t key_type = psa_get_key_type(attributes);
+
+    if (!PSA_KEY_TYPE_IS_ECC(key_type)) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    /* key_buffer is already plaintext private key (stored in ITS).
-     * Use PSA internal to derive the public key. */
-    return psa_export_public_key_internal(attributes,
-                                          key_buffer, key_buffer_size,
-                                          data, data_size, data_length);
+    /* An already-public key is stored in the PSA-standard SEC1 encoding
+     * (0x04 || X || Y for Weierstrass). Copy it out unchanged. */
+    if (true == PSA_KEY_TYPE_IS_PUBLIC_KEY(key_type)) {
+        if (data_size < key_buffer_size) {
+            return PSA_ERROR_BUFFER_TOO_SMALL;
+        }
+        (void) memcpy(data, key_buffer, key_buffer_size);
+        *data_length = key_buffer_size;
+        return PSA_SUCCESS;
+    }
+
+    if (!PSA_KEY_TYPE_IS_KEY_PAIR(key_type)) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    /* key_buffer is the plaintext private scalar d (stored in ITS). Derive
+     * the public key Q = d * G on-chip via a secured scalar multiplication. */
+    if (mcux_mutex_lock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
+    mcuxClSession_Handle_t session = &sessionDesc;
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  SGI_OPAQUE_EXPORT_PUB_WACPU_SIZE,
+                                                  SGI_OPAQUE_EXPORT_PUB_WAPKC_SIZE);
+
+    /* The secured scalar multiplication requires an initialized PRNG. */
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    uint8_t raw_point[SGI_OPAQUE_EXPORT_MAX_RAW_POINT_SIZE] = { 0u };
+    size_t raw_point_length = 0u;
+
+    status = sgi_ecc_derive_public_key(session,
+                                       attributes,
+                                       key_buffer,
+                                       key_buffer_size,
+                                       raw_point,
+                                       sizeof(raw_point),
+                                       &raw_point_length);
+    if (PSA_SUCCESS != status) {
+        goto exit;
+    }
+
+    if (0u == raw_point_length) {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+
+    /* PSA exports Weierstrass public keys in SEC1 uncompressed form
+     * 0x04 || X || Y. Prepend the tag to the derived raw X||Y. */
+    if (data_size < (raw_point_length + 1u)) {
+        status = PSA_ERROR_BUFFER_TOO_SMALL;
+        goto exit;
+    }
+
+    data[0] = ECC_POINT_FORMAT_UNCOMPRESSED;
+    (void) memcpy(&data[1], raw_point, raw_point_length);
+    *data_length = raw_point_length + 1u;
+    status = PSA_SUCCESS;
+
+exit:
+    /* Destroy the session */
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClSession_destroy(session));
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != token) ||
+        (MCUXCLSESSION_STATUS_OK != result)) {
+        if (PSA_SUCCESS == status) {
+            status = PSA_ERROR_CORRUPTION_DETECTED;
+        }
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    if (mcux_mutex_unlock(&sgi_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    return status;
 }
 
 /* =========================================================================

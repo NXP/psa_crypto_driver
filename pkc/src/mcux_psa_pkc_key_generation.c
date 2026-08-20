@@ -16,6 +16,11 @@
 #include "mcux_psa_sgi_common_key_management.h"
 #include "mcux_psa_util_wrapcheck_static_inline.h"
 
+#include <mcuxClBuffer.h>
+#include <mcuxCsslFlowProtection.h>
+#include <internal/mcuxClPkc_Macros.h>
+#include <internal/mcuxClEcc_Weier_Internal.h>
+
 #define RSA_PUBLIC_EXP_BYTE_LENGTH (3u)
 #define RSA_MAX_KEYSIZE MCUXCLKEY_SIZE_4096
 
@@ -305,7 +310,7 @@ static psa_status_t pkc_internal_generate_rsa_key(const psa_key_attributes_t *at
         }
         der_offset += encoded_size;
     }
-    if (mcux_psa_sub_size_t_wrapcheck(der_offset, seq_start + 10))
+    if (mcux_psa_sub_size_t_wrapcheck(der_offset, seq_start + 10u))
     {
         status = PSA_ERROR_CORRUPTION_DETECTED;
         goto exit;
@@ -475,13 +480,15 @@ psa_status_t pkc_generate_key(const psa_key_attributes_t *attributes,
                               size_t *key_buffer_length)
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-    psa_key_type_t type = psa_get_key_type(attributes);
+    psa_key_type_t type;
 
-    /* Validate parameters BEFORE acquiring mutex */
+    /* Validate parameters BEFORE dereferencing attributes or acquiring mutex */
     if (NULL == attributes || NULL == key_buffer ||
         NULL == key_buffer_length || 0u == key_buffer_size) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+
+    type = psa_get_key_type(attributes);
 
     /* Acquire mutex */
     if (mcux_mutex_lock(&pkc_hwcrypto_mutex) != 0) {
@@ -693,6 +700,150 @@ exit:
         }
     }
     MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    if (mcux_mutex_unlock(&pkc_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    return status;
+}
+
+psa_status_t pkc_internal_export_ecp_public_key(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer,
+    uint8_t *data,
+    size_t data_size,
+    size_t *data_length)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    /* Standard private-scalar length for the curve; sgi_ecc_derive_public_key
+     * clamps it to byteLen(n) internally. */
+    size_t private_key_size = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
+
+    /* Raw derived point X||Y (no leading tag). The largest supported coordinate
+     * pair is secp521r1 (2 * 66 bytes); one extra byte holds the 0x04 tag. */
+    uint8_t raw_point[2u * MCUXCLECC_WEIERECC_MAX_SIZE_PRIMEP] = { 0u };
+    size_t raw_point_length = 0u;
+
+    /* Setup one session to be used by all functions called */
+    mcuxClSession_Descriptor_t sessionDesc = { 0 };
+    mcuxClSession_Handle_t session = &sessionDesc;
+
+    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                                  MCUXCLECC_ARITHMETICOPERATION_SECURESCALARMULT_WACPU_SIZE,
+                                                  MCUXCLECC_ARITHMETICOPERATION_SECURESCALARMULT_WAPKC_SIZE_640);
+
+    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+
+    /* Derive Q = d*G on-chip using the single shared secure helper. It resolves
+     * the curve from the attributes, extracts the base point G, and performs the
+     * scalar multiplication, returning the raw X||Y point. */
+    status = sgi_ecc_derive_public_key(session,
+                                       attributes,
+                                       key_buffer,
+                                       private_key_size,
+                                       raw_point,
+                                       sizeof(raw_point),
+                                       &raw_point_length);
+    if (PSA_SUCCESS != status) {
+        goto exit;
+    }
+
+    if (0u == raw_point_length) {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
+    }
+
+    /* Prepend the SEC1 uncompressed-format tag: 0x04 || X || Y. */
+    if (data_size < (raw_point_length + 1u)) {
+        status = PSA_ERROR_BUFFER_TOO_SMALL;
+        goto exit;
+    }
+
+    data[0] = ECC_POINT_FORMAT_UNCOMPRESSED;
+    (void) memcpy(&data[1], raw_point, raw_point_length);
+    *data_length = raw_point_length + 1u;
+    status = PSA_SUCCESS;
+
+exit:
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(cleanup_result, cleanup_token,
+                                     mcuxClSession_cleanup(session));
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_cleanup) != cleanup_token) ||
+        (MCUXCLSESSION_STATUS_OK != cleanup_result)) {
+        if (PSA_SUCCESS == status) {
+            status = PSA_ERROR_GENERIC_ERROR;
+        }
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(destroy_result, destroy_token,
+                                     mcuxClSession_destroy(session));
+    if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClSession_destroy) != destroy_token) ||
+        (MCUXCLSESSION_STATUS_OK != destroy_result)) {
+        if (PSA_SUCCESS == status) {
+            status = PSA_ERROR_GENERIC_ERROR;
+        }
+    }
+    MCUX_CSSL_FP_FUNCTION_CALL_END();
+
+    return status;
+}
+
+psa_status_t pkc_transparent_export_public_key(const psa_key_attributes_t *attributes,
+                                   const uint8_t *key_buffer,
+                                   size_t key_buffer_size,
+                                   uint8_t *data,
+                                   size_t data_size,
+                                   size_t *data_length)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_type_t type;
+
+    /* Validate parameters BEFORE acquiring mutex */
+    if (NULL == attributes || NULL == key_buffer || 0u == key_buffer_size ||
+        NULL == data || 0u == data_size || NULL == data_length) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    type = psa_get_key_type(attributes);
+
+    /* Only ECC keys are supported by this driver */
+    if (!PSA_KEY_TYPE_IS_ECC(type)) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    /* If the key is already a public key, the export is a straight copy.
+     * A stored ECC public key must be in the SEC1 uncompressed point format
+     * (0x04 || X || Y); reject any other/compressed encoding to stay
+     * consistent with the verify path that assumes the leading 0x04 tag. */
+    if (PSA_KEY_TYPE_IS_PUBLIC_KEY(type)) {
+        if (key_buffer[0] != ECC_POINT_FORMAT_UNCOMPRESSED) {
+            return PSA_ERROR_NOT_SUPPORTED;
+        }
+        if (key_buffer_size > data_size) {
+            return PSA_ERROR_BUFFER_TOO_SMALL;
+        }
+        (void) memcpy(data, key_buffer, key_buffer_size);
+        *data_length = key_buffer_size;
+        return PSA_SUCCESS;
+    }
+
+    /* Otherwise it must be a key pair from which we derive the public part */
+    if (!PSA_KEY_TYPE_IS_KEY_PAIR(type)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Acquire mutex */
+    if (mcux_mutex_lock(&pkc_hwcrypto_mutex) != 0) {
+        return PSA_ERROR_SERVICE_FAILURE;
+    }
+
+    status = pkc_internal_export_ecp_public_key(attributes,
+                                                key_buffer,
+                                                data,
+                                                data_size,
+                                                data_length);
 
     if (mcux_mutex_unlock(&pkc_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;

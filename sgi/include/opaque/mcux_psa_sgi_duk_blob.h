@@ -15,9 +15,9 @@
  *   Blob format (28 bytes overhead + key_data_len):
  *   nonce[8] | AES-CCM( metadata[12] | key_data[N] ) | tag[8]
  *
- *   nonce     – 8 random bytes generated fresh for every seal operation.
- *   ciphertext – AES-CCM encryption of (metadata ∥ plaintext key material).
- *   tag        – 8-byte AES-CCM authentication tag.
+ *   nonce     - 8 random bytes generated fresh for every seal operation.
+ *   ciphertext - AES-CCM encryption of (metadata || plaintext key material).
+ *   tag        - 8-byte AES-CCM authentication tag.
  *
  * Metadata layout (12 bytes):
  *
@@ -97,11 +97,11 @@ extern "C" {
 /**
  * @brief Seal (encrypt + authenticate) plaintext key material into a DUK blob.
  *
- * @param[in]  attributes      PSA key attributes – encoded into the blob metadata.
+ * @param[in]  attributes      PSA key attributes - encoded into the blob metadata.
  * @param[in]  key_data        Plaintext key material to protect.
  * @param[in]  key_data_len    Length of @p key_data in bytes.
  * @param[out] blob            Output buffer for the sealed blob.
- * @param[in]  blob_size       Size of @p blob in bytes; must be ≥
+ * @param[in]  blob_size       Size of @p blob in bytes; must be >=
  *                             SGI_DUK_BLOB_SIZE(key_data_len).
  * @param[out] blob_length     Set to the actual number of bytes written to @p blob.
  *
@@ -122,7 +122,7 @@ psa_status_t sgi_duk_blob_seal(const psa_key_attributes_t *attributes,
  *
  * On success the key attributes (algorithm, usage, type, bits) are populated
  * from the blob metadata into @p attributes. The blob is the source of truth
- * for key properties — this allows the caller to fully recreate the key from
+ * for key properties - this allows the caller to fully recreate the key from
  * the blob without needing to know the original attributes beforehand.
  *
  * @param[out] attributes      PSA key attributes set from blob metadata on success.
@@ -154,7 +154,7 @@ psa_status_t sgi_duk_blob_unseal(psa_key_attributes_t *attributes,
  * @brief Derive (once per boot) and cache the 256-bit Secure Storage Root Key.
  *
  * Uses CKDF-CMAC on the DUK (SGI slots 6/7) with a fixed label/context.
- * Idempotent – safe to call multiple times; derivation is performed only on
+ * Idempotent - safe to call multiple times; derivation is performed only on
  * the first invocation after reset.
  *
  * Must be called before sgi_duk_blob_seal() or sgi_duk_blob_unseal().
