@@ -146,8 +146,8 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Key size should match the key_bits in attribute */
-    if (PSA_BYTES_TO_BITS(key_buffer_size) != key_bits) {
+    /* Key size should match the key_bits in attribute. */
+    if (key_buffer_size != PSA_BITS_TO_BYTES(key_bits)) {
         /* The attributes don't match the buffer given as input */
         return PSA_ERROR_INVALID_ARGUMENT;
     }
