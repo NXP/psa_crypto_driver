@@ -27,6 +27,7 @@
 #include "mbedtls/ecp.h"
 #endif
 #include "mbedtls/error.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000)
 #include "mbedtls/private/hmac_drbg.h"
@@ -54,6 +55,11 @@ static int derive_mpi(const mbedtls_ecp_group *grp, mbedtls_mpi *x,
     size_t use_size = blen > n_size ? n_size : blen;
 
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(x, buf, use_size));
+
+    if (mcux_psa_mul_size_t_wrapcheck(use_size, 8U))
+    {
+        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    }
     if (use_size * 8 > grp->nbits) {
         MBEDTLS_MPI_CHK(mbedtls_mpi_shift_r(x, use_size * 8 - grp->nbits));
     }

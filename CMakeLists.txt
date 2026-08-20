@@ -188,6 +188,8 @@ if(CONFIG_PSA_CRYPTO_DRIVER_CASPER_HASHCRYPT)
 		${PSA_CRYPTO_DRIVER_PATH}/hashcrypt/include
 		${PSA_CRYPTO_DRIVER_PATH}/osal/
 		${PSA_CRYPTO_DRIVER_PATH}/osal/zephyr/
+		# Shared PSA util helpers (e.g. mcux_psa_util_wrapcheck_static_inline.h)
+		${PSA_CRYPTO_DRIVER_PATH}/utils
 	)
 
 	# PSA driver implementation

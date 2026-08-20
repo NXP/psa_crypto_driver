@@ -20,6 +20,7 @@
 #include "mbedtls/ecp.h"
 #endif
 #include "mbedtls/psa_util.h"
+#include "mcux_psa_util_wrapcheck_static_inline.h"
 #include <string.h>
 
 /* Forward declarations for PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY-gated functions.
@@ -257,6 +258,15 @@ psa_status_t mcux_alloc_raw_ecc(struct ecc_keypair *ecc_key, size_t key_bytes, m
 
     if ((key_type == MCUX_KEY_TYPE_PUBLIC) || (key_type == MCUX_KEY_TYPE_KEYPAIR))
     {
+        if (key_bytes > MAX_ECC_KEYSIZE)
+        {
+            return PSA_ERROR_INVALID_ARGUMENT;
+        }
+        if (mcux_psa_mul_size_t_wrapcheck(key_bytes, 2U) ||
+            mcux_psa_add_size_t_wrapcheck(key_bytes * 2U, 1U))
+        {
+            return PSA_ERROR_INVALID_ARGUMENT;
+        }
 #if defined(USE_MALLOC)
         /* Alocate MPI structure for Private exponent */
         ecc_key->public_key = malloc(ECC_PUBLIC_KEY_SIZE(key_bytes));

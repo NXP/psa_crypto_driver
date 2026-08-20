@@ -228,6 +228,7 @@ menu "PSA Crypto Driver"
         bool "CASPER"
         select MCUX_COMPONENT_component.psa_crypto_driver
         select MCUX_COMPONENT_driver.casper
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
 
         # We provide option to have hashcrypt-only, or CASPER+hashcrypt, but CASPER-only is not available.
         select MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt
