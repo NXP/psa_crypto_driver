@@ -22,6 +22,7 @@
 #include "mcux_psa_ele_hseb_key_management.h"
 #include "hse_host_import_key.h"
 #include "hse_keys_allocator.h"
+#include "psa_crypto_storage.h"
 
 #include "mcux_psa_util_wrapcheck_static_inline.h"
 
@@ -337,14 +338,25 @@ psa_status_t ele_hseb_opaque_generate_key(const psa_key_attributes_t *attributes
     psa_key_type_t key_type     = psa_get_key_type(attributes);
     bool is_nvm                 = false;
 
+    /* Set the NVM flag if the key is persistent */
+    is_nvm = !PSA_KEY_LIFETIME_IS_VOLATILE(lifetime);
+
+#if defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
+    /* Pre-check for NVM keys: psa_fail_key_creation() does not call
+     * destroy_key, so an HSE-B NVM slot would be orphaned if the key ID
+     * already exists. Reject here before allocating any slot.
+     */
+    if (is_nvm &&
+        (0 != psa_is_key_present_in_storage(psa_get_key_id(attributes)))) {
+        return PSA_SUCCESS;
+    }
+#endif /* MBEDTLS_PSA_CRYPTO_STORAGE_C */
+
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (PSA_KEY_LOCATION_ELE_HSEB == location) {
-        /* Set the NVM flag if the key is persistent */
-        is_nvm = !PSA_KEY_LIFETIME_IS_VOLATILE(lifetime);
-
         if (true == PSA_KEY_TYPE_IS_UNSTRUCTURED(key_type)) {
             status = hseb_generate_symmetric_key(attributes,
                                                  key_buffer,
@@ -688,14 +700,24 @@ psa_status_t ele_hseb_opaque_import_key(const psa_key_attributes_t *attributes,
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(lifetime);
     bool is_nvm                 = false;
 
+    /* Set the NVM flag if the key is persistent */
+    is_nvm = !PSA_KEY_LIFETIME_IS_VOLATILE(lifetime);
+
+#if defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
+    /* Same pre-check as in ele_hseb_opaque_generate_key: prevent orphaned
+     * NVM slots when psa_fail_key_creation() bypasses destroy_key.
+     */
+    if (is_nvm &&
+        (0 != psa_is_key_present_in_storage(psa_get_key_id(attributes)))) {
+        return PSA_SUCCESS;
+    }
+#endif /* MBEDTLS_PSA_CRYPTO_STORAGE_C */
+
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
     if (PSA_KEY_LOCATION_ELE_HSEB == location) {
-        /* Set the NVM flag if the key is persistent */
-        is_nvm = !PSA_KEY_LIFETIME_IS_VOLATILE(lifetime);
-
         if (true == PSA_KEY_TYPE_IS_UNSTRUCTURED(key_type)) {
             status = hseb_import_symmetric_key(attributes, data, data_length,
                                                key_buffer, key_buffer_size,

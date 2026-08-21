@@ -30,6 +30,11 @@ that can be configured with their respective Kconfig options:
   the `psa_crypto_init()` function will reformat the key catalogs, removing all
   any previously stored keys.
 
+  When the catalogs are already formatted at boot (e.g. after a Power-on Reset),
+  `psa_crypto_init()` also synchronizes the host-side NVM key catalog mirror with
+  the persisted HSE-B state. This ensures slots occupied by previously stored keys
+  are correctly marked as allocated before any PSA operations are performed.
+
 * `MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb.feature.use_custom_config_header`
 
   *Disabled by default*. When enabled, this option allows users to provide
@@ -61,6 +66,37 @@ limitations.
   ELE HSEB-enabled boards.
 * For PSA_KEY_TYPE_HMAC, the only supported key bit sizes are in the range
   [128, 1024].
+
+# Persistent Key Behavior
+
+This device does not support exporting key blobs for all key types.
+The default and only enabled way for supporting persistent keys is to keep the
+key material in the internal HSE-B keystore and to reference it via
+its key handle. This key handle is stored in the PSA persistent storage backend.
+Below are notes on the implementation to enable this approach.
+
+## NVM Mirror Synchronization After Power-on Reset
+
+The internal HSE-B keystore state is explicitly mirrored in a runtime layer
+for the HSE-B component. This mirror is not persistent and needs to be restored
+in case it is lost (e.g. due to PoR).
+
+After a PoR, `HKF_Init()` rebuilds the NVM key catalog mirror with all slots
+marked empty, even if HSE-B NVM already holds persisted keys. When
+`CONFIG_ELE_HSEB_AUTOFORMAT_KEY_CATALOGS` is enabled, `CRYPTO_InitHardware()`
+calls `sync_nvm_key_mirror()` after `HKF_Init()` to probe each NVM slot via
+`GetKeyInfo()` and mark occupied slots with `HKF_MarkAsAllocated()`, restoring
+the mirror to match actual HSE-B state.
+
+## Duplicate Persistent Key ID Prevention
+
+Before allocating an HSE-B NVM slot for a persistent key, `psa_generate_key()`
+and `psa_import_key()` check whether the key ID already exists in PSA ITS
+(requires `MBEDTLS_PSA_CRYPTO_STORAGE_C`). If the key is already present, the
+operation returns `PSA_SUCCESS` immediately. This is done because the PSA core
+checks for key existence only *after* the key generation or key import call to
+the driver. This way we prevent orphaned NVM slots that would otherwise result
+from `psa_fail_key_creation()` bypassing a call to `destroy_key` driver wrapper.
 
 # Supported Algorithms by Location
 
