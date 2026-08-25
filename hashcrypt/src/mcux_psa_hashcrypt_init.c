@@ -68,6 +68,15 @@ status_t CRYPTO_InitHardware_Hashcrypt(void)
     }
 
     HASHCRYPT_Init(PSA_HASHCRYPT);
+
+#if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE & 0x2U)
+    /* Secure build only: lock the AHB master to secure so it can read the secure
+     * SRAM alias. With SECLOCK=0 (default) master transactions are non-secure and
+     * fault on secure memory, hanging any HASHCRYPT operation that DMAs its data
+     * block (SHA/HMAC/AES). PATTERN 0xA75 is the write key for SECLOCK. */
+    PSA_HASHCRYPT->LOCK = HASHCRYPT_LOCK_PATTERN(0xA75u) | HASHCRYPT_LOCK_SECLOCK(1u);
+#endif
+
     result = kStatus_Success;
 
     if (result == kStatus_Success) {
@@ -100,6 +109,12 @@ status_t CRYPTO_DeinitHardware_Hashcrypt(void)
     }
 
     HASHCRYPT_Deinit(PSA_HASHCRYPT);
+
+#if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE & 0x2U)
+    /* Secure build only: release SECLOCK (symmetric with init). */
+    PSA_HASHCRYPT->LOCK = HASHCRYPT_LOCK_PATTERN(0xA75u) | HASHCRYPT_LOCK_SECLOCK(0u);
+#endif
+
     result = kStatus_Success;
 
     if (result == kStatus_Success) {
