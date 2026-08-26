@@ -23,16 +23,20 @@ static psa_status_t psa_to_hashcrypt_hash_algo(psa_algorithm_t alg, hashcrypt_al
     uint32_t algo = PSA_ALG_GET_HASH(alg);
 
     switch (algo) {
+#if defined(PSA_WANT_ALG_SHA_1)
         case PSA_ALG_SHA_1:
         {
             *hash_algo = kHASHCRYPT_Sha1;
             break;
         }
+#endif /* PSA_WANT_ALG_SHA_1*/
+#if defined(PSA_WANT_ALG_SHA_256)
         case PSA_ALG_SHA_256:
         {
             *hash_algo = kHASHCRYPT_Sha256;
             break;
         }
+#endif /* PSA_WANT_ALG_SHA_256*/
         default:
         {
             return PSA_ERROR_NOT_SUPPORTED;
