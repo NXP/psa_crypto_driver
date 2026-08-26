@@ -193,7 +193,6 @@ if(CONFIG_MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto.builtin_driver)
                 src/ecjpake.c
                 src/ecp.c
                 src/ecp_curves.c
-                src/ecp_curves_new.c
                 src/ecp_invasive.h
                 src/entropy.c
                 src/entropy_poll.c
