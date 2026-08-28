@@ -227,6 +227,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto.builtin_driver)
                 src/rsa_alt_helpers.c
                 src/rsa_alt_helpers.h
                 src/rsa_internal.h
+                src/rsa_invasive.h
                 src/sha1.c
                 src/sha256.c
                 src/sha3.c
