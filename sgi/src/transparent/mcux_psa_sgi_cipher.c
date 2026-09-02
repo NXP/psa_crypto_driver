@@ -203,18 +203,18 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
 
 #if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLRANDOMMODES_MAX_CPU_WA_BUFFER_SIZE,
-                                                  0u);
+                                                   0u, status, cleanup);
 #else /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
-                                                  0u);
+                                                   0u, status, cleanup);
 #endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size, &keyDesc);
     if (PSA_SUCCESS != status) {
@@ -241,9 +241,9 @@ psa_status_t sgi_transparent_cipher_encrypt(const psa_key_attributes_t *attribut
 
     /* Generate random CMAC key */
     /* Initialize the RNG context  */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_RNG(session,
                                               MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
-                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3, status, cleanup);
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(retRandGen, tokenRandGen, mcuxClRandom_generate(session,
                                                                                      cmac_key,
@@ -547,18 +547,18 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
 
 #if defined(CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE)
     /* Allocate larger work area for CMAC and RANDOM operations */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLRANDOMMODES_MAX_CPU_WA_BUFFER_SIZE,
-                                                  0u);
+                                                   0u, status, cleanup);
 #else /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
-                                                  0u);
+                                                   0u, status, cleanup);
 #endif /* CONFIG_MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE  */
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size, &keyDesc);
     if (PSA_SUCCESS != status) {
@@ -582,9 +582,9 @@ psa_status_t sgi_transparent_cipher_decrypt(const psa_key_attributes_t *attribut
 
     /* Generate random CMAC key */
     /* Initialize the RNG context  */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_RNG(session,
                                               MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
-                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3, status, cleanup);
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(retRandGen, tokenRandGen, mcuxClRandom_generate(session,
                                                                                      cmac_key,
@@ -853,12 +853,12 @@ static psa_status_t cipher_common_setup(sgi_cipher_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
-                                                  0u);
+                                                   0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size,
                                        (mcuxClKey_Descriptor_t *) &operation->keyDesc);
@@ -934,12 +934,12 @@ psa_status_t sgi_transparent_cipher_set_iv(sgi_cipher_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
-                                                  0u);
+                                                   0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     mcuxClCipher_Context_t * const ctx = (mcuxClCipher_Context_t *) operation->ctx;
 
@@ -1049,12 +1049,12 @@ psa_status_t sgi_transparent_cipher_update(sgi_cipher_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
-                                                  0u);
+                                                   0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     mcuxClCipher_Context_t * const ctx = (mcuxClCipher_Context_t *) operation->ctx;
 
@@ -1139,12 +1139,12 @@ psa_status_t sgi_transparent_cipher_finish(sgi_cipher_operation_t *operation,
     }
 
     /* Initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
                                                   MCUXCLCIPHER_MAX_AES_CPU_WA_BUFFER_SIZE,
-                                                  0u);
+                                                   0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(df_status, df_token, mcuxClCipher_finish(
                                          /* mcuxClSession_Handle_t session:         */ session,

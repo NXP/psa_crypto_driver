@@ -73,12 +73,13 @@ psa_status_t pkc_sign_hash(const psa_key_attributes_t *attributes,
     /* Setup one session to be used by all functions called */
     mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLSIGNATURE_SIGN_ECDSA_WACPU_SIZE,
-                                                  MCUXCLSIGNATURE_SIGN_ECDSA_WAPKC_SIZE_640);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLSIGNATURE_SIGN_ECDSA_WACPU_SIZE,
+                                           MCUXCLSIGNATURE_SIGN_ECDSA_WAPKC_SIZE_640,
+                                           status, exit);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, exit);
 
     /* Create private key descriptor using the common key management utility */
     mcuxClKey_Descriptor_t privKeyDesc;
@@ -88,9 +89,10 @@ psa_status_t pkc_sign_hash(const psa_key_attributes_t *attributes,
     }
 
     /* Initialize the RNG context and Initialize the PRNG */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
-                                              MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
-                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_RNG(session,
+                                       MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
+                                       mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3,
+                                       status, exit);
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(ss_status, ss_token, mcuxClSignature_sign(
                                          session,
@@ -175,9 +177,11 @@ psa_status_t pkc_verify_hash(const psa_key_attributes_t *attributes,
     /* Setup one session to be used by all functions called */
     mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLSIGNATURE_VERIFY_ECDSA_WACPU_SIZE,
-                                                  MCUXCLSIGNATURE_VERIFY_ECDSA_WAPKC_SIZE_640);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLSIGNATURE_VERIFY_ECDSA_WACPU_SIZE,
+                                           MCUXCLSIGNATURE_VERIFY_ECDSA_WAPKC_SIZE_640,
+                                           status, exit);
+
 
     const uint8_t *key_data_pub = NULL;
     size_t key_data_size = 0u;
@@ -220,7 +224,7 @@ psa_status_t pkc_verify_hash(const psa_key_attributes_t *attributes,
     }
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, exit);
 
     /* Create public key descriptor using the common key management utility.
      * Construct public-key attributes from the original attributes so that
@@ -241,9 +245,10 @@ psa_status_t pkc_verify_hash(const psa_key_attributes_t *attributes,
     }
 
     /* Initialize the RNG context and Initialize the PRNG */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
-                                              MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
-                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_RNG(session,
+                                       MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
+                                       mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3,
+                                       status, exit);
 
     /**************************************************************************/
     /* ECDSA signature verification                                            */

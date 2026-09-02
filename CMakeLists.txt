@@ -342,6 +342,7 @@ endif()
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/src/transparent/mcux_psa_sgi_mac.c
 		# Include
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/common/mcux_psa_sgi_common_init.h
+		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/common/mcux_psa_sgi_session_helper.h
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/common/mcux_psa_sgi_entropy.h
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_cipher.h
 		${NXP_MODULE_PSA_CRYPTO_DRIVER_PATH}/sgi/include/transparent/mcux_psa_sgi_aead.h

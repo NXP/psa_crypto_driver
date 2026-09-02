@@ -7,6 +7,7 @@
 
 #include "mcux_psa_pkc_init.h" /* PKC Crypto port layer */
 
+#include <mcuxClResource.h>
 
 #include "fsl_crc.h"
 #include "fsl_trng.h"

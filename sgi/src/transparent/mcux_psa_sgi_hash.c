@@ -120,10 +120,10 @@ psa_status_t sgi_hash_setup(mcux_sgi_hash_operation_t *operation, psa_algorithm_
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token,
                                      mcuxClHash_init(session,
@@ -265,10 +265,10 @@ psa_status_t sgi_hash_update(mcux_sgi_hash_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Perform the hashing operation */
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token,
@@ -346,10 +346,10 @@ psa_status_t sgi_hash_finish(mcux_sgi_hash_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Perform the hashing operation */
     uint32_t hashOutputSize = 0;
@@ -456,10 +456,10 @@ psa_status_t sgi_hash_compute(psa_algorithm_t alg,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Perform the hashing operation */
     uint32_t hashOutputSize = 0u;

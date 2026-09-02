@@ -46,6 +46,7 @@
 #include "mcux_psa_sgi_common_init.h"
 #include "mcux_psa_sgi_common_key_management.h" /* sgi_ecc_derive_public_key() */
 #include "mcux_psa_sgi_entropy.h"     /* sgi_get_entropy() */
+#include "mcux_psa_sgi_session_helper.h"
 
 #include <mcuxClEcc.h>
 
@@ -313,12 +314,13 @@ psa_status_t sgi_opaque_export_public_key(const psa_key_attributes_t *attributes
 
     mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  SGI_OPAQUE_EXPORT_PUB_WACPU_SIZE,
-                                                  SGI_OPAQUE_EXPORT_PUB_WAPKC_SIZE);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           SGI_OPAQUE_EXPORT_PUB_WACPU_SIZE,
+                                           SGI_OPAQUE_EXPORT_PUB_WAPKC_SIZE,
+                                           status, exit);
 
     /* The secured scalar multiplication requires an initialized PRNG. */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, exit);
 
     uint8_t raw_point[SGI_OPAQUE_EXPORT_MAX_RAW_POINT_SIZE] = { 0u };
     size_t raw_point_length = 0u;

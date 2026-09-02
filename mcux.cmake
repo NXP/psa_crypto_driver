@@ -583,6 +583,7 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.common)
     sgi/include/common/mcux_psa_sgi_common_init.h
     sgi/include/common/mcux_psa_sgi_common_key_management.h
     sgi/include/common/mcux_psa_sgi_entropy.h
+    sgi/include/common/mcux_psa_sgi_session_helper.h
     sgi/src/common/mcux_psa_sgi_common_init.c
     sgi/src/common/mcux_psa_sgi_common_key_management.c
     sgi/src/common/mcux_psa_sgi_entropy.c

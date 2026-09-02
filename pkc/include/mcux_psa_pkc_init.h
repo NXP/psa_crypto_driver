@@ -20,9 +20,11 @@
 #include "fsl_common.h"
 #include "osal_mutex.h"
 
-#include <mcuxClExample_Session_Helper.h>
-#include <mcuxClCore_Examples.h>
-#include <mcuxClExample_RNG_Helper.h>
+/* The session/RNG helper macros are shared between the SGI
+ * and PKC drivers, which are always linked together and drive the same CL
+ * crypto library. PKC driver reuses the SGI session helper directly instead
+ * of maintaining a duplicate copy. */
+#include "mcux_psa_sgi_session_helper.h"
 
 #include "mcux_pkc.h"
 

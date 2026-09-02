@@ -139,10 +139,10 @@ static psa_status_t sgi_mac_compute_hmac(const psa_key_attributes_t *attributes,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHMAC_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLHMAC_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Build the HMAC mode descriptor for the requested hash. */
     uint32_t hmacModeDescBuffer[MCUXCLHMAC_HMAC_MODE_DESCRIPTOR_SIZE_IN_WORDS] = { 0u };
@@ -258,7 +258,7 @@ psa_status_t sgi_mac_compute(const psa_key_attributes_t *attributes,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLMAC_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLMAC_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     mcuxClKey_Descriptor_t keyDesc;
 
@@ -355,10 +355,10 @@ psa_status_t sgi_mac_sign_setup(sgi_mac_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, SGI_MAC_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, SGI_MAC_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
 #if defined(PSA_WANT_ALG_HMAC)
     if (PSA_ALG_IS_HMAC(alg) == true) {
@@ -454,10 +454,10 @@ psa_status_t sgi_mac_update(sgi_mac_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, SGI_MAC_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, SGI_MAC_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(mp1_status, mp1_token,
                                      mcuxClMac_process(session,
@@ -517,10 +517,10 @@ psa_status_t sgi_mac_sign_finish(sgi_mac_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, SGI_MAC_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, SGI_MAC_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     mcuxClMac_Context_t * const ctx = (mcuxClMac_Context_t *) operation->ctx;
 
@@ -587,10 +587,10 @@ psa_status_t sgi_mac_verify_finish(sgi_mac_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, SGI_MAC_MAX_CPU_WA_BUFFER_SIZE, 0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, SGI_MAC_MAX_CPU_WA_BUFFER_SIZE, 0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     mcuxClMac_Context_t * const ctx = (mcuxClMac_Context_t *) operation->ctx;
 

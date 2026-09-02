@@ -25,9 +25,7 @@
 #include <mcuxClAes.h> // Interface to AES-related definitions and types
 
 
-#include <mcuxClExample_Session_Helper.h>
-#include <mcuxClCore_Examples.h>
-#include <mcuxClExample_RNG_Helper.h>
+#include "mcux_psa_sgi_session_helper.h"
 
 #include "mcux_sgi.h"
 

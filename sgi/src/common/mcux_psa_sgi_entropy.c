@@ -94,14 +94,16 @@ psa_status_t sgi_get_entropy(uint32_t flags,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLEXAMPLE_MAX_WA(
-                                                      MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE,
-                                                      MCUXCLRANDOM_NCINIT_WACPU_SIZE),
-                                                  0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCL_PSA_MAX_WA(
+                                               MCUXCLHASH_MAX_CPU_WA_BUFFER_SIZE,
+                                               MCUXCLRANDOM_NCINIT_WACPU_SIZE),
+                                           0u,
+                                           status,
+                                           cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
 
     /**************************************************************************/

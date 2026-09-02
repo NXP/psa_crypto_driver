@@ -177,10 +177,10 @@ psa_status_t sgi_aead_encrypt(const psa_key_attributes_t *attributes,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX, 0U);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX,  0U, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     mcuxClKey_Descriptor_t keyDesc;
 
@@ -334,10 +334,10 @@ psa_status_t sgi_aead_decrypt(const psa_key_attributes_t *attributes,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX, 0U);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX,  0U, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     mcuxClKey_Descriptor_t keyDesc;
 
@@ -436,12 +436,12 @@ static psa_status_t sgi_aead_multipart_common_setup(sgi_aead_operation_t *operat
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLAEAD_WA_SIZE_MAX,
-                                                  0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLAEAD_WA_SIZE_MAX,
+                                           0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Create the key descriptor */
     status = sgi_create_key_descriptor(attributes, key_buffer, key_buffer_size,
@@ -551,12 +551,12 @@ psa_status_t sgi_aead_set_nonce(sgi_aead_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLAEAD_WA_SIZE_MAX,
-                                                  0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLAEAD_WA_SIZE_MAX,
+                                           0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Initialize AEAD multi-part */
 
@@ -684,12 +684,12 @@ psa_status_t sgi_aead_update_ad(sgi_aead_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLAEAD_WA_SIZE_MAX,
-                                                  0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLAEAD_WA_SIZE_MAX,
+                                           0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(epa1_status, epa1_token,
                                      mcuxClAead_process_adata(session,
@@ -769,12 +769,12 @@ psa_status_t sgi_aead_update(sgi_aead_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLAEAD_WA_SIZE_MAX,
-                                                  0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLAEAD_WA_SIZE_MAX,
+                                           0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Call Process AEAD */
     uint32_t output_length_tmp = 0u;
@@ -870,12 +870,12 @@ psa_status_t sgi_aead_finish(sgi_aead_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLAEAD_WA_SIZE_MAX,
-                                                  0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLAEAD_WA_SIZE_MAX,
+                                           0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Call Finish AEAD */
 
@@ -967,12 +967,12 @@ psa_status_t sgi_aead_verify(sgi_aead_operation_t *operation,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLAEAD_WA_SIZE_MAX,
-                                                  0u);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLAEAD_WA_SIZE_MAX,
+                                           0u, status, cleanup);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Call Verify AEAD */
     uint32_t output_length_tmp = 0u;

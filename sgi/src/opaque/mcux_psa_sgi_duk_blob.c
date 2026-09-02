@@ -36,8 +36,7 @@
 #include <mcuxClMacModes.h>
 #endif /* MCUXCL_FEATURE_KEY_DERIVATION */
 #include <mcuxClMemory_Clear.h>
-#include <mcuxClExample_Session_Helper.h>
-#include <mcuxClExample_RNG_Helper.h>
+#include "mcux_psa_sgi_session_helper.h"
 
 /* PSA headers */
 #include "psa/crypto.h"
@@ -225,10 +224,10 @@ psa_status_t sgi_ssrk_derive_if_needed(void)
     mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t     session = &sessionDesc;
 
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLKEY_DERIVATION_CPU_WA_SIZE,
-                                                  0U);
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLKEY_DERIVATION_CPU_WA_SIZE,
+                                           0U, status, exit_unlock);
+    MCUXCL_INITIALIZE_PRNG(session, status, exit_unlock);
 
     uint32_t dukKeyDescWords[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS] = { 0u };
     mcuxClKey_Handle_t dukKey = (mcuxClKey_Handle_t) dukKeyDescWords;
@@ -343,9 +342,9 @@ psa_status_t sgi_duk_blob_seal(const psa_key_attributes_t *attributes,
     mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t     session = &sessionDesc;
 
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX, 0U);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX, 0U, status, cleanup_plaintext);
 
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup_plaintext);
 
     /* Encode metadata and assemble plaintext */
     uint8_t metadata[SGI_DUK_BLOB_METADATA_SIZE];
@@ -458,9 +457,9 @@ psa_status_t sgi_duk_blob_unseal(psa_key_attributes_t *attributes,
     mcuxClSession_Handle_t     session = &sessionDesc;
 
 
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX, 0U);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session, MCUXCLAEAD_WA_SIZE_MAX, 0U, status, cleanup);
 
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, cleanup);
 
     /* Load wrapping key */
     status = load_blob_wrapping_key(session, wrapKey);

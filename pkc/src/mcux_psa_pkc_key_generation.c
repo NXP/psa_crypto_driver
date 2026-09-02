@@ -184,14 +184,16 @@ static psa_status_t pkc_internal_generate_rsa_key(const psa_key_attributes_t *at
     mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLRSA_KEYGENERATION_PLAIN_4096_WACPU_SIZE,
-                                                  MCUXCLRSA_KEYGENERATION_PLAIN_4096_WAPKC_SIZE);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLRSA_KEYGENERATION_PLAIN_4096_WACPU_SIZE,
+                                           MCUXCLRSA_KEYGENERATION_PLAIN_4096_WAPKC_SIZE,
+                                           status, exit);
 
     /* Initialize the RNG context and initialize the PRNG */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
-                                              MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
-                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_RNG(session,
+                                       MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
+                                       mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3,
+                                       status, exit);
 
     /* Allocate space for and initialize RSA private key handle */
     uint32_t privKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
@@ -391,17 +393,19 @@ static psa_status_t pkc_internal_generate_ecp_key(const psa_key_attributes_t *at
     /* Setup one session to be used by all functions called */
     mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLKEY_GENERATEKEYPAIR_WEIERECC_WACPU_SIZE,
-                                                  MCUXCLKEY_GENERATEKEYPAIR_WEIERECC_WAPKC_SIZE_640);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLKEY_GENERATEKEYPAIR_WEIERECC_WACPU_SIZE,
+                                           MCUXCLKEY_GENERATEKEYPAIR_WEIERECC_WAPKC_SIZE_640,
+                                           status, exit);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, exit);
 
     /* Initialize the RNG context and initialize the PRNG */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_RNG(session,
-                                              MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
-                                              mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_RNG(session,
+                                       MCUXCLRANDOMMODES_CTR_DRBG_AES256_CONTEXT_SIZE,
+                                       mcuxClRandomModes_Mode_CtrDrbg_AES256_DRG3,
+                                       status, exit);
 
     /* Allocate private key descriptor and data buffer */
     uint32_t privKeyDesc[MCUXCLKEY_DESCRIPTOR_SIZE_IN_WORDS];
@@ -612,12 +616,13 @@ psa_status_t pkc_key_agreement(const psa_key_attributes_t *attributes,
     mcuxClSession_Handle_t session = &sessionDesc;
 
     /* Allocate and initialize session */
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLKEY_AGREEMENT_ECDH_WACPU_SIZE,
-                                                  MCUXCLKEY_AGREEMENT_ECDH_WAPKC_SIZE_640);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLKEY_AGREEMENT_ECDH_WACPU_SIZE,
+                                           MCUXCLKEY_AGREEMENT_ECDH_WAPKC_SIZE_640,
+                                           status, exit);
 
     /* Initialize the PRNG */
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, exit);
 
     /* Create private key descriptor using the common key management utility */
     mcuxClKey_Descriptor_t privKeyDesc;
@@ -730,11 +735,13 @@ psa_status_t pkc_internal_export_ecp_public_key(
     mcuxClSession_Descriptor_t sessionDesc = { 0 };
     mcuxClSession_Handle_t session = &sessionDesc;
 
-    MCUXCLEXAMPLE_ALLOCATE_AND_INITIALIZE_SESSION(session,
-                                                  MCUXCLECC_ARITHMETICOPERATION_SECURESCALARMULT_WACPU_SIZE,
-                                                  MCUXCLECC_ARITHMETICOPERATION_SECURESCALARMULT_WAPKC_SIZE_640);
+    MCUXCL_ALLOCATE_AND_INITIALIZE_SESSION(session,
+                                           MCUXCLECC_ARITHMETICOPERATION_SECURESCALARMULT_WACPU_SIZE,
+                                           MCUXCLECC_ARITHMETICOPERATION_SECURESCALARMULT_WAPKC_SIZE_640,
+                                           status, exit);
 
-    MCUXCLEXAMPLE_INITIALIZE_PRNG(session);
+    MCUXCL_INITIALIZE_PRNG(session, status, exit);
+
 
     /* Derive Q = d*G on-chip using the single shared secure helper. It resolves
      * the curve from the attributes, extracts the base point G, and performs the
