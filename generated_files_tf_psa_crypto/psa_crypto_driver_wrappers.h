@@ -2568,6 +2568,20 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
                                                      output_size,
                                                      output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            return( ele_hseb_opaque_cipher_encrypt( attributes,
+                                         key_buffer,
+                                         key_buffer_size,
+                                         alg,
+                                         iv,
+                                         iv_length,
+                                         input,
+                                         input_length,
+                                         output,
+                                         output_size,
+                                         output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
@@ -2814,6 +2828,18 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
                                                     output_size,
                                                     output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            return( ele_hseb_opaque_cipher_decrypt( attributes,
+                                         key_buffer,
+                                         key_buffer_size,
+                                         alg,
+                                         input,
+                                         input_length,
+                                         output,
+                                         output_size,
+                                         output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
@@ -2932,6 +2958,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt_setup(
 
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            status = ele_hseb_opaque_cipher_encrypt_setup(
+                         &operation->ctx.opaque_ele_hseb_driver_ctx,
+                         attributes,
+                         key_buffer, key_buffer_size,
+                         alg );
+
+            if( status == PSA_SUCCESS )
+                operation->id = ELE_HSEB_OPAQUE_DRIVER_ID;
+
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -3045,6 +3084,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt_setup(
 
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
+        case PSA_KEY_LOCATION_ELE_HSEB:
+            status = ele_hseb_opaque_cipher_decrypt_setup(
+                         &operation->ctx.opaque_ele_hseb_driver_ctx,
+                         attributes,
+                         key_buffer, key_buffer_size,
+                         alg );
+
+            if( status == PSA_SUCCESS )
+                operation->id = ELE_HSEB_OPAQUE_DRIVER_ID;
+
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -3099,6 +3151,10 @@ static inline psa_status_t psa_driver_wrapper_cipher_set_iv(
         case ELE_HSEB_TRANSPARENT_DRIVER_ID:
             return( ele_hseb_transparent_cipher_set_iv(
                         &operation->ctx.transparent_ele_hseb_driver_ctx,
+                        iv, iv_length ) );
+        case ELE_HSEB_OPAQUE_DRIVER_ID:
+            return( ele_hseb_opaque_cipher_set_iv(
+                        &operation->ctx.opaque_ele_hseb_driver_ctx,
                         iv, iv_length ) );
 #endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
@@ -3164,6 +3220,11 @@ static inline psa_status_t psa_driver_wrapper_cipher_update(
                         &operation->ctx.transparent_ele_hseb_driver_ctx,
                         input, input_length,
                         output, output_size, output_length ) );
+        case ELE_HSEB_OPAQUE_DRIVER_ID:
+            return( ele_hseb_opaque_cipher_update(
+                        &operation->ctx.opaque_ele_hseb_driver_ctx,
+                        input, input_length,
+                        output, output_size, output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
@@ -3221,6 +3282,10 @@ static inline psa_status_t psa_driver_wrapper_cipher_finish(
         case ELE_HSEB_TRANSPARENT_DRIVER_ID:
             return( ele_hseb_transparent_cipher_finish(
                         &operation->ctx.transparent_ele_hseb_driver_ctx,
+                        output, output_size, output_length ) );
+        case ELE_HSEB_OPAQUE_DRIVER_ID:
+            return( ele_hseb_opaque_cipher_finish(
+                        &operation->ctx.opaque_ele_hseb_driver_ctx,
                         output, output_size, output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
@@ -3283,6 +3348,9 @@ static inline psa_status_t psa_driver_wrapper_cipher_abort(
         case ELE_HSEB_TRANSPARENT_DRIVER_ID:
             return ele_hseb_transparent_cipher_abort(
                          &operation->ctx.transparent_ele_hseb_driver_ctx );
+        case ELE_HSEB_OPAQUE_DRIVER_ID:
+            return ele_hseb_opaque_cipher_abort(
+                         &operation->ctx.opaque_ele_hseb_driver_ctx );
 #endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
