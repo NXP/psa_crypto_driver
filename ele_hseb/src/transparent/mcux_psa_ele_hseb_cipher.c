@@ -40,6 +40,7 @@ psa_status_t ele_hseb_transparent_cipher_encrypt(const psa_key_attributes_t *att
     psa_status_t status              = PSA_ERROR_CORRUPTION_DETECTED;
     hseSrvResponse_t hseb_status     = HSE_SRV_RSP_GENERAL_ERROR;
     psa_key_type_t key_type          = psa_get_key_type(attributes);
+    size_t key_bits                  = psa_get_key_bits(attributes);
     hseKeyHandle_t aes_key_handle    = 0u;
     hseCipherBlockMode_t cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
 
@@ -55,6 +56,14 @@ psa_status_t ele_hseb_transparent_cipher_encrypt(const psa_key_attributes_t *att
 
     /* Algorithm must be a CIPHER algorithm */
     if (false == PSA_ALG_IS_CIPHER(alg)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(key_bits)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (PSA_BITS_TO_BYTES(key_bits) != key_buffer_size) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -130,6 +139,7 @@ psa_status_t ele_hseb_transparent_cipher_decrypt(const psa_key_attributes_t *att
     psa_status_t status              = PSA_ERROR_CORRUPTION_DETECTED;
     hseSrvResponse_t hseb_status     = HSE_SRV_RSP_GENERAL_ERROR;
     psa_key_type_t key_type          = psa_get_key_type(attributes);
+    size_t key_bits                  = psa_get_key_bits(attributes);
     hseKeyHandle_t aes_key_handle    = 0u;
     hseCipherBlockMode_t cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
     size_t iv_length                 = PSA_CIPHER_IV_LENGTH(key_type, alg);
@@ -149,6 +159,14 @@ psa_status_t ele_hseb_transparent_cipher_decrypt(const psa_key_attributes_t *att
 
     /* Algorithm must be a CIPHER algorithm */
     if (false == PSA_ALG_IS_CIPHER(alg)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(key_bits)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (PSA_BITS_TO_BYTES(key_bits) != key_buffer_size) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -229,6 +247,10 @@ psa_status_t ele_hseb_transparent_cipher_encrypt_setup(
     hseKeyHandle_t key_handle    = 0u;
     size_t key_bits              = psa_get_key_bits(attributes);
 
+    if (!ele_hseb_is_cipher_key_bit_size_valid(key_bits)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
@@ -266,6 +288,10 @@ psa_status_t ele_hseb_transparent_cipher_decrypt_setup(
     hseSrvResponse_t hseb_status = HSE_SRV_RSP_GENERAL_ERROR;
     hseKeyHandle_t key_handle    = 0u;
     size_t key_bits              = psa_get_key_bits(attributes);
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(key_bits)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -305,6 +331,11 @@ psa_status_t ele_hseb_transparent_cipher_set_iv(ele_hseb_transparent_cipher_oper
     if (HSE_CIPHER_BLOCK_MODE_ECB != operation->cipher_mode &&
         AES_BLOCK_LENGTH != iv_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(operation->key_bits)) {
+        /* We validated in *_setup(), but now we have an invalid bit size */
+        return PSA_ERROR_CORRUPTION_DETECTED;
     }
 
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
@@ -349,6 +380,11 @@ psa_status_t ele_hseb_transparent_cipher_update(ele_hseb_transparent_cipher_oper
     hseSrvResponse_t hseb_status = HSE_SRV_RSP_GENERAL_ERROR;
     hseKeyHandle_t key_handle    = 0u;
 
+    if (!ele_hseb_is_cipher_key_bit_size_valid(operation->key_bits)) {
+        /* We validated in *_setup(), but now we have an invalid bit size */
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
     }
@@ -383,6 +419,11 @@ psa_status_t ele_hseb_transparent_cipher_finish(ele_hseb_transparent_cipher_oper
     psa_status_t status          = PSA_ERROR_CORRUPTION_DETECTED;
     hseSrvResponse_t hseb_status = HSE_SRV_RSP_GENERAL_ERROR;
     hseKeyHandle_t key_handle    = 0u;
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(operation->key_bits)) {
+        /* We validated in *_setup(), but now we have an invalid bit size */
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
 
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;

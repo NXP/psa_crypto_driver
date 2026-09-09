@@ -37,6 +37,7 @@ psa_status_t ele_hseb_opaque_cipher_encrypt(const psa_key_attributes_t *attribut
     psa_status_t status              = PSA_ERROR_CORRUPTION_DETECTED;
     hseSrvResponse_t hseb_status     = HSE_SRV_RSP_GENERAL_ERROR;
     psa_key_type_t key_type          = psa_get_key_type(attributes);
+    size_t key_bits                  = psa_get_key_bits(attributes);
     hseKeyHandle_t aes_key_handle    = 0u;
     hseCipherBlockMode_t cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
 
@@ -52,6 +53,10 @@ psa_status_t ele_hseb_opaque_cipher_encrypt(const psa_key_attributes_t *attribut
 
     /* Algorithm must be a CIPHER algorithm */
     if (false == PSA_ALG_IS_CIPHER(alg)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(key_bits)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -123,6 +128,7 @@ psa_status_t ele_hseb_opaque_cipher_decrypt(const psa_key_attributes_t *attribut
     psa_status_t status              = PSA_ERROR_CORRUPTION_DETECTED;
     hseSrvResponse_t hseb_status     = HSE_SRV_RSP_GENERAL_ERROR;
     psa_key_type_t key_type          = psa_get_key_type(attributes);
+    size_t key_bits                  = psa_get_key_bits(attributes);
     hseKeyHandle_t aes_key_handle    = 0u;
     hseCipherBlockMode_t cipher_mode = HSE_CIPHER_BLOCK_MODE_NULL;
     size_t iv_length                 = PSA_CIPHER_IV_LENGTH(key_type, alg);
@@ -142,6 +148,10 @@ psa_status_t ele_hseb_opaque_cipher_decrypt(const psa_key_attributes_t *attribut
 
     /* Algorithm must be a CIPHER algorithm */
     if (false == PSA_ALG_IS_CIPHER(alg)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(key_bits)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
@@ -215,6 +225,11 @@ psa_status_t ele_hseb_opaque_cipher_encrypt_setup(
 {
     psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
     hseKeyHandle_t key_handle = 0u;
+    size_t key_bits           = psa_get_key_bits(attributes);
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(key_bits)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     /* For opaque keys the handle is stored in the key buffer */
     if (sizeof(hseKeyHandle_t) != key_buffer_size) {
@@ -245,6 +260,11 @@ psa_status_t ele_hseb_opaque_cipher_decrypt_setup(
 {
     psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
     hseKeyHandle_t key_handle = 0u;
+    size_t key_bits           = psa_get_key_bits(attributes);
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(key_bits)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     /* For opaque keys the handle is stored in the key buffer */
     if (sizeof(hseKeyHandle_t) != key_buffer_size) {
@@ -310,6 +330,11 @@ psa_status_t ele_hseb_opaque_cipher_update(ele_hseb_opaque_cipher_operation_t *o
     psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
     hseKeyHandle_t key_handle = 0u;
 
+    if (!ele_hseb_is_cipher_key_bit_size_valid(operation->key_bits)) {
+        /* We validated in *_setup(), but now we have an invalid bit size */
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
+
     ele_hseb_read_key_handle_from_buffer(operation->key, &key_handle);
 
     if (mcux_mutex_lock(&ele_hseb_hwcrypto_mutex) != 0) {
@@ -331,8 +356,13 @@ psa_status_t ele_hseb_opaque_cipher_finish(ele_hseb_opaque_cipher_operation_t *o
                                            size_t output_size,
                                            size_t *output_length)
 {
-    psa_status_t status          = PSA_ERROR_CORRUPTION_DETECTED;
-    hseKeyHandle_t key_handle    = 0u;
+    psa_status_t status       = PSA_ERROR_CORRUPTION_DETECTED;
+    hseKeyHandle_t key_handle = 0u;
+
+    if (!ele_hseb_is_cipher_key_bit_size_valid(operation->key_bits)) {
+        /* We validated in *_setup(), but now we have an invalid bit size */
+        return PSA_ERROR_CORRUPTION_DETECTED;
+    }
 
     ele_hseb_read_key_handle_from_buffer(operation->key, &key_handle);
 

@@ -38,6 +38,15 @@ bool ele_hseb_is_cipher_input_length_correct(size_t input_length,
                                              psa_key_type_t key_type);
 
 /*!
+ * \brief Check whether the key bit size is valid for the AES cipher
+ *
+ * \param[in] key_bits Bit size of the key
+ *
+ * \retval  true if the key bit size is valid for AES, false otherwise
+ */
+bool ele_hseb_is_cipher_key_bit_size_valid(size_t key_bits);
+
+/*!
  * \brief Encrypt or decrypt a message fragment in an active cipher operation
  *
  * \param[in]     key_handle    Handle of the key to use for the operation

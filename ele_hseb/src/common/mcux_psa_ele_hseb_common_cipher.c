@@ -45,6 +45,14 @@ bool ele_hseb_is_cipher_input_length_correct(size_t input_length,
     return true;
 }
 
+bool ele_hseb_is_cipher_key_bit_size_valid(size_t key_bits)
+{
+    if ((128u == key_bits) || (192u == key_bits) || (256u == key_bits)) {
+        return true;
+    }
+    return false;
+}
+
 static psa_status_t cipher_update_compute(hseKeyHandle_t key_handle,
                                           hseCipherBlockMode_t cipher_mode,
                                           uint32_t input_length,
