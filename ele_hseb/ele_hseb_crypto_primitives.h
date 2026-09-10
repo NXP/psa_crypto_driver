@@ -33,7 +33,6 @@ typedef struct {
     hseCipherDir_t       cipher_direction;
     uint8_t              key[32]; /*!< @brief Store the cipher operation key, as we need it during each step. */
     size_t               key_bits;
-    uint8_t              iv[16];
     uint8_t              chunk[16];  /*!< @brief An incomplete AES block of input data. */
     size_t               chunk_length; /*!< @brief The current length of the cached AES block. */
     bool                 need_full_block; /*!< @brief Flag for whether or not the current algorithm requires full-block-length inputs. */
