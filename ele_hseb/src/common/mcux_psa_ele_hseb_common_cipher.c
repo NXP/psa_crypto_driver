@@ -105,6 +105,20 @@ psa_status_t ele_hseb_common_cipher_update(hseKeyHandle_t key_handle,
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    if (mcux_psa_add_size_t_wrapcheck(input_length, operation->chunk_length)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    const size_t total_length = input_length + operation->chunk_length;
+
+    /* Adding check if output buffer is big enough to hold all data from
+     * input + intermediate data in context to prevent buffer overflow.
+     */
+    if (total_length >= AES_BLOCK_LENGTH) {
+        if (output_size / AES_BLOCK_LENGTH < total_length / AES_BLOCK_LENGTH) {
+            return PSA_ERROR_BUFFER_TOO_SMALL;
+        }
+    }
+
     /* 1. Fill the chunk buff as much as we can
      * 2. If chunk buff full
      *     2a. call first update
