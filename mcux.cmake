@@ -584,6 +584,7 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.common)
     sgi/include/common/mcux_psa_sgi_common_key_management.h
     sgi/include/common/mcux_psa_sgi_entropy.h
     sgi/include/common/mcux_psa_sgi_session_helper.h
+    sgi/include/common/mcux_psa_sgi_opaque_key_locations.h
     sgi/src/common/mcux_psa_sgi_common_init.c
     sgi/src/common/mcux_psa_sgi_common_key_management.c
     sgi/src/common/mcux_psa_sgi_entropy.c
@@ -617,7 +618,6 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque)
     SOURCES
     sgi/include/opaque/mcux_psa_sgi_duk_blob.h
     sgi/include/opaque/mcux_psa_sgi_opaque_key_generation.h
-    sgi/include/opaque/mcux_psa_sgi_opaque_key_locations.h
     sgi/src/opaque/mcux_psa_sgi_duk_blob.c
     sgi/src/opaque/mcux_psa_sgi_opaque_key_generation.c
     BASE_PATH

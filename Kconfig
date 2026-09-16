@@ -262,6 +262,10 @@ menu "PSA Crypto Driver"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque
         bool "SGI Opaque"
+        # The opaque driver sources include mcux_psa_sgi_opaque_key_locations.h,
+        # which is provided by the SGI Common component.
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
+
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.feature.double_cipher_enable
         bool "SGI Double cipher enable"
