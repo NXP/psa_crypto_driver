@@ -584,7 +584,6 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.common)
     sgi/include/common/mcux_psa_sgi_common_key_management.h
     sgi/include/common/mcux_psa_sgi_entropy.h
     sgi/include/common/mcux_psa_sgi_session_helper.h
-    sgi/include/common/mcux_psa_sgi_opaque_key_locations.h
     sgi/src/common/mcux_psa_sgi_common_init.c
     sgi/src/common/mcux_psa_sgi_common_key_management.c
     sgi/src/common/mcux_psa_sgi_entropy.c
@@ -610,6 +609,16 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent)
     BASE_PATH
     ${SdkRootDirPath}/components/psa_crypto_driver/)
   mcux_add_include(INCLUDES sgi/include/transparent BASE_PATH
+                   ${SdkRootDirPath}/components/psa_crypto_driver/)
+endif()
+
+if (MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations)
+  mcux_add_source(
+    SOURCES
+    sgi/include/opaque/mcux_psa_sgi_opaque_key_locations.h
+    BASE_PATH
+    ${SdkRootDirPath}/components/psa_crypto_driver/)
+  mcux_add_include(INCLUDES sgi/include/opaque BASE_PATH
                    ${SdkRootDirPath}/components/psa_crypto_driver/)
 endif()
 

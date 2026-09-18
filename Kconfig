@@ -260,12 +260,15 @@ menu "PSA Crypto Driver"
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
         bool "SGI Transparent"
 
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations
+        bool "SGI Opaque Key Locations"
+
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque
         bool "SGI Opaque"
-        # The opaque driver sources include mcux_psa_sgi_opaque_key_locations.h,
-        # which is provided by the SGI Common component.
-        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
-
+        # Splitting the key_locations into a seperate (sub) component allows for
+        # key_locations to be selected by TF-M non-secure side without pulling in
+        # the entire SGI Opaque component, especially *.c files!
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.feature.double_cipher_enable
         bool "SGI Double cipher enable"
