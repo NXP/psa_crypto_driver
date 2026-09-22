@@ -612,7 +612,7 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent)
                    ${SdkRootDirPath}/components/psa_crypto_driver/)
 endif()
 
-if (MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations)
+if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations)
   mcux_add_source(
     SOURCES
     sgi/include/opaque/mcux_psa_sgi_opaque_key_locations.h

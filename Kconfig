@@ -256,6 +256,11 @@ menu "PSA Crypto Driver"
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
         bool "SGI Common"
+        # sgi.h (base SGI port) and the mbedtls3x PSA port include
+        # mcux_psa_sgi_opaque_key_locations.h unconditionally, so the
+        # key_locations include path must be present whenever SGI common
+        # is used, independent of the full SGI opaque driver.
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
         bool "SGI Transparent"
@@ -267,7 +272,7 @@ menu "PSA Crypto Driver"
         bool "SGI Opaque"
         # Splitting the key_locations into a seperate (sub) component allows for
         # key_locations to be selected by TF-M non-secure side without pulling in
-        # the entire SGI Opaque component, especially *.c files!
+        # the entire SGI Opaque component.
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations
 
     config MCUX_COMPONENT_component.psa_crypto_driver.sgi.feature.double_cipher_enable
