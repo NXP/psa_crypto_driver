@@ -1,0 +1,11 @@
+#
+# Copyright 2024-2026 NXP
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+    config MCUX_COMPONENT_middleware.mbedtls
+        bool "MbedTLS middleware"
+
+    config MCUX_COMPONENT_middleware.mbedtls.default_config
+        default true if MCUX_COMPONENT_middleware.mbedtls
+        bool "Default MCUX MbedTLS configuration header"

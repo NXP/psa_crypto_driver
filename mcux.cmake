@@ -201,61 +201,60 @@ endif()
 
 ####### ELE S400 ########
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_rng)
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_rng)
     mcux_add_source(
-        SOURCES ele_s4xx/ele_s4xx.h
-                ele_s4xx/ele_fw.h
-                ele_s4xx/src/common/mcux_psa_s4xx_common_init.c
-                ele_s4xx/include/common/mcux_psa_s4xx_common_init.h
-                ele_s4xx/src/common/mcux_psa_s4xx_entropy.c
-                ele_s4xx/include/common/mcux_psa_s4xx_entropy.h
+        SOURCES ele_s1xx_4xx/ele_s1xx_4xx.h
+                ele_s1xx_4xx/src/common/mcux_psa_s1xx_4xx_common_init.c
+                ele_s1xx_4xx/include/common/mcux_psa_s1xx_4xx_common_init.h
+                ele_s1xx_4xx/src/common/mcux_psa_s1xx_4xx_entropy.c
+                ele_s1xx_4xx/include/common/mcux_psa_s1xx_4xx_entropy.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
-        INCLUDES ele_s4xx
-                 ele_s4xx/include
-                 ele_s4xx/include/common
+        INCLUDES ele_s1xx_4xx
+                 ele_s1xx_4xx/include
+                 ele_s1xx_4xx/include/common
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
 endif()
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_transparent)
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_transparent)
     mcux_add_source(
-        SOURCES ele_s4xx/ele_s4xx_crypto_primitives.h
-                ele_s4xx/src/transparent/mcux_psa_s4xx_init.c
-                ele_s4xx/include/transparent/mcux_psa_s4xx_init.h
-                ele_s4xx/src/transparent/mcux_psa_s4xx_hash.c
-                ele_s4xx/include/transparent/mcux_psa_s4xx_hash.h
-                ele_s4xx/src/common/mcux_psa_s4xx_common_key_management.c
-                ele_s4xx/include/common/mcux_psa_s4xx_common_key_management.h
-                ele_s4xx/src/transparent/mcux_psa_s4xx_aead.c
-                ele_s4xx/include/transparent/mcux_psa_s4xx_aead.h
-                ele_s4xx/src/transparent/mcux_psa_s4xx_cipher.c
-                ele_s4xx/include/transparent/mcux_psa_s4xx_cipher.h
-                ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_encryption.c
-                ele_s4xx/include/transparent/mcux_psa_s4xx_asymmetric_encryption.h
-                ele_s4xx/src/transparent/mcux_psa_s4xx_asymmetric_signature.c
-                ele_s4xx/include/transparent/mcux_psa_s4xx_asymmetric_signature.h
-                ele_s4xx/src/transparent/mcux_psa_s4xx_key_agreement.c
-                ele_s4xx/include/transparent/mcux_psa_s4xx_key_agreement.h
+        SOURCES ele_s1xx_4xx/ele_s1xx_4xx_crypto_primitives.h
+                ele_s1xx_4xx/src/transparent/mcux_psa_s1xx_4xx_init.c
+                ele_s1xx_4xx/include/transparent/mcux_psa_s1xx_4xx_init.h
+                ele_s1xx_4xx/src/transparent/mcux_psa_s1xx_4xx_hash.c
+                ele_s1xx_4xx/include/transparent/mcux_psa_s1xx_4xx_hash.h
+                ele_s1xx_4xx/src/common/mcux_psa_s1xx_4xx_common_key_management.c
+                ele_s1xx_4xx/include/common/mcux_psa_s1xx_4xx_common_key_management.h
+                ele_s1xx_4xx/src/transparent/mcux_psa_s1xx_4xx_aead.c
+                ele_s1xx_4xx/include/transparent/mcux_psa_s1xx_4xx_aead.h
+                ele_s1xx_4xx/src/transparent/mcux_psa_s1xx_4xx_cipher.c
+                ele_s1xx_4xx/include/transparent/mcux_psa_s1xx_4xx_cipher.h
+                ele_s1xx_4xx/src/transparent/mcux_psa_s1xx_4xx_asymmetric_encryption.c
+                ele_s1xx_4xx/include/transparent/mcux_psa_s1xx_4xx_asymmetric_encryption.h
+                ele_s1xx_4xx/src/transparent/mcux_psa_s1xx_4xx_asymmetric_signature.c
+                ele_s1xx_4xx/include/transparent/mcux_psa_s1xx_4xx_asymmetric_signature.h
+                ele_s1xx_4xx/src/transparent/mcux_psa_s1xx_4xx_key_agreement.c
+                ele_s1xx_4xx/include/transparent/mcux_psa_s1xx_4xx_key_agreement.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
-        INCLUDES ele_s4xx/
-                 ele_s4xx/include/common
-                 ele_s4xx/include/transparent
+        INCLUDES ele_s1xx_4xx/
+                 ele_s1xx_4xx/include/common
+                 ele_s1xx_4xx/include/transparent
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
 endif()
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr)
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_sd_nvm_mgr)
     mcux_add_source(
-        SOURCES ele_s4xx/src/common/mcux_psa_s4xx_sdmmc_nvm_manager.c
-                ele_s4xx/include/common/mcux_psa_s4xx_sdmmc_nvm_manager.h
+        SOURCES ele_s1xx_4xx/src/common/mcux_psa_s1xx_4xx_sdmmc_nvm_manager.c
+                ele_s1xx_4xx/include/common/mcux_psa_s1xx_4xx_sdmmc_nvm_manager.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
-        INCLUDES ele_s4xx/include/common
+        INCLUDES ele_s1xx_4xx/include/common
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_macro(
@@ -263,42 +262,42 @@ if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_sd_nvm_mgr)
     )
 endif()
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_opaque)
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_opaque)
     mcux_add_source(
-        SOURCES ele_s4xx/ele_s4xx_crypto_primitives.h
-                ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_init.c
-                ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_init.h
-                ele_s4xx/src/common/mcux_psa_s4xx_common_key_management.c
-                ele_s4xx/include/common/mcux_psa_s4xx_common_key_management.h
-                ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_key_generation.c
-                ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_key_generation.h
-                ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_asymmetric_signature.c
-                ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_asymmetric_signature.h
-                ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_cipher.c
-                ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_cipher.h
-                ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_aead.c
-                ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_aead.h
-                ele_s4xx/src/opaque/mcux_psa_s4xx_opaque_mac.c
-                ele_s4xx/include/opaque/mcux_psa_s4xx_opaque_mac.h
+        SOURCES ele_s1xx_4xx/ele_s1xx_4xx_crypto_primitives.h
+                ele_s1xx_4xx/src/opaque/mcux_psa_s1xx_4xx_opaque_init.c
+                ele_s1xx_4xx/include/opaque/mcux_psa_s1xx_4xx_opaque_init.h
+                ele_s1xx_4xx/src/common/mcux_psa_s1xx_4xx_common_key_management.c
+                ele_s1xx_4xx/include/common/mcux_psa_s1xx_4xx_common_key_management.h
+                ele_s1xx_4xx/src/opaque/mcux_psa_s1xx_4xx_opaque_key_generation.c
+                ele_s1xx_4xx/include/opaque/mcux_psa_s1xx_4xx_opaque_key_generation.h
+                ele_s1xx_4xx/src/opaque/mcux_psa_s1xx_4xx_opaque_asymmetric_signature.c
+                ele_s1xx_4xx/include/opaque/mcux_psa_s1xx_4xx_opaque_asymmetric_signature.h
+                ele_s1xx_4xx/src/opaque/mcux_psa_s1xx_4xx_opaque_cipher.c
+                ele_s1xx_4xx/include/opaque/mcux_psa_s1xx_4xx_opaque_cipher.h
+                ele_s1xx_4xx/src/opaque/mcux_psa_s1xx_4xx_opaque_aead.c
+                ele_s1xx_4xx/include/opaque/mcux_psa_s1xx_4xx_opaque_aead.h
+                ele_s1xx_4xx/src/opaque/mcux_psa_s1xx_4xx_opaque_mac.c
+                ele_s1xx_4xx/include/opaque/mcux_psa_s1xx_4xx_opaque_mac.h
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
     mcux_add_include(
-        INCLUDES ele_s4xx/
-                 ele_s4xx/include/common
-                 ele_s4xx/include/opaque
+        INCLUDES ele_s1xx_4xx/
+                 ele_s1xx_4xx/include/common
+                 ele_s1xx_4xx/include/opaque
         BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
     )
 endif()
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa)
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx)
     mcux_add_macro(
-        "-DPSA_CRYPTO_DRIVER_ELE_S4XX"
+        "-DPSA_CRYPTO_DRIVER_ELE_S1XX_4XX"
     )
 endif()
 
-if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa_with_persistent_storage)
+if (CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_with_persistent_storage)
     mcux_add_macro(
-        "-DPSA_CRYPTO_DRIVER_ELE_S4XX"
+        "-DPSA_CRYPTO_DRIVER_ELE_S1XX_4XX"
     )
 endif()
 

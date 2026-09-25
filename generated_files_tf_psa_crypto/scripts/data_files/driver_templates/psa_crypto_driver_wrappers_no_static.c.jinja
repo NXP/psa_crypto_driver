@@ -122,14 +122,14 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
             break;
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
-#if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
-        case PSA_CRYPTO_ELE_S4XX_LOCATION:
-            *key_buffer_size = ele_s4xx_opaque_size_function(key_type,
+#if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
+        case PSA_CRYPTO_ELE_S1XX_4XX_LOCATION:
+            *key_buffer_size = ele_s1xx_4xx_opaque_size_function(key_type,
                                                            key_bits );
             return( ( *key_buffer_size != 0 ) ?
                     PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
             break;
-#endif /* PSA_CRYPTO_DRIVER_ELE_S4XX */
+#endif /* PSA_CRYPTO_DRIVER_ELE_S1XX_4XX */
 #if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
         case PSA_KEY_LOCATION_ELE_HSEB:
             *key_buffer_size = ele_hseb_opaque_get_key_buffer_size( attributes );

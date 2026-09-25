@@ -1,0 +1,418 @@
+#
+# Copyright 2024-2026 NXP
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# PSA crypto drivers extends the TF-PSA-Crypto (Mbed TLS 4.x / tf-psa-crypto)
+# as well as the legacy MbedTLS 3.x.
+
+    config MCUX_COMPONENT_component.psa_crypto_driver
+        bool
+        # Default on when an Mbed TLS flavor (TF-PSA-Crypto / Mbed TLS 4.x or
+        # legacy Mbed TLS 3.x) is used. Other consumers (TF-M, wireless
+        # framework, direct users) can still select the driver / sub-components
+        # explicitly without relying on this default.
+        default y if MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto || MCUX_COMPONENT_middleware.mbedtls3x
+        help
+            Toplevel PSA Crypto Driver component symbol.
+            Auto-selected by platform-specific configurations.
+
+
+    ##################################################################
+    #                            OSAL                                #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.osal
+        bool
+        default y if MCUX_COMPONENT_component.psa_crypto_driver
+
+    if MCUX_COMPONENT_component.psa_crypto_driver.osal
+        choice MCUX_COMPONENT_component.psa_crypto_driver.osal.selection
+            prompt "OSAL Selection"
+            default MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.frtos if MCUX_COMPONENT_middleware.freertos-kernel
+            default MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.baremetal
+
+            config MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.baremetal
+                bool "Baremetal"
+                help
+                    Empty baremetal OSAL implementation for PSA Crypto Driver.
+                    Must be implemented by the user.
+
+            config MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.frtos
+                bool "FreeRTOS"
+                depends on MCUX_COMPONENT_middleware.freertos-kernel
+                help
+                    FreeRTOS OSAL for PSA Crypto Driver.
+        endchoice
+    endif
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.osal.baremetal
+        depends on MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.baremetal
+        bool
+        default y
+        help
+            Kept as a separate config to allow for backward compatibility, but now should only be selected
+            via the MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.baremetal choice.
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.osal.frtos
+        depends on MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.frtos
+        bool
+        default y
+        help
+            Kept as a separate config to allow for backward compatibility, but now should only be selected
+            via the MCUX_COMPONENT_component.psa_crypto_driver.osal.selection.frtos choice.
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.mbedtls_thread_alt
+        bool "Mbed TLS Thread Alt"
+
+    ##################################################################
+    #                        ELS PKC (ELS)                           #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.rw61x
+        bool "ELS PKC Oracle RW61x"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn
+        bool "ELS PKC Oracle MCXN"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mimxrt
+        bool "ELS PKC Oracle MIMXRT"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.lpc
+        bool "ELS PKC Oracle LPC"
+
+     config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
+         bool "ELS PKC Oracle"
+
+        if MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
+          choice
+            prompt "Platform"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.rw61x
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.rw61x
+                bool "RW61x"
+                select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.rw61x
+                depends on MCUX_HW_DEVICE_RW610 || MCUX_HW_DEVICE_RW612
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.mcxn
+                bool "MCXN"
+                select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mcxn
+                depends on MCUX_HW_DEVICE_MCXN546 || MCUX_HW_DEVICE_MCXN547 || MCUX_HW_DEVICE_MCXN946 || MCUX_HW_DEVICE_MCXN947 || MCUX_HW_DEVICE_MCXN235 || MCUX_HW_DEVICE_MCXN236 || MCUX_HW_DEVICE_MCXN247 || MCUX_HW_DEVICE_MCXN526 || MCUX_HW_DEVICE_MCXN527 || MCUX_HW_DEVICE_MCXN536 || MCUX_HW_DEVICE_MCXN537 || MCUX_HW_DEVICE_MCXN556S || MCUX_HW_DEVICE_MCXN557S || MCUX_HW_DEVICE_MCXN556T || MCUX_HW_DEVICE_MCXN557T || MCUX_HW_DEVICE_MCXN246T || MCUX_HW_DEVICE_MCXN246 || MCUX_HW_DEVICE_MCXN247T || MCUX_HW_DEVICE_MCXN526T || MCUX_HW_DEVICE_MCXN527T || MCUX_HW_DEVICE_MCXN536T || MCUX_HW_DEVICE_MCXN537T || MCUX_HW_DEVICE_MCXN546T || MCUX_HW_DEVICE_MCXN547T || MCUX_HW_DEVICE_MCXN946T || MCUX_HW_DEVICE_MCXN947T
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.mimxrt
+                bool "MIMXRT"
+                select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.mimxrt
+                depends on MCUX_HW_DEVICE_MIMXRT798S || MCUX_HW_DEVICE_MIMXRT758S || MCUX_HW_DEVICE_MIMXRT735S
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.oracle.platform.lpc
+                bool "LPC"
+                select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle.lpc
+                depends on MCUX_HW_DEVICE_LPC55S36
+            endchoice
+        endif
+
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.common
+        bool "ELS PKC Common"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.transparent
+        bool "ELS PKC Transparent"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.opaque
+        bool "ELS PKC Opaque"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.els_pkc
+        bool "ELS PKC"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.oracle
+        select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.common
+        select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.els_pkc.opaque
+        select MCUX_COMPONENT_component.els_pkc.psa_driver
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+
+        if MCUX_COMPONENT_component.psa_crypto_driver.els_pkc
+          choice
+            prompt "Hardware Platform Selection"
+            default MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.platform.rw61x
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.platform.rw61x
+                bool "RW61x with TRNG support"
+                select MCUX_COMPONENT_driver.trng
+                select MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option
+                depends on MCUX_HW_DEVICE_RW610 || MCUX_HW_DEVICE_RW612
+
+            config MCUX_DEPENDENCY_COMPONENT_component.psa_crypto_driver.els_pkc.platform.mcxn_rt700_lpc
+                bool "MCXN/RT700/LPC55S36 series devices"
+                depends on MCUX_HW_DEVICE_MCXN546 || MCUX_HW_DEVICE_MCXN547 || MCUX_HW_DEVICE_MCXN946 || MCUX_HW_DEVICE_MCXN947 || MCUX_HW_DEVICE_MCXN235 || MCUX_HW_DEVICE_MCXN236 || MCUX_HW_DEVICE_MCXN247 || MCUX_HW_DEVICE_MCXN526 || MCUX_HW_DEVICE_MCXN527 || MCUX_HW_DEVICE_MCXN536 || MCUX_HW_DEVICE_MCXN537 || MCUX_HW_DEVICE_MCXN556S || MCUX_HW_DEVICE_MCXN557S || MCUX_HW_DEVICE_MCXN556T || MCUX_HW_DEVICE_MCXN557T || MCUX_HW_DEVICE_MCXN246T || MCUX_HW_DEVICE_MCXN246 || MCUX_HW_DEVICE_MCXN247T || MCUX_HW_DEVICE_MCXN526T || MCUX_HW_DEVICE_MCXN527T || MCUX_HW_DEVICE_MCXN536T || MCUX_HW_DEVICE_MCXN537T || MCUX_HW_DEVICE_MCXN546T || MCUX_HW_DEVICE_MCXN547T || MCUX_HW_DEVICE_MCXN946T || MCUX_HW_DEVICE_MCXN947T || MCUX_HW_DEVICE_MIMXRT798S || MCUX_HW_DEVICE_MIMXRT758S || MCUX_HW_DEVICE_MIMXRT735S || MCUX_HW_DEVICE_LPC55S36
+
+          endchoice
+        endif
+
+    ##################################################################
+    #                              DCP                               #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.dcp
+        bool "DCP"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.dcp
+        select MCUX_COMPONENT_driver.trng
+        select MCUX_COMPONENT_component.osa
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option
+        bool "Use TRNG"
+
+    ##################################################################
+    #                    ELE S1xx/S4xx (S100/S400)                   #
+    ##################################################################
+
+    #### Top Driver ###
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx
+        bool "ELE S1xx/S4xx"
+        # Enabled by default on SoCs that have ELE S1xx/S4xx, but only when an
+        # Mbed TLS flavor is in use. Other consumers can still select this HW
+        # driver explicitly.
+        default y if (MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto || \
+                      MCUX_COMPONENT_middleware.mbedtls3x) && \
+                     (MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx.soc_s100 || \
+                      MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx.soc_s400)
+
+
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_rng
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_opaque
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_transparent
+        # Default EdgeLock firmware container per SoC (imply = overridable default,
+        # so the user can still change or unselect the FW).
+        imply MCUX_COMPONENT_component.edgelock.s100.rt2660a0_ele_container if MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx.soc_s100
+        imply MCUX_COMPONENT_component.edgelock.s400.mxrt1180b0alt_ahab_container if MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx.soc_s400
+
+    #### Top ELE S400 driver (backward-compatibility) ###
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s4xx_psa
+        bool
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx
+
+    #### Top ELE S100 driver ###
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_psa
+        bool
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx
+
+    #### HW decision check (so we maintain just one place) ###
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx.soc_s100
+        bool
+        default y if MCUX_HW_DEVICE_ID_MIMXRT2663xxxxx
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx.soc_s400
+        bool
+        default y if MCUX_HW_DEVICE_ID_MIMXRT1181xxxxx || MCUX_HW_DEVICE_ID_MIMXRT1182xxxxx || MCUX_HW_DEVICE_ID_MIMXRT1183xxxxx || MCUX_HW_DEVICE_ID_MIMXRT1184xxxxx || MCUX_HW_DEVICE_ID_MIMXRT1185xxxxx || MCUX_HW_DEVICE_ID_MIMXRT1186xxxxx || MCUX_HW_DEVICE_ID_MIMXRT1187xxxxx || MCUX_HW_DEVICE_ID_MIMXRT1189xxxxx || MCUX_HW_DEVICE_ID_MIMXRT118Cxxxxx || MCUX_HW_DEVICE_ID_MIMXRT118Dxxxxx || MCUX_HW_DEVICE_ID_MIMXRT118Exxxxx
+
+    #### Sub-components for ELE100/400 driver ###
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_rng
+        bool "ELE S1xx/S4xx RNG"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_transparent
+        bool "ELE S1xx/S4xx Transparent"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_sd_nvm_mgr
+        bool "ELE S1xx/S4xx SD NVM Manager"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.usdhc
+        select MCUX_COMPONENT_component.rgpio_adapter
+        select MCUX_COMPONENT_middleware.sdmmc.host.usdhc
+        select MCUX_COMPONENT_middleware.sdmmc.sd
+        select MCUX_COMPONENT_middleware.fatfs.sd
+        select MCUX_COMPONENT_middleware.fatfs
+        select MCUX_COMPONENT_component.ele_nvm_manager
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_opaque
+        bool "ELE S1xx/S4xx Opaque"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_with_persistent_storage
+        bool "ELE S1xx/S4xx with Persistent Storage"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.s3mu
+        select MCUX_COMPONENT_component.ele_crypto
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_rng
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_opaque
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s1xx_4xx_sd_nvm_mgr
+        select MCUX_COMPONENT_middleware.mbedtls3x.crypto_storage_fatfs
+
+    ##################################################################
+    #                            ELE S200                            #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common
+        bool "ELE S200 Common"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent
+        bool "ELE S200 Transparent"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.opaque
+        bool "ELE S200 Opaque"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.feature.hash_context_persistence
+        bool "ELE S200 Hash Context Persistence"
+        depends on MCUX_HW_SOC_SERIES_KW47 || MCUX_HW_SOC_SERIES_MCXW72
+        default false
+        help
+            Enables multipart hash context persistence across sleep/wake cycles
+            when the ELE S200 subsystem loses internal contexts, but the application
+            RAM does not.
+            Supported only on KW47 and MCXW72 series.
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ele_s200
+        bool "ELE S200"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.common
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.opaque
+        select MCUX_COMPONENT_middleware.secure-subsystem
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+
+    ##################################################################
+    #                             CASPER                             #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.casper
+        bool "CASPER"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.casper
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+
+        # We provide option to have hashcrypt-only, or CASPER+hashcrypt, but CASPER-only is not available.
+        select MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt
+
+    ##################################################################
+    #                           HASHCRYPT                            #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.hashcrypt
+        bool "HASHCRYPT"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.hashcrypt
+        select MCUX_COMPONENT_component.rng_adapter_interface
+
+    ##################################################################
+    #                              CAAM                              #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.caam
+        bool "CAAM"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.caam
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+
+    ##################################################################
+    #                            ELA CSEC                            #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.ela_csec
+        bool "ELA CSEC"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_driver.ela_csec
+
+    ##################################################################
+    #                            ELE HSEB                            #
+    ##################################################################
+
+    # MCUX_COMPONENT_component.psa_crypto_driver.ele_hseb
+    # has been moved to its own Kconfig file.
+    rsource "./ele_hseb/Kconfig.ele_hseb"
+
+    ##################################################################
+    #                          SGI / PKC                             #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
+        bool "SGI Common"
+        # sgi.h (base SGI port) and the mbedtls3x PSA port include
+        # mcux_psa_sgi_opaque_key_locations.h unconditionally, so the
+        # key_locations include path must be present whenever SGI common
+        # is used, independent of the full SGI opaque driver.
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
+        bool "SGI Transparent"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations
+        bool "SGI Opaque Key Locations"
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque
+        bool "SGI Opaque"
+        # Splitting the key_locations into a seperate (sub) component allows for
+        # key_locations to be selected by TF-M non-secure side without pulling in
+        # the entire SGI Opaque component.
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque.key_locations
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi
+        bool "SGI"
+        select MCUX_COMPONENT_component.psa_crypto_driver
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.transparent
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.opaque
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi.common
+        select MCUX_COMPONENT_component.sgi_pkc
+        select MCUX_COMPONENT_component.sgi_pkc.example
+
+        select MCUX_COMPONENT_component.psa_crypto_driver.use_trng_compile_option
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.pkc
+        bool "SGI PKC"
+        select MCUX_COMPONENT_component.sgi_pkc.pkc
+        select MCUX_COMPONENT_component.sgi_pkc.ecc
+        select MCUX_COMPONENT_component.sgi_pkc.signature
+        select MCUX_COMPONENT_component.sgi_pkc.rsa
+        select MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+
+        # We provide option to have SGI-only, or SGI+PKC, but PKC-only is not available.
+        select MCUX_COMPONENT_component.psa_crypto_driver.sgi
+
+    ##################################################################
+    #                           Utilities                            #
+    #                                                                #
+    # Options without menu entries, to be used for SW-only utilities #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.util.wrapcheck_static_inline
+        bool
+
+    ##################################################################
+    #                            Features                            #
+    #                                                                #
+    # Options without menu entries, translated from the above        #
+    # user-facing MCUX_COMPONENT_component.psa_crypto_driver symbols #
+    # to be used in-code.                                            #
+    ##################################################################
+
+    config MCUX_COMPONENT_component.psa_crypto_driver.sgi.feature.double_cipher_enable
+        bool "SGI Double cipher enable"
+        default false
+        help
+            Enable double encryption/decryption with CMAC verification.
+            When enabled, cipher operations are performed twice and verified
+            using AES-128-CMAC to detect potential faults.
+
+    config ELE_S2XX_ENABLE_HASH_CONTEXT_IMPORT_EXPORT
+        bool
+        default y if MCUX_COMPONENT_component.psa_crypto_driver.ele_s200.feature.hash_context_persistence
+
+    config MCUX_PSA_SGI_DOUBLE_CIPHER_ENABLE
+        bool
+        default y if MCUX_COMPONENT_component.psa_crypto_driver.sgi.feature.double_cipher_enable
+
+
+

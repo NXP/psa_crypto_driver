@@ -1,0 +1,14 @@
+#
+# Copyright 2024-2026 NXP
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+    config MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto
+        bool "TF-PSA-Crypto component used in MbedTLS"
+
+    config MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto.builtin_driver
+        bool "TF-PSA-Crypto driver builtin SW implementation"
+
+    config MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto.default_config
+        default true if MCUX_COMPONENT_middleware.mbedtls.tf_psa_crypto
+        bool "Default MCUX TF-PSA-Crypto configuration header"

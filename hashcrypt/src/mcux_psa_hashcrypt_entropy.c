@@ -19,11 +19,14 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#include "mbedtls/build_info.h"
+
 #include "mcux_psa_hashcrypt_entropy.h"
 
-#if defined(CONFIG_USING_TF_PSA_CRYPTO) && (CONFIG_USING_TF_PSA_CRYPTO > 0)
-#include "crypto_driver_random.h"
-#endif /* defined(USING_TF_PSA_CRYPTO) && (USING_TF_PSA_CRYPTO > 0) */
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) && !defined(__ZEPHYR__)
+#include "psa/crypto_driver_random.h"
+#endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) && !defined(__ZEPHYR__) */
+
 
 static mcux_mutex_t *s_mutex = NULL;
 
@@ -206,14 +209,15 @@ psa_status_t mcux_psa_hashcrypt_entropy_get(uint32_t flags,
 
 /** @} */ // end of psa_entropy
 
-#if defined(CONFIG_USING_TF_PSA_CRYPTO) && (CONFIG_USING_TF_PSA_CRYPTO > 0)
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) && !defined(__ZEPHYR__)
 int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
                                  size_t *estimate_bits,
                                  unsigned char *output, size_t output_size)
 {
     return mcux_psa_hashcrypt_entropy_get(flags, estimate_bits, output, output_size);
 }
-#endif /* defined(CONFIG_USING_TF_PSA_CRYPTO) && (CONFIG_USING_TF_PSA_CRYPTO > 0) */
+#endif /* defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER >= 0x04000000) && !defined(__ZEPHYR__) */
+
 
 /*
  * Keep mbedtls_hardware_poll() for backward compatibility

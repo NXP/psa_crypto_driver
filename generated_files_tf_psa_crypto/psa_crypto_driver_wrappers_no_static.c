@@ -95,13 +95,13 @@
 
 #endif
 /* Headers for ele_s4xx opaque driver */
-#if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
-#include "ele_s4xx.h"
+#if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
+#include "ele_s1xx_4xx.h"
 
 #endif
 /* Headers for ele_s4xx transparent driver */
-#if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
-#include "ele_s4xx.h"
+#if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
+#include "ele_s1xx_4xx.h"
 
 #endif
 /* Headers for els_pkc transparent driver */
@@ -130,8 +130,8 @@
 #define ELA_CSEC_TRANSPARENT_DRIVER_ID (12)
 #define ELE_S2XX_TRANSPARENT_DRIVER_ID (13)
 #define ELE_S2XX_OPAQUE_DRIVER_ID (14)
-#define ELE_S4XX_OPAQUE_DRIVER_ID (15)
-#define ELE_S4XX_TRANSPARENT_DRIVER_ID (16)
+#define ELE_S1XX_4XX_OPAQUE_DRIVER_ID (15)
+#define ELE_S1XX_4XX_TRANSPARENT_DRIVER_ID (16)
 #define ELS_PKC_TRANSPARENT_DRIVER_ID (17)
 
 /* END-driver id */
@@ -199,14 +199,14 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
             break;
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
 
-#if defined(PSA_CRYPTO_DRIVER_ELE_S4XX)
-        case PSA_CRYPTO_ELE_S4XX_LOCATION:
-            *key_buffer_size = ele_s4xx_opaque_size_function(key_type,
+#if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
+        case PSA_CRYPTO_ELE_S1XX_4XX_LOCATION:
+            *key_buffer_size = ele_s1xx_4xx_opaque_size_function(key_type,
                                                            key_bits );
             return( ( *key_buffer_size != 0 ) ?
                     PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
             break;
-#endif /* PSA_CRYPTO_DRIVER_ELE_S4XX */
+#endif /* PSA_CRYPTO_DRIVER_ELE_S1XX_4XX */
 #if defined(PSA_CRYPTO_DRIVER_ELE_HSEB)
         case PSA_KEY_LOCATION_ELE_HSEB:
             *key_buffer_size = ele_hseb_opaque_get_key_buffer_size( attributes );
@@ -316,9 +316,9 @@ psa_status_t psa_driver_wrapper_export_public_key(
 
 
 
-#if (defined(PSA_CRYPTO_DRIVER_ELE_S4XX) )
+#if (defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX) )
         case 0x000001:
-            return( ele_s4xx_opaque_export_public_key
+            return( ele_s1xx_4xx_opaque_export_public_key
             (attributes,
                             key_buffer,
                             key_buffer_size,
