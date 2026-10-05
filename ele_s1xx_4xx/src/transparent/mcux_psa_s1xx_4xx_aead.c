@@ -72,6 +72,7 @@ static psa_status_t check_generic_aead_alg(psa_algorithm_t alg,
             return PSA_ERROR_NOT_SUPPORTED;
     }
 
+#if defined(PSA_WANT_ALG_CCM) || defined(PSA_WANT_ALG_GCM)
     /* Cycle through all valid tag lengths for CCM or GCM */
     uint32_t i;
     for (i = 0; i < VALID_TAG_LENGTH_SIZE; i++) {
@@ -83,6 +84,7 @@ static psa_status_t check_generic_aead_alg(psa_algorithm_t alg,
     if (i == VALID_TAG_LENGTH_SIZE) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+#endif /* PSA_WANT_ALG_CCM || PSA_WANT_ALG_GCM */
 
     return PSA_SUCCESS;
 }
