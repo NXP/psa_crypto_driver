@@ -88,6 +88,7 @@
 #define PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS       1
 #define PSA_WANT_ALG_SHAKE128                   1
 #define PSA_WANT_ALG_SHAKE256                   1
+#define PSA_WANT_ALG_ML_DSA                     1 /* NXP-added */
 
 #define PSA_WANT_ECC_BRAINPOOL_P_R1_256         1
 #define PSA_WANT_ECC_BRAINPOOL_P_R1_384         1
@@ -119,6 +120,7 @@
 #define PSA_WANT_KEY_TYPE_DH_PUBLIC_KEY         1
 #define PSA_WANT_KEY_TYPE_RAW_DATA              1
 #define PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY        1
+#define PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY     1 /* NXP-added */
 
 /*
  * The following symbols extend and deprecate the legacy
@@ -144,6 +146,13 @@
 #define PSA_WANT_KEY_TYPE_DH_KEY_PAIR_EXPORT    1
 #define PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE  1
 //#define PSA_WANT_KEY_TYPE_DH_KEY_PAIR_DERIVE    1 /* Not supported */
+
+/* NXP-added START */
+#define PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC      1
+#define PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_IMPORT   1
+#define PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_EXPORT   1
+#define PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_GENERATE 1
+/* NXP-added END */
 /** \} name SECTION Cryptographic mechanism selection (PSA API) */
 
 /**

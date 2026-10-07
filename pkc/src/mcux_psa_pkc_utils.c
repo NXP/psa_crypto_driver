@@ -12,6 +12,12 @@
 
 #include "mcux_psa_pkc_utils.h"
 
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && \
+    (defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC))
+#include <mcuxClMlDsa.h>
+#include <mcuxClMlKem.h>
+#endif
+
 /**
  * \brief Map PSA key attributes to PKC private key type
  *
@@ -38,76 +44,98 @@ psa_status_t psa_to_pkc_asym_alg_priv(
     psa_ecc_family_t ecc_family = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
     size_t key_bits             = psa_get_key_bits(attributes);
 
-    if (PSA_ECC_FAMILY_SECP_R1 == ecc_family) {
-        switch (key_bits) {
+    if (PSA_KEY_TYPE_IS_ECC(key_type)) {
+        if (PSA_ECC_FAMILY_SECP_R1 == ecc_family) {
+            switch (key_bits) {
 #if defined(PSA_WANT_ECC_SECP_R1_192)
-            case 192:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp192r1_Priv;
-                break;
+                case 192:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp192r1_Priv;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_R1_224)
-            case 224:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp224r1_Priv;
-                break;
+                case 224:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp224r1_Priv;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_R1_256)
-            case 256:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp256r1_Priv;
-                break;
+                case 256:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp256r1_Priv;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_R1_384)
-            case 384:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp384r1_Priv;
-                break;
+                case 384:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp384r1_Priv;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_R1_521)
-            case 521:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp521r1_Priv;
-                break;
+                case 521:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp521r1_Priv;
+                    break;
 #endif
-            default:
-                status = PSA_ERROR_NOT_SUPPORTED;
-                break;
-        }
-    } else if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 == ecc_family) {
-        switch (key_bits) {
+                default:
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
+            }
+        } else if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 == ecc_family) {
+            switch (key_bits) {
 #if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_256)
-            case 256:
-                *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP256r1_Priv;
-                break;
+                case 256:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP256r1_Priv;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_384)
-            case 384:
-                *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP384r1_Priv;
-                break;
+                case 384:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP384r1_Priv;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_512)
-            case 512:
-                *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP512r1_Priv;
-                break;
+                case 512:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP512r1_Priv;
+                    break;
 #endif
-            default:
-                status = PSA_ERROR_NOT_SUPPORTED;
-                break;
-        }
+                default:
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
+            }
 #if defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES)
-    } else if (PSA_ECC_FAMILY_SECP_K1 == ecc_family) {
-        switch (key_bits) {
+        } else if (PSA_ECC_FAMILY_SECP_K1 == ecc_family) {
+            switch (key_bits) {
 #if defined(PSA_WANT_ECC_SECP_K1_192)
-            case 192:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp192k1_Priv;
-                break;
+                case 192:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp192k1_Priv;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_K1_256)
-            case 256:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp256k1_Priv;
-                break;
+                case 256:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp256k1_Priv;
+                    break;
 #endif
+                default:
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
+            }
+#endif /* defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES) */
+        } else {
+            status = PSA_ERROR_NOT_SUPPORTED;
+        }
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && \
+    (defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC))
+    } else if (PSA_KEY_TYPE_IS_ML_DSA(key_type)) {
+        switch (key_bits) {
+            case PSA_ML_DSA_44_BITS:
+                *pkc_alg = mcuxClKey_Type_MlDsa44_Private;
+                break;
+            case PSA_ML_DSA_65_BITS:
+                *pkc_alg = mcuxClKey_Type_MlDsa65_Private;
+                break;
+            case PSA_ML_DSA_87_BITS:
+                *pkc_alg = mcuxClKey_Type_MlDsa87_Private;
+                break;
             default:
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
-#endif /* defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES) */
+#endif /* PSA_CRYPTO_DRIVER_PKC_PQC && (PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY || PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC) */
     } else {
         status = PSA_ERROR_NOT_SUPPORTED;
     }
@@ -142,76 +170,98 @@ psa_status_t psa_to_pkc_asym_alg_pub(
     psa_ecc_family_t ecc_family = PSA_KEY_TYPE_ECC_GET_FAMILY(key_type);
     size_t key_bits             = psa_get_key_bits(attributes);
 
-    if (PSA_ECC_FAMILY_SECP_R1 == ecc_family) {
-        switch (key_bits) {
+    if (PSA_KEY_TYPE_IS_ECC(key_type)) {
+        if (PSA_ECC_FAMILY_SECP_R1 == ecc_family) {
+            switch (key_bits) {
 #if defined(PSA_WANT_ECC_SECP_R1_192)
-            case 192:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp192r1_Pub;
-                break;
+                case 192:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp192r1_Pub;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_R1_224)
-            case 224:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp224r1_Pub;
-                break;
+                case 224:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp224r1_Pub;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_R1_256)
-            case 256:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp256r1_Pub;
-                break;
+                case 256:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp256r1_Pub;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_R1_384)
-            case 384:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp384r1_Pub;
-                break;
+                case 384:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp384r1_Pub;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_R1_521)
-            case 521:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp521r1_Pub;
-                break;
+                case 521:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp521r1_Pub;
+                    break;
 #endif
-            default:
-                status = PSA_ERROR_NOT_SUPPORTED;
-                break;
-        }
-    } else if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 == ecc_family) {
-        switch (key_bits) {
+                default:
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
+            }
+        } else if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 == ecc_family) {
+            switch (key_bits) {
 #if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_256)
-            case 256:
-                *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP256r1_Pub;
-                break;
+                case 256:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP256r1_Pub;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_384)
-            case 384:
-                *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP384r1_Pub;
-                break;
+                case 384:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP384r1_Pub;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_512)
-            case 512:
-                *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP512r1_Pub;
-                break;
+                case 512:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_brainpoolP512r1_Pub;
+                    break;
 #endif
-            default:
-                status = PSA_ERROR_NOT_SUPPORTED;
-                break;
-        }
+                default:
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
+            }
 #if defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES)
-    } else if (PSA_ECC_FAMILY_SECP_K1 == ecc_family) {
-        switch (key_bits) {
+        } else if (PSA_ECC_FAMILY_SECP_K1 == ecc_family) {
+            switch (key_bits) {
 #if defined(PSA_WANT_ECC_SECP_K1_192)
-            case 192:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp192k1_Pub;
-                break;
+                case 192:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp192k1_Pub;
+                    break;
 #endif
 #if defined(PSA_WANT_ECC_SECP_K1_256)
-            case 256:
-                *pkc_alg = mcuxClKey_Type_WeierECC_secp256k1_Pub;
-                break;
+                case 256:
+                    *pkc_alg = mcuxClKey_Type_WeierECC_secp256k1_Pub;
+                    break;
 #endif
+                default:
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
+            }
+#endif /* defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES) */
+        } else {
+            status = PSA_ERROR_NOT_SUPPORTED;
+        }
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && \
+    (defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC))
+    } else if (PSA_KEY_TYPE_IS_ML_DSA(key_type)) {
+        switch (key_bits) {
+            case PSA_ML_DSA_44_BITS:
+                *pkc_alg = mcuxClKey_Type_MlDsa44_Public;
+                break;
+            case PSA_ML_DSA_65_BITS:
+                *pkc_alg = mcuxClKey_Type_MlDsa65_Public;
+                break;
+            case PSA_ML_DSA_87_BITS:
+                *pkc_alg = mcuxClKey_Type_MlDsa87_Public;
+                break;
             default:
                 status = PSA_ERROR_NOT_SUPPORTED;
                 break;
         }
-#endif /* defined(MCUXCL_FEATURE_ECC_SECPK1_CURVES) */
+#endif /* PSA_CRYPTO_DRIVER_PKC_PQC && (PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY || PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC) */
     } else {
         status = PSA_ERROR_NOT_SUPPORTED;
     }
@@ -333,6 +383,7 @@ psa_status_t get_ecc_key_sizes(const psa_key_attributes_t *attributes,
 
     return status;
 }
+
 /**
  * @brief Get the shared secret size based on key attributes
  *

@@ -86,7 +86,6 @@ psa_status_t get_ecc_key_sizes(const psa_key_attributes_t *attributes,
 psa_status_t psa_to_pkc_asym_shared_secret_size(const psa_key_attributes_t *attributes,
                                                 size_t *secret_size);
 
-
 #ifdef __cplusplus
 }
 #endif

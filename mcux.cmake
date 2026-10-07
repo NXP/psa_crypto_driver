@@ -654,7 +654,7 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.pkc)
     pkc/src/mcux_psa_pkc_init.c
     pkc/src/mcux_psa_pkc_utils.c
     pkc/src/mcux_psa_pkc_key_generation.c
-	pkc/pkc.h
+    pkc/pkc.h
     BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/)
   mcux_add_include(
         INCLUDES pkc
@@ -663,6 +663,24 @@ if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.pkc)
     )
     mcux_add_macro(
         "PSA_CRYPTO_DRIVER_PKC"
+    )
+endif()
+
+####### PKC_PQC ########
+
+if(CONFIG_MCUX_COMPONENT_component.psa_crypto_driver.pkc_pqc)
+  mcux_add_source(SOURCES
+    pkc/include/mcux_psa_pkc_pqc_utils.h
+    pkc/src/mcux_psa_pkc_pqc_utils.c
+    pkc/pkc.h
+    BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/)
+  mcux_add_include(
+        INCLUDES pkc
+                 pkc/include
+        BASE_PATH ${SdkRootDirPath}/components/psa_crypto_driver/
+    )
+    mcux_add_macro(
+        "PSA_CRYPTO_DRIVER_PKC_PQC"
     )
 endif()
 

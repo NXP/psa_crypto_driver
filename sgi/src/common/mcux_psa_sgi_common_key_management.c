@@ -15,6 +15,11 @@
 #include "mcux_psa_sgi_common_key_management.h"
 #include "mcux_psa_sgi_common_init.h"
 
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && \
+    (defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC))
+#include <mcuxClMlDsa_KeyTypes.h>
+#endif
+
 #include <mcuxClKey.h>
 #include <mcuxClKey_Types.h>
 #include <mcuxClKey_Functions.h>
@@ -289,6 +294,57 @@ static psa_status_t get_key_type_descriptor(
             status = PSA_SUCCESS;
         }
         break;
+
+
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC)
+#if defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC)
+        case PSA_KEY_TYPE_ML_DSA_KEY_PAIR:
+        {
+            switch (psa_get_key_bits(attributes)) {
+                case PSA_ML_DSA_44_BITS:
+                    *out_type_desc = mcuxClKey_TypeDescriptor_MlDsa44_Private;
+                    status = PSA_SUCCESS;
+                    break;
+                case PSA_ML_DSA_65_BITS:
+                    *out_type_desc = mcuxClKey_TypeDescriptor_MlDsa65_Private;
+                    status = PSA_SUCCESS;
+                    break;
+                case PSA_ML_DSA_87_BITS:
+                    *out_type_desc = mcuxClKey_TypeDescriptor_MlDsa87_Private;
+                    status = PSA_SUCCESS;
+                    break;
+                default:
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
+            }
+        }
+        break;
+#endif /* PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC */
+
+#if defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY)
+        case PSA_KEY_TYPE_ML_DSA_PUBLIC_KEY:
+        {
+            switch (psa_get_key_bits(attributes)) {
+                case PSA_ML_DSA_44_BITS:
+                    *out_type_desc = mcuxClKey_TypeDescriptor_MlDsa44_Public;
+                    status = PSA_SUCCESS;
+                    break;
+                case PSA_ML_DSA_65_BITS:
+                    *out_type_desc = mcuxClKey_TypeDescriptor_MlDsa65_Public;
+                    status = PSA_SUCCESS;
+                    break;
+                case PSA_ML_DSA_87_BITS:
+                    *out_type_desc = mcuxClKey_TypeDescriptor_MlDsa87_Public;
+                    status = PSA_SUCCESS;
+                    break;
+                default:
+                    status = PSA_ERROR_NOT_SUPPORTED;
+                    break;
+            }
+        }
+        break;
+#endif /* PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY */
+#endif /* PSA_CRYPTO_DRIVER_PKC_PQC */
 
         default:
             /* Check if it's an ECC key pair */

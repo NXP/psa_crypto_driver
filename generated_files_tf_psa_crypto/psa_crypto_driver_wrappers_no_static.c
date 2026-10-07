@@ -94,12 +94,12 @@
 #include "ele_s2xx.h"
 
 #endif
-/* Headers for ele_s4xx opaque driver */
+/* Headers for ele_s1xx_4xx opaque driver */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
 #include "ele_s1xx_4xx.h"
 
 #endif
-/* Headers for ele_s4xx transparent driver */
+/* Headers for ele_s1xx_4xx transparent driver */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
 #include "ele_s1xx_4xx.h"
 
@@ -256,12 +256,8 @@ psa_status_t psa_driver_wrapper_export_public_key(
 
 
 
-
-
-
-
-#if (defined(PSA_CRYPTO_DRIVER_ELE_S2XX) )
-            status = ele_s2xx_transparent_export_public_key
+#if (defined(PSA_CRYPTO_DRIVER_PKC) )
+            status = pkc_transparent_export_public_key
                 (attributes,
                                 key_buffer,
                                 key_buffer_size,
@@ -274,8 +270,11 @@ psa_status_t psa_driver_wrapper_export_public_key(
                 return( status );
 #endif
 
-#if (defined(PSA_CRYPTO_DRIVER_PKC) )
-            status = pkc_transparent_export_public_key
+
+
+
+#if (defined(PSA_CRYPTO_DRIVER_ELE_S2XX) )
+            status = ele_s2xx_transparent_export_public_key
                 (attributes,
                                 key_buffer,
                                 key_buffer_size,

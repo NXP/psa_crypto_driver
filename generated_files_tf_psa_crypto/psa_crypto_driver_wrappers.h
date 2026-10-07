@@ -96,12 +96,12 @@
 #include "ele_s2xx.h"
 
 #endif
-/* Headers for ele_s4xx opaque driver */
+/* Headers for ele_s1xx_4xx opaque driver */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
 #include "ele_s1xx_4xx.h"
 
 #endif
-/* Headers for ele_s4xx transparent driver */
+/* Headers for ele_s1xx_4xx transparent driver */
 #if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
 #include "ele_s1xx_4xx.h"
 
@@ -373,6 +373,20 @@ static inline psa_status_t psa_driver_wrapper_sign_message(
                 return( status );
             break;
 #endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
+#if defined(PSA_CRYPTO_DRIVER_PKC)
+            status = pkc_sign_message(
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_size,
+                        signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_PKC */
 
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
@@ -806,6 +820,20 @@ static inline psa_status_t psa_driver_wrapper_verify_message(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_ELE_HSEB */
+#if defined(PSA_CRYPTO_DRIVER_PKC)
+            status = pkc_verify_message(
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        input,
+                        input_length,
+                        signature,
+                        signature_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_PKC */
 
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED)
@@ -2153,6 +2181,20 @@ static inline psa_status_t psa_driver_wrapper_import_key(
 
 
 
+#if (defined(PSA_CRYPTO_DRIVER_PKC) )
+            status = pkc_transparent_import_key
+                (attributes,
+                                data,
+                                data_length,
+                                key_buffer,
+                                key_buffer_size,
+                                key_buffer_length,
+                                bits
+            );
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif
 
 
 

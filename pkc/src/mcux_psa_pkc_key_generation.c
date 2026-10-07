@@ -21,6 +21,12 @@
 #include <internal/mcuxClPkc_Macros.h>
 #include <internal/mcuxClEcc_Weier_Internal.h>
 
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && \
+    (defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC))
+#include <mcuxClMlDsa.h>
+#include "mcux_psa_pkc_pqc_utils.h"
+#endif
+
 #define RSA_PUBLIC_EXP_BYTE_LENGTH (3u)
 #define RSA_MAX_KEYSIZE MCUXCLKEY_SIZE_4096
 
@@ -479,6 +485,40 @@ exit:
     return status;
 }
 
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_GENERATE)
+static psa_status_t pkc_internal_generate_ml_dsa_key(const psa_key_attributes_t *attributes,
+                                                     uint8_t *key_buffer,
+                                                     size_t key_buffer_size,
+                                                     size_t *key_buffer_length)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_type_t key_type = psa_get_key_type(attributes);
+    size_t bits = psa_get_key_bits(attributes);
+    size_t estimate_bits = 0u;
+
+    *key_buffer_length = 0u;
+
+    if (PSA_ML_DSA_44_BITS != bits &&
+        PSA_ML_DSA_65_BITS != bits &&
+        PSA_ML_DSA_87_BITS != bits) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    const size_t key_length = PSA_EXPORT_KEY_OUTPUT_SIZE(key_type, bits);
+
+    if (key_length > key_buffer_size) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    /* This locks the SGI mutex, not the PKC one, so we are safe to call */
+    status = sgi_get_entropy(0u, &estimate_bits, key_buffer, key_length);
+    if (PSA_SUCCESS == status) {
+        *key_buffer_length = key_length;
+    }
+
+    return status;
+}
+#endif /* PSA_CRYPTO_DRIVER_PKC_PQC && PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_GENERATE */
+
 psa_status_t pkc_generate_key(const psa_key_attributes_t *attributes,
                               uint8_t *key_buffer, size_t key_buffer_size,
                               size_t *key_buffer_length)
@@ -539,6 +579,16 @@ psa_status_t pkc_generate_key(const psa_key_attributes_t *attributes,
         if (status != PSA_SUCCESS) {
             goto exit;
         }
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_GENERATE)
+    } else if (PSA_KEY_TYPE_IS_ML_DSA(type) && PSA_KEY_TYPE_IS_KEY_PAIR(type)) {
+        status = pkc_internal_generate_ml_dsa_key(attributes,
+                                                  mcuxClKey_getLoadedKeyData(&key),
+                                                  mcuxClKey_getLoadedKeyLength(&key),
+                                                  key_buffer_length);
+        if (status != PSA_SUCCESS) {
+            goto exit;
+        }
+#endif /* PSA_CRYPTO_DRIVER_PKC_PQC && PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_GENERATE */
     } else {
         (void) key_buffer_length;
         status = PSA_ERROR_NOT_SUPPORTED;
@@ -797,6 +847,39 @@ exit:
     return status;
 }
 
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY)
+static psa_status_t pkc_internal_export_ml_dsa_public_key(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer,
+    size_t key_buffer_size,
+    uint8_t *data,
+    size_t data_size,
+    size_t *data_length)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    /* We need this for the deterministic keygen, but it will be unused */
+    uint32_t private_key_data[MCUXCLCORE_NUM_OF_CPUWORDS_CEIL(MCUXCLMLDSA_MLDSA87_SK_LEN)];
+    size_t private_key_length = 0u;
+
+    if (32u != key_buffer_size) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Deterministically generate a keypair from the given seed */
+    status = pkc_ml_dsa_generate_key_from_seed(attributes,
+                                               key_buffer,
+                                               key_buffer_size,
+                                               (uint8_t *) private_key_data,
+                                               sizeof(private_key_data),
+                                               &private_key_length,
+                                               data,
+                                               data_size,
+                                               data_length);
+    return status;
+}
+#endif /* PSA_CRYPTO_DRIVER_PKC_PQC && PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY */
+
 psa_status_t pkc_transparent_export_public_key(const psa_key_attributes_t *attributes,
                                    const uint8_t *key_buffer,
                                    size_t key_buffer_size,
@@ -815,8 +898,13 @@ psa_status_t pkc_transparent_export_public_key(const psa_key_attributes_t *attri
 
     type = psa_get_key_type(attributes);
 
-    /* Only ECC keys are supported by this driver */
-    if (!PSA_KEY_TYPE_IS_ECC(type)) {
+    /* Only ECC keys are supported by the base driver... */
+    if (!PSA_KEY_TYPE_IS_ECC(type)
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY)
+        /* ...and additionally ML-DSA keys if we have the addon */
+        && !PSA_KEY_TYPE_IS_ML_DSA(type)
+#endif
+        ) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -824,7 +912,7 @@ psa_status_t pkc_transparent_export_public_key(const psa_key_attributes_t *attri
      * A stored ECC public key must be in the SEC1 uncompressed point format
      * (0x04 || X || Y); reject any other/compressed encoding to stay
      * consistent with the verify path that assumes the leading 0x04 tag. */
-    if (PSA_KEY_TYPE_IS_PUBLIC_KEY(type)) {
+    if (PSA_KEY_TYPE_IS_ECC(type) && PSA_KEY_TYPE_IS_PUBLIC_KEY(type)) {
         if (key_buffer[0] != ECC_POINT_FORMAT_UNCOMPRESSED) {
             return PSA_ERROR_NOT_SUPPORTED;
         }
@@ -836,6 +924,18 @@ psa_status_t pkc_transparent_export_public_key(const psa_key_attributes_t *attri
         return PSA_SUCCESS;
     }
 
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY)
+    /* Same as above, only without the leading 0x04 byte requirement */
+    if (PSA_KEY_TYPE_IS_ML_DSA(type) && PSA_KEY_TYPE_IS_PUBLIC_KEY(type)) {
+        if (key_buffer_size > data_size) {
+            return PSA_ERROR_BUFFER_TOO_SMALL;
+        }
+        (void) memcpy(data, key_buffer, key_buffer_size);
+        *data_length = key_buffer_size;
+        return PSA_SUCCESS;
+    }
+#endif
+
     /* Otherwise it must be a key pair from which we derive the public part */
     if (!PSA_KEY_TYPE_IS_KEY_PAIR(type)) {
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -846,11 +946,24 @@ psa_status_t pkc_transparent_export_public_key(const psa_key_attributes_t *attri
         return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    status = pkc_internal_export_ecp_public_key(attributes,
-                                                key_buffer,
-                                                data,
-                                                data_size,
-                                                data_length);
+    if (PSA_KEY_TYPE_IS_ECC(type)) {
+        status = pkc_internal_export_ecp_public_key(attributes,
+                                                    key_buffer,
+                                                    data,
+                                                    data_size,
+                                                    data_length);
+    }
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY)
+    /* We got here, so we know it's a key pair. Key pairs must be 32 Bytes long seeds. */
+    if (PSA_KEY_TYPE_IS_ML_DSA(type)) {
+        status = pkc_internal_export_ml_dsa_public_key(attributes,
+                                                       key_buffer,
+                                                       key_buffer_size,
+                                                       data,
+                                                       data_size,
+                                                       data_length);
+    }
+#endif
 
     if (mcux_mutex_unlock(&pkc_hwcrypto_mutex) != 0) {
         return PSA_ERROR_SERVICE_FAILURE;
@@ -858,4 +971,74 @@ psa_status_t pkc_transparent_export_public_key(const psa_key_attributes_t *attri
 
     return status;
 }
+
+psa_status_t pkc_transparent_import_key(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *data, size_t data_length,
+    uint8_t *key_buffer, size_t key_buffer_size,
+    size_t *key_buffer_length, size_t *bits)
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+#if defined(PSA_CRYPTO_DRIVER_PKC_PQC) && \
+    (defined(PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_IMPORT) || defined(PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY))
+
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
+
+    if ((PSA_KEY_LOCATION_LOCAL_STORAGE == location)) {
+
+        psa_key_type_t key_type = psa_get_key_type(attributes);
+
+        /* For now, we extend the PSA-Core transparent import key support for ML-DSA */
+        if (PSA_KEY_TYPE_IS_ML_DSA(key_type)) {
+            size_t passed_bits = psa_get_key_bits(attributes);
+
+            /* Until PSA supports ML-DSA, we'll refuse imports where the bits attribute is not set */
+            if (PSA_ML_DSA_44_BITS != passed_bits && PSA_ML_DSA_65_BITS != passed_bits &&
+                PSA_ML_DSA_87_BITS != passed_bits) {
+                return PSA_ERROR_NOT_SUPPORTED;
+            }
+
+            size_t unused_key_length = 0u;
+            size_t expected_key_length = 0u;
+
+            if (key_buffer_size < data_length) {
+                return PSA_ERROR_BUFFER_TOO_SMALL;
+            }
+
+            if (PSA_KEY_TYPE_IS_PUBLIC_KEY(key_type)) {
+                status = get_ml_key_sizes(attributes, &unused_key_length, &expected_key_length);
+                if (PSA_SUCCESS != status) {
+                    return status;
+                }
+            } else {
+                expected_key_length = 32u; /* ML-DSA key pairs are stored as a 32-byte seed */
+            }
+
+            if (data_length != expected_key_length) {
+                return PSA_ERROR_INVALID_ARGUMENT;
+            }
+
+            MCUX_CSSL_FP_FUNCTION_CALL_VOID_BEGIN(tokenCopyKey,
+                                                    mcuxClMemory_copy(key_buffer, data,
+                                                                      data_length, key_buffer_size));
+            if (MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClMemory_copy) != tokenCopyKey) {
+                status = PSA_ERROR_CORRUPTION_DETECTED;
+            } else {
+                *key_buffer_length = data_length;
+                *bits = passed_bits;
+                status = PSA_SUCCESS;
+            }
+            MCUX_CSSL_FP_FUNCTION_CALL_VOID_END();
+        }
+    } else
+#endif /* PSA_CRYPTO_DRIVER_PKC_PQC && (PSA_WANT_KEY_TYPE_ML_DSA_PUBLIC_KEY || PSA_WANT_KEY_TYPE_ML_DSA_KEY_PAIR_BASIC) */
+    {
+        /* Additional functionality may be added at a later date */
+        status = PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    return status;
+}
+
 /** @} */ // end of psa_key_generation

@@ -3,5 +3,18 @@
     "type":         "transparent",
     "mbedtls/h_condition":   "defined(PSA_CRYPTO_DRIVER_PKC)",
     "headers":      ["pkc.h"],
-    "capabilities": []
+    "capabilities": [
+        {
+            "_comment":     "Extend the builtin PSA import key functionality for PQC support until it is provided by the PSA Core",
+            "mbedtls/c_condition":    "defined(PSA_CRYPTO_DRIVER_PKC)",
+            "entry_points": ["import_key"],
+            "fallback":     true
+        },
+        {
+            "_comment":     "Extend the builtin PSA export public key functionality for PQC support until it is provided by the PSA Core",
+            "mbedtls/c_condition":    "defined(PSA_CRYPTO_DRIVER_PKC)",
+            "entry_points": ["export_public_key"],
+            "fallback":     true
+        }
+    ]
 }

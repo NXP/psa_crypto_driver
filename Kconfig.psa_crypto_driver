@@ -381,6 +381,11 @@
         # We provide option to have SGI-only, or SGI+PKC, but PKC-only is not available.
         select MCUX_COMPONENT_component.psa_crypto_driver.sgi
 
+    config MCUX_COMPONENT_component.psa_crypto_driver.pkc_pqc
+        bool "SGI PKC with PQC Addon"
+        select MCUX_COMPONENT_component.psa_crypto_driver.pkc
+        select MCUX_COMPONENT_component.sgi_pkc_pqc
+
     ##################################################################
     #                           Utilities                            #
     #                                                                #

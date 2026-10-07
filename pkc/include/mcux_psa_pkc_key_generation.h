@@ -139,6 +139,28 @@ psa_status_t pkc_internal_export_ecp_public_key(const psa_key_attributes_t *attr
                                    uint8_t *data,
                                    size_t data_size,
                                    size_t *data_length);
+
+/*!
+ * \brief Import a key in binary format
+ *
+ * \param[in]  attributes        Attributes of the key to use
+ * \param[in]  data              Buffer holding the key data to import
+ * \param[in]  data_length       Size in bytes of the data buffer
+ * \param[out] key_buffer        Buffer to hold the imported key
+ * \param[in]  key_buffer_size   Size in bytes of the key_buffer buffer
+ * \param[out] key_buffer_length Size in bytes of the imported key
+ * \param[out] bits              Size in bits of the imported key
+ *
+ * \retval  PSA_SUCCESS on success. Error code from \ref psa_status_t on
+ *          failure
+ */
+psa_status_t pkc_transparent_import_key(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *data, size_t data_length,
+    uint8_t *key_buffer, size_t key_buffer_size,
+    size_t *key_buffer_length, size_t *bits);
+
+
 #ifdef __cplusplus
 }
 #endif
