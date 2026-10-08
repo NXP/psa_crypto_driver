@@ -5617,7 +5617,7 @@ static inline psa_status_t psa_driver_wrapper_key_agreement(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
-#if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX)
+#if defined(PSA_CRYPTO_DRIVER_ELE_S1XX_4XX) && 0 // Disable temporarily due to S100 issue with ECDH_HKDF
     status = ele_s1xx_4xx_transparent_key_agreement( attributes,
                                                  key_buffer,
                                                  key_buffer_size,
