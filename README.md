@@ -6,10 +6,10 @@ This repository is for MCUXpresso SDK PSA crypto driver middleware delivery and 
 The PSA crypto driver provides the driver interface used to run the PSA cryptographic API on top of NXP crypto hardware IP.
 
 ## Documentation
-Overall details can be reviewed here: [MCUXpresso SDK Online Documentation](https://mcuxpresso.nxp.com/mcuxsdk/latest/html/introduction/README.html)
+Overall details can be reviewed here: [MCUXpresso SDK Online Documentation](https://docs.mcuxpresso.nxp.com/mcuxsdk/latest/introduction/README.html)
 
 ## Setup
-Instructions on how to install the MCUXpresso SDK provided from GitHub via west manifest [Getting Started with SDK - Detailed Installation Instructions](https://mcuxpresso.nxp.com/mcuxsdk/latest/html/gsd/installation.html#installation)
+Instructions on how to install the MCUXpresso SDK provided from GitHub via west manifest [Getting Started with SDK - Detailed Installation Instructions](https://docs.mcuxpresso.nxp.com/mcuxsdk/latest/gsd/installation.html#installation)
 
 ## Contribution
 Contributions are not currently accepted. Guidelines to contribute will be posted in the future.
