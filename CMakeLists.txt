@@ -257,15 +257,23 @@ else()
 		McuxPsaCryptoDriverSgiPkc
 		PUBLIC
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/trng
-		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/glikey
 		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/crc
 	)
 
-	target_sources(
-		McuxPsaCryptoDriverSgiPkc
-		PRIVATE
-		${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/glikey/fsl_glikey.c
-	)
+	# Skip the HAL glikey driver (references GLIKEY_Type) on MCXW7.
+	if(NOT CONFIG_SGI_PKC_PLATFORM_MCXW)
+		target_include_directories(
+			McuxPsaCryptoDriverSgiPkc
+			PUBLIC
+			${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/glikey
+		)
+
+		target_sources(
+			McuxPsaCryptoDriverSgiPkc
+			PRIVATE
+			${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/glikey/fsl_glikey.c
+		)
+	endif()
 
 	# fsl_crc.c is compiled here only when the Zephyr NXP CRC driver
 	# (CONFIG_CRC_DRIVER_NXP) is NOT enabled. When that driver is active, it
