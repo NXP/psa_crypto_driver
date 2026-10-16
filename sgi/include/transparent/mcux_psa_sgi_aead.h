@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -18,6 +18,7 @@
 
 #include "psa/crypto.h"
 #include "mcux_psa_sgi_common_init.h"
+#include "sgi_crypto_primitives.h"
 
 #include <mcuxClMemory.h>
 #include <mcuxCsslMemory.h>
