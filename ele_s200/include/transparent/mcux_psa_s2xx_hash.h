@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -18,6 +18,7 @@
 
 #include "psa/crypto.h"
 #include "mcux_psa_s2xx_common_init.h"
+#include "ele_s2xx_crypto_primitives.h"
 
 #ifdef __cplusplus
 extern "C" {
