@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "psa/crypto.h"
+#include "hse_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
