@@ -2,20 +2,20 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2025-05-28T05:41:53Z",
+    "created": "2026-11-10T02:37:33Z",
     "creators": [
       "Organization: NXP"
     ],
-    "licenseListVersion": "3.20"
+    "licenseListVersion": "3.28"
   },
-  "name": "psa_crypto_driver-v25.06.00",
+  "name": "psa_crypto_driver-v26.12.00",
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://nxp.com/spdx/c15eed11-61d8-4e58-a90f-f207682b5491",
+  "documentNamespace": "https://nxp.com/spdx/966c70d9-832d-44bb-9666-0b3d6b633333",
   "packages": [
     {
-      "SPDXID": "SPDXRef-package-c15eed11-61d8-4e58-a90f-f207682b5491",
+      "SPDXID": "SPDXRef-package-966c70d9-832d-44bb-9666-0b3d6b633333",
       "name": "psa_crypto_driver",
-      "versionInfo": "v25.06.00",
+      "versionInfo": "v26.12.00",
       "licenseConcluded": "(BSD-3-Clause)",
       "licenseDeclared": "(BSD-3-Clause)",
       "downloadLocation": "https://github.com/NXP/psa_crypto_driver",
@@ -23,13 +23,42 @@
       "supplier": "NOASSERTION",
       "externalRefs": [],
       "filesAnalyzed": false
+    },
+    {
+      "SPDXID": "SPDXRef-package-60191d93-939b-4790-a27e-a268ecaee21d",
+      "name": "Mbed-TLS/TF-PSA-Crypto",
+      "versionInfo": "v1.2.0",
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "(Apache-2.0 OR GPL-2.0-or-later)",
+      "homepage": "https://github.com/Mbed-TLS",
+      "downloadLocation": "NOASSERTION",
+      "originator": "Organization: Mbed-TLS/TF-PSA-Crypto",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:arm:tf-psa-crypto:1.2.0:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:mbed_tls:tf_psa_crypto:1.2.0:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "filesAnalyzed": false
     }
   ],
   "relationships": [
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
       "relationshipType": "DESCRIBES",
-      "relatedSpdxElement": "SPDXRef-package-c15eed11-61d8-4e58-a90f-f207682b5491"
+      "relatedSpdxElement": "SPDXRef-package-966c70d9-832d-44bb-9666-0b3d6b633333"
+    },
+    {
+      "spdxElementId": "SPDXRef-package-966c70d9-832d-44bb-9666-0b3d6b633333",
+      "relationshipType": "DYNAMIC_LINK",
+      "relatedSpdxElement": "SPDXRef-package-60191d93-939b-4790-a27e-a268ecaee21d"
     }
   ]
 }
